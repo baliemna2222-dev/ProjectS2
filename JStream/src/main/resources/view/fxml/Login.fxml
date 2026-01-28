@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.effect.InnerShadow?>
+<?import javafx.scene.paint.*?>
+
+
+<BorderPane prefHeight="600" prefWidth="800" style="-fx-background-image: url('assets/images/mbg1.jpeg'); -fx-background-size: cover; -fx-background-repeat: no-repeat; -fx-background-position: center; " xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+    <top style="-fx-background-color: rgba(0,0,0,0.4);">
+         <HBox fx:id="navbar" spacing="10" alignment="CENTER_LEFT"
+          AnchorPane.topAnchor="10.0" AnchorPane.leftAnchor="10.0"
+          AnchorPane.rightAnchor="10.0" prefHeight="50.0"
+          styleClass="navbar
+          -fx-background-color: rgba(0,0,0,0.4);">
+
+        <Button text="Home"/>
+        <Button text="Movies"/>
+        <Button text="Series"/>
+    </HBox>
+    </top>
+ 
+    <center>
+       <StackPane prefWidth="800" prefHeight="600">
+
+    <VBox prefHeight="600" prefWidth="800" style="-fx-background-color: rgba(0,0,0,0.4);"/>
+            
+    <VBox alignment="CENTER" maxHeight="700" maxWidth="500" prefHeight="600" prefWidth="383" spacing="15" style="
+        -fx-background-color: rgba(0,0,0,0.9);
+        -fx-background-radius: 0;
+        -fx-padding: 20;
+        -fx-border-color: black;
+        -fx-border-radius: 0;
+        -fx-border-width: 1;
+    ">
+        <Label text="Login" style="-fx-font-size: 24px; -fx-text-fill: white;" />
+        <TextField promptText="Username" style="-fx-pref-width: 250;" />
+        <PasswordField promptText="Password" style="-fx-pref-width: 250;" />
+        <Button text="Sign In" style="-fx-pref-width: 150; -fx-font-size: 16px;" />
+    </VBox>
+
+</StackPane>
+
+    </center>
+</BorderPane>

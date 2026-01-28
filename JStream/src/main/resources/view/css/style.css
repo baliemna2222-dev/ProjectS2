@@ -1,0 +1,16 @@
+.root { 
+    -fx-background-image: url("assets/images/mbg1.jpeg");
+    -fx-background-size: cover;
+    -fx-background-position: center;
+}
+
+/* Overlay shadow */
+.shadow-overlay {
+    -fx-background-color: 
+        radial-gradient(
+            center 50% 50%, 
+            radius 50%, 
+            #00000088 0%,  /* semi-transparent center */
+            #000000CC 100% /* very dark edges */
+        );
+}
