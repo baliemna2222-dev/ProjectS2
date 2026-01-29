@@ -1,69 +1,82 @@
 package JStream.controller;
 
-import java.net.URL;
-import java.util.ResourceBundle;
-
-import javafx.application.Platform;
+import javafx.animation.TranslateTransition;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
-import javafx.stage.Stage;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.effect.DropShadow;
+import javafx.util.Duration;
+
+import java.net.URL;
+import java.util.Random;
+import java.util.ResourceBundle;
 
 public class Logincontroller implements Initializable {
 
+    private static final int WIDTH = 1640;
+    private static final int HEIGHT = 800;
+    private static final int ELEMENTS = 30;
+
     @FXML
-    private MediaView mediaView;
+    private Pane dotsPane;
 
-    private void switchToLogin() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Login.fxml"));
-            Parent root = loader.load();
+    @FXML
+    private VBox loginForm;
 
-            Stage stage = (Stage) mediaView.getScene().getWindow();
+    @FXML
+    private VBox signupForm;
 
-            // ✅ Keep the old stage size
-            Scene newScene = new Scene(root, stage.getWidth(), stage.getHeight());
+    @FXML
+    private Hyperlink goToSignUp;
 
-            stage.setScene(newScene);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
+    @FXML
+    private Hyperlink goToLogin;
 
     @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        Random random = new Random();
 
-        URL videoUrl = getClass().getResource("/assets/videos/videoplayback.mp4");
+        // --- Animated background dots ---
+        for (int i = 0; i < ELEMENTS; i++) {
+            Rectangle rect = new Rectangle(10, 10);
+            rect.setArcWidth(10);
+            rect.setArcHeight(10);
 
-        Media media = new Media(videoUrl.toExternalForm());
-        MediaPlayer player = new MediaPlayer(media);
+            DropShadow glow = new DropShadow();
+            glow.setColor(Color.web("#0159e4"));
+            glow.setRadius(30);
+            glow.setSpread(0.6);
+            rect.setEffect(glow);
+            rect.setFill(Color.web("#01133A"));
 
-        mediaView.setPreserveRatio(false); 
-        mediaView.setSmooth(true);
-        mediaView.setCache(true);
-        mediaView.setMediaPlayer(player);
+            rect.setX(random.nextInt(WIDTH));
+            rect.setY(HEIGHT + random.nextInt(200));
 
-        player.play();
+            TranslateTransition transition = new TranslateTransition();
+            transition.setNode(rect);
+            transition.setFromY(0);
+            transition.setToY(-HEIGHT - 300);
+            transition.setDuration(Duration.seconds(6 + random.nextInt(15)));
+            transition.setDelay(Duration.seconds(random.nextInt(8)));
+            transition.setCycleCount(TranslateTransition.INDEFINITE);
+            transition.play();
 
-        player.setOnEndOfMedia(() -> {
-            player.stop();
-            player.dispose(); 
-            switchToLogin();
+            dotsPane.getChildren().add(rect);
+        }
+
+        // --- Switch between login/signup ---
+        goToSignUp.setOnAction(e -> {
+            loginForm.setVisible(false);
+            signupForm.setVisible(true);
         });
 
-        // Resize video to full screen
-        mediaView.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) {
-                mediaView.fitWidthProperty().bind(newScene.widthProperty());
-                mediaView.fitHeightProperty().bind(newScene.heightProperty());
-            }
+        goToLogin.setOnAction(e -> {
+            signupForm.setVisible(false);
+            loginForm.setVisible(true);
         });
     }
 }

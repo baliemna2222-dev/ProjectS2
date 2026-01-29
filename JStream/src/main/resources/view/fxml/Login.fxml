@@ -1,47 +1,137 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.Rectangle?>
-<?import javafx.scene.effect.InnerShadow?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.effect.*?>
 <?import javafx.scene.paint.*?>
 
+<BorderPane fx:id="wrapper" xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="JStream.controller.Logincontroller"
+            prefWidth="800" prefHeight="600"
+            style="-fx-background-image: url('assets/images/dark.png');">
 
-<BorderPane prefHeight="600" prefWidth="800" style="-fx-background-image: url('assets/images/mbg1.jpeg'); -fx-background-size: cover; -fx-background-repeat: no-repeat; -fx-background-position: center; " xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
-    <top style="-fx-background-color: rgba(0,0,0,0.4);">
-         <HBox fx:id="navbar" spacing="10" alignment="CENTER_LEFT"
-          AnchorPane.topAnchor="10.0" AnchorPane.leftAnchor="10.0"
-          AnchorPane.rightAnchor="10.0" prefHeight="50.0"
-          styleClass="navbar
-          -fx-background-color: rgba(0,0,0,0.4);">
+    
 
-        <Button text="Home"/>
-        <Button text="Movies"/>
-        <Button text="Series"/>
-    </HBox>
-    </top>
- 
     <center>
-       <StackPane prefWidth="800" prefHeight="600">
+        <StackPane fx:id="centerStack" alignment="CENTER" prefWidth="800" prefHeight="600"
+                   style="-fx-background-image: url('assets/images/dark.png');
+                          -fx-background-size: cover;
+                          -fx-background-position: center;
+                          -fx-background-repeat: no-repeat;">
 
-    <VBox prefHeight="600" prefWidth="800" style="-fx-background-color: rgba(0,0,0,0.4);"/>
-            
-    <VBox alignment="CENTER" maxHeight="700" maxWidth="500" prefHeight="600" prefWidth="383" spacing="15" style="
-        -fx-background-color: rgba(0,0,0,0.9);
-        -fx-background-radius: 0;
-        -fx-padding: 20;
-        -fx-border-color: black;
-        -fx-border-radius: 0;
-        -fx-border-width: 1;
-    ">
-        <Label text="Login" style="-fx-font-size: 24px; -fx-text-fill: white;" />
-        <TextField promptText="Username" style="-fx-pref-width: 250;" />
-        <PasswordField promptText="Password" style="-fx-pref-width: 250;" />
-        <Button text="Sign In" style="-fx-pref-width: 150; -fx-font-size: 16px;" />
-    </VBox>
+            <!-- Animated dots -->
+            <Pane fx:id="dotsPane" prefWidth="800" prefHeight="600"/>
 
-</StackPane>
+            <!-- Overlay -->
+            <VBox prefHeight="600" prefWidth="800" style="-fx-background-color: rgba(0,0,0,0.4);"/>
 
+            <!-- Login Form Box -->
+            <VBox fx:id="loginForm" alignment="CENTER" spacing="20"
+                  prefWidth="400" prefHeight="500"
+                  maxWidth="400" maxHeight="500"
+                  style="-fx-background-color: rgba(0,0,0,0.9);
+                         -fx-padding: 40;
+                         -fx-background-radius: 20;
+                         -fx-border-radius: 20;
+                         -fx-effect: dropshadow(gaussian, #0ef, 30, 0.5, 0, 0);">
+                <Label text="Login" style="-fx-font-size: 30px; -fx-text-fill: white;"/>
+
+                <!-- Username -->
+                <TextField fx:id="loginUsername" promptText="Username"
+                           style="-fx-pref-width: 320;
+                                  -fx-background-color: transparent;
+                                  -fx-text-fill: white;
+                                  -fx-border-color: white;
+                                  -fx-border-width: 0 0 2 0;
+                                  -fx-border-radius: 0;
+                                  -fx-font-size: 16px;"/>
+
+                <!-- Password -->
+                <PasswordField fx:id="loginPassword" promptText="Password"
+                               style="-fx-pref-width: 320;
+                                      -fx-background-color: transparent;
+                                      -fx-text-fill: white;
+                                      -fx-border-color: white;
+                                      -fx-border-width: 0 0 2 0;
+                                      -fx-border-radius: 0;
+                                      -fx-font-size: 16px;"/>
+
+                <HBox alignment="CENTER_LEFT" spacing="5">
+                    <CheckBox text="Remember me" style="-fx-text-fill: white; -fx-accent: #0ef;"/>
+                </HBox>
+
+                <Button text="Login" style="-fx-background-color: #0ef;
+                                             -fx-text-fill: black;
+                                             -fx-pref-width: 320;
+                                             -fx-font-size: 16px;
+                                             -fx-background-radius: 30px;
+                                             -fx-effect: dropshadow(gaussian, #0ef, 10, 0.3, 0, 0);"/>
+
+                <HBox alignment="CENTER" spacing="5">
+                    <Label text="Don't have an account?" style="-fx-text-fill: white;"/>
+                    <Hyperlink fx:id="goToSignUp" text="Sign Up" style="-fx-text-fill: #0ef;"/>
+                </HBox>
+            </VBox>
+
+            <!-- SignUp Form Box -->
+            <VBox fx:id="signupForm" alignment="CENTER" spacing="15"
+                  prefWidth="400" prefHeight="500"
+                  maxWidth="400" maxHeight="500"
+                  style="-fx-background-color: rgba(0,0,0,0.9);
+                         -fx-padding: 40;
+                         -fx-background-radius: 20;
+                         -fx-border-radius: 20;
+                         -fx-effect: dropshadow(gaussian, #0ef, 30, 0.5, 0, 0);"
+                  visible="false">
+
+                <Label text="Sign Up" style="-fx-font-size: 30px; -fx-text-fill: white;"/>
+
+                <TextField fx:id="signupUsername" promptText="Username"
+                           style="-fx-pref-width: 320;
+                                  -fx-background-color: transparent;
+                                  -fx-text-fill: white;
+                                  -fx-border-color: white;
+                                  -fx-border-width: 0 0 2 0;
+                                  -fx-border-radius: 0;
+                                  -fx-font-size: 16px;"/>
+
+                <TextField fx:id="signupEmail" promptText="Email"
+                           style="-fx-pref-width: 320;
+                                  -fx-background-color: transparent;
+                                  -fx-text-fill: white;
+                                  -fx-border-color: white;
+                                  -fx-border-width: 0 0 2 0;
+                                  -fx-border-radius: 0;
+                                  -fx-font-size: 16px;"/>
+
+                <PasswordField fx:id="signupPassword" promptText="Password"
+                               style="-fx-pref-width: 320;
+                                      -fx-background-color: transparent;
+                                      -fx-text-fill: white;
+                                      -fx-border-color: white;
+                                      -fx-border-width: 0 0 2 0;
+                                      -fx-border-radius: 0;
+                                      -fx-font-size: 16px;"/>
+
+                <CheckBox text="I agree to the terms and conditions" style="-fx-text-fill: white; -fx-accent: #0ef;"/>
+
+                <Button text="Sign Up" style="-fx-background-color: #0ef;
+                                              -fx-text-fill: black;
+                                              -fx-pref-width: 320;
+                                              -fx-font-size: 16px;
+                                              -fx-background-radius: 30px;
+                                              -fx-effect: dropshadow(gaussian, #0ef, 10, 0.3, 0, 0);"/>
+
+                <HBox alignment="CENTER" spacing="5">
+                    <Label text="Already have an account?" style="-fx-text-fill: white;"/>
+                    <Hyperlink fx:id="goToLogin" text="Sign In" style="-fx-text-fill: #0ef;"/>
+                </HBox>
+            </VBox>
+
+        </StackPane>
     </center>
+
 </BorderPane>

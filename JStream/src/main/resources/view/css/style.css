@@ -10,7 +10,7 @@
         radial-gradient(
             center 50% 50%, 
             radius 50%, 
-            #00000088 0%,  /* semi-transparent center */
-            #000000CC 100% /* very dark edges */
+            #00000088 0%,  
+            #000000CC 100% 
         );
 }
