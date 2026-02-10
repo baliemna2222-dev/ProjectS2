@@ -2,9 +2,9 @@ package JStream;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
-import javafx.stage.Stage;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.stage.Stage;
 
 public class application extends Application {
 	@Override
@@ -17,9 +17,9 @@ public class application extends Application {
 
         stage.setTitle("Login");
         stage.setScene(scene);
-        stage.setMaximized(true); 
+        stage.setMaximized(true);
         stage.show();
-        
+
     }
 
     public static void main(String[] args) {

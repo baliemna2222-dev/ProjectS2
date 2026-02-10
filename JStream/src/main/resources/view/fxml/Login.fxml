@@ -13,8 +13,6 @@
             prefWidth="800" prefHeight="600"
             style="-fx-background-image: url('assets/images/dark.png');">
 
-    
-
     <center>
         <StackPane fx:id="centerStack" alignment="CENTER" prefWidth="800" prefHeight="600"
                    style="-fx-background-image: url('assets/images/dark.png');
@@ -22,13 +20,11 @@
                           -fx-background-position: center;
                           -fx-background-repeat: no-repeat;">
 
-            <!-- Animated dots -->
             <Pane fx:id="dotsPane" prefWidth="800" prefHeight="600"/>
 
-            <!-- Overlay -->
             <VBox prefHeight="600" prefWidth="800" style="-fx-background-color: rgba(0,0,0,0.4);"/>
 
-            <!-- Login Form Box -->
+            <!-- ================= LOGIN FORM ================= -->
             <VBox fx:id="loginForm" alignment="CENTER" spacing="20"
                   prefWidth="400" prefHeight="500"
                   maxWidth="400" maxHeight="500"
@@ -37,55 +33,56 @@
                          -fx-background-radius: 20;
                          -fx-border-radius: 20;
                          -fx-effect: dropshadow(gaussian, #0ef, 30, 0.5, 0, 0);">
+
                 <Label text="Login" style="-fx-font-size: 30px; -fx-text-fill: white;"/>
 
-                <!-- Username -->
                 <TextField fx:id="loginUsername" promptText="Username"
                            style="-fx-pref-width: 320;
                                   -fx-background-color: transparent;
                                   -fx-text-fill: white;
                                   -fx-border-color: white;
                                   -fx-border-width: 0 0 2 0;
-                                  -fx-border-radius: 0;
                                   -fx-font-size: 16px;"/>
 
-                <!-- Password -->
                 <PasswordField fx:id="loginPassword" promptText="Password"
                                style="-fx-pref-width: 320;
                                       -fx-background-color: transparent;
                                       -fx-text-fill: white;
                                       -fx-border-color: white;
                                       -fx-border-width: 0 0 2 0;
-                                      -fx-border-radius: 0;
                                       -fx-font-size: 16px;"/>
 
-                <HBox alignment="CENTER_LEFT" spacing="5">
-                    <CheckBox text="Remember me" style="-fx-text-fill: white; -fx-accent: #0ef;"/>
-                </HBox>
 
-                <Button text="Login" style="-fx-background-color: #0ef;
-                                             -fx-text-fill: black;
-                                             -fx-pref-width: 320;
-                                             -fx-font-size: 16px;
-                                             -fx-background-radius: 30px;
-                                             -fx-effect: dropshadow(gaussian, #0ef, 10, 0.3, 0, 0);"/>
+                <Label fx:id="loginError" text="" visible="false"
+                       style="-fx-text-fill: #ff4d4d; -fx-font-size: 16px;"/>
+
+                <Button fx:id="loginBtn" text="Login" onAction="#handleLogin"
+                        style="-fx-background-color: #0ef;
+                               -fx-text-fill: black;
+                               -fx-pref-width: 320;
+                               -fx-font-size: 16px;
+                               -fx-background-radius: 30px;
+                               -fx-effect: dropshadow(gaussian, #0ef, 10, 0.3, 0, 0);"/>
 
                 <HBox alignment="CENTER" spacing="5">
                     <Label text="Don't have an account?" style="-fx-text-fill: white;"/>
                     <Hyperlink fx:id="goToSignUp" text="Sign Up" style="-fx-text-fill: #0ef;"/>
+                    <Hyperlink fx:id="forgotPassword" text="Forgot password?" 
+                               style="-fx-text-fill: #0ef; -fx-font-size: 13px;" 
+                               onAction="#handleForgotPassword"/>
                 </HBox>
             </VBox>
 
-            <!-- SignUp Form Box -->
+            <!-- ================= SIGNUP FORM ================= -->
             <VBox fx:id="signupForm" alignment="CENTER" spacing="15"
                   prefWidth="400" prefHeight="500"
                   maxWidth="400" maxHeight="500"
+                  visible="false"
                   style="-fx-background-color: rgba(0,0,0,0.9);
                          -fx-padding: 40;
                          -fx-background-radius: 20;
                          -fx-border-radius: 20;
-                         -fx-effect: dropshadow(gaussian, #0ef, 30, 0.5, 0, 0);"
-                  visible="false">
+                         -fx-effect: dropshadow(gaussian, #0ef, 30, 0.5, 0, 0);">
 
                 <Label text="Sign Up" style="-fx-font-size: 30px; -fx-text-fill: white;"/>
 
@@ -95,7 +92,6 @@
                                   -fx-text-fill: white;
                                   -fx-border-color: white;
                                   -fx-border-width: 0 0 2 0;
-                                  -fx-border-radius: 0;
                                   -fx-font-size: 16px;"/>
 
                 <TextField fx:id="signupEmail" promptText="Email"
@@ -104,7 +100,6 @@
                                   -fx-text-fill: white;
                                   -fx-border-color: white;
                                   -fx-border-width: 0 0 2 0;
-                                  -fx-border-radius: 0;
                                   -fx-font-size: 16px;"/>
 
                 <PasswordField fx:id="signupPassword" promptText="Password"
@@ -113,22 +108,85 @@
                                       -fx-text-fill: white;
                                       -fx-border-color: white;
                                       -fx-border-width: 0 0 2 0;
-                                      -fx-border-radius: 0;
                                       -fx-font-size: 16px;"/>
 
-                <CheckBox text="I agree to the terms and conditions" style="-fx-text-fill: white; -fx-accent: #0ef;"/>
+                <CheckBox fx:id="signupAgreeTerms" text="I agree to the terms and conditions"
+                          style="-fx-text-fill: white; -fx-accent: #0ef;"/>
 
-                <Button text="Sign Up" style="-fx-background-color: #0ef;
-                                              -fx-text-fill: black;
-                                              -fx-pref-width: 320;
-                                              -fx-font-size: 16px;
-                                              -fx-background-radius: 30px;
-                                              -fx-effect: dropshadow(gaussian, #0ef, 10, 0.3, 0, 0);"/>
+                <Label fx:id="signupError" text="" visible="false"
+                       style="-fx-text-fill: #ff4d4d; -fx-font-size: 16px;"/>
+
+                <Button fx:id="signupBtn" text="Sign Up" onAction="#handleSignup"
+                        style="-fx-background-color: #0ef;
+                               -fx-text-fill: black;
+                               -fx-pref-width: 320;
+                               -fx-font-size: 16px;
+                               -fx-background-radius: 30px;
+                               -fx-effect: dropshadow(gaussian, #0ef, 10, 0.3, 0, 0);"/>
 
                 <HBox alignment="CENTER" spacing="5">
                     <Label text="Already have an account?" style="-fx-text-fill: white;"/>
                     <Hyperlink fx:id="goToLogin" text="Sign In" style="-fx-text-fill: #0ef;"/>
                 </HBox>
+            </VBox>
+
+            <!-- ================= FORGOT PASSWORD FORM ================= -->
+            <VBox fx:id="forgotForm" alignment="CENTER" spacing="15"
+                  prefWidth="400" prefHeight="300"
+                  maxWidth="400" maxHeight="300"
+                  visible="false"
+                  style="-fx-background-color: rgba(0,0,0,0.9);
+                         -fx-padding: 20;
+                         -fx-background-radius: 20;
+                         -fx-border-radius: 20;
+                         -fx-effect: dropshadow(gaussian, #0ef, 30, 0.5, 0, 0);">
+
+                <HBox alignment="TOP_LEFT">
+                    <Button text="← Back" onAction="#backToLogin"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #0ef;
+                                   -fx-font-size: 16px;
+                                   -fx-underline: true;"/>
+                </HBox>
+
+                <Label text="Verify Your Email"
+                       style="-fx-font-size: 28px; -fx-text-fill: white;"/>
+
+                <TextField fx:id="verifywithEmail" promptText="Enter your email"
+                           style="-fx-pref-width: 320;
+                                  -fx-background-color: transparent;
+                                  -fx-text-fill: white;
+                                  -fx-border-color: white;
+                                  -fx-border-width: 0 0 2 0;
+                                  -fx-font-size: 16px;"/>
+
+                <TextField fx:id="verificationCode" promptText="Enter verification code"
+                           visible="false"
+                           style="-fx-pref-width: 320;
+                                  -fx-background-color: transparent;
+                                  -fx-text-fill: white;
+                                  -fx-border-color: white;
+                                  -fx-border-width: 0 0 2 0;
+                                  -fx-font-size: 16px;"/>
+
+                <Button fx:id="sendCodeBtn" text="Send Verification Code" onAction="#handleSendCode"
+                        style="-fx-background-color: #0ef;
+                               -fx-text-fill: black;
+                               -fx-pref-width: 320;
+                               -fx-font-size: 16px;
+                               -fx-background-radius: 30px;
+                               -fx-effect: dropshadow(gaussian, #0ef, 10, 0.3, 0, 0);"/>
+
+                <Button fx:id="verifyBtn" text="Verify Code" visible="false" onAction="#handleVerifyCode"
+                        style="-fx-background-color: #0ef;
+                               -fx-text-fill: black;
+                               -fx-pref-width: 320;
+                               -fx-font-size: 16px;
+                               -fx-background-radius: 30px;
+                               -fx-effect: dropshadow(gaussian, #0ef, 10, 0.3, 0, 0);"/>
+
+                <Label fx:id="messageLabel" text="" visible="false"
+                       style="-fx-text-fill: #ff4d4d; -fx-font-size: 16px;"/>
             </VBox>
 
         </StackPane>

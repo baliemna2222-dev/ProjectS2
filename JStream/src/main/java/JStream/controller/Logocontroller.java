@@ -3,7 +3,6 @@ package JStream.controller;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -48,7 +47,7 @@ public class Logocontroller implements Initializable {
         Media media = new Media(videoUrl.toExternalForm());
         MediaPlayer player = new MediaPlayer(media);
 
-        mediaView.setPreserveRatio(false); 
+        mediaView.setPreserveRatio(false);
         mediaView.setSmooth(true);
         mediaView.setCache(true);
         mediaView.setMediaPlayer(player);
@@ -57,7 +56,7 @@ public class Logocontroller implements Initializable {
 
         player.setOnEndOfMedia(() -> {
             player.stop();
-            player.dispose(); 
+            player.dispose();
             switchToLogin();
         });
 
