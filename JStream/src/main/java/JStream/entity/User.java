@@ -6,6 +6,7 @@ public class User {
 	    private String username;
 	    private String email;
 	    private String password;
+	    private UserRole role;
 
 	    // Constructors
 	    public User() {}
@@ -28,5 +29,8 @@ public class User {
 
 	    public String getPassword() { return password; }
 	    public void setPassword(String password) { this.password = password; }
+
+		public UserRole getRole() {return role;}
+        public void setRole(UserRole role) {this.role = role;}
 
 }
