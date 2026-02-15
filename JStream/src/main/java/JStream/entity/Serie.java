@@ -9,7 +9,7 @@ public class Serie {
 	private String title;
 	private String synopsis;
 	private String casting;
-	private String covert_url;//meme que image_url du film(just pour faire la difference)
+	private String covert_url;
 	private Category category;
 	private List<Season> seasons;
 	private Timestamp created_at;

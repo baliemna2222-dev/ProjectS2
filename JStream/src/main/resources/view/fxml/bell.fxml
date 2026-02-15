@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.shape.Circle?>
+
+<VBox xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="JStream.controller.BellController"
+      alignment="CENTER"
+      spacing="10"
+      style="-fx-background-color: black;">
+
+    <!-- Bell container -->
+    <StackPane fx:id="bellContainer" style="-fx-background-color: transparent;">
+
+        <!-- Bell Image -->
+        <ImageView fx:id="bellIcon" fitWidth="50" fitHeight="50"
+                   pickOnBounds="true"
+                   preserveRatio="true"
+                   style="-fx-cursor: hand;"/>
+		
+        <!-- Notification Circle -->
+        <Circle fx:id="notificationCircle"
+                radius="6"
+                fill="#f72918"
+                stroke="#ffffff"
+                strokeWidth="2"
+                translateX="14"
+                translateY="-13"
+                visible="false"/>
+    </StackPane>
+
+</VBox>

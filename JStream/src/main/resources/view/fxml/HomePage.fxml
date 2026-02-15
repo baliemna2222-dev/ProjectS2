@@ -1,9 +1,203 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.shape.Circle?>
 
-<AnchorPane xmlns="http://javafx.com/javafx/25"
-            xmlns:fx="http://javafx.com/fxml/1"
-            prefWidth="800" prefHeight="600">
-    <Label text="Welcome to the Homepage!" layoutX="300" layoutY="250" style="-fx-font-size: 24px;"/>
-</AnchorPane>
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="JStream.controller.HomepageController"
+            fitToWidth="true"
+            vbarPolicy="AS_NEEDED"
+            hbarPolicy="NEVER"
+           style="-fx-background-color: black;">
+	<VBox>
+    <!-- MAIN CAROUSEL STACK -->
+    <StackPane prefWidth="Infinity" prefHeight="700">
+
+        <!-- Background image -->
+        <Pane fx:id="carouselBackground"
+              prefWidth="Infinity" prefHeight="700"
+              style="-fx-background-image: url('/assets/images/dark.png');
+                     -fx-background-size: contain;
+                     -fx-background-repeat: no-repeat;
+                     -fx-background-position: center top;"
+              StackPane.alignment="TOP_CENTER"/>
+
+        <!-- Overlay container -->
+        <VBox spacing="0" prefWidth="Infinity" prefHeight="700">
+
+            <!-- HEADER -->
+            <HBox fx:id="header"
+                  alignment="CENTER_LEFT"
+                  spacing="30"
+                  prefHeight="80"
+                  style="-fx-padding: 10 80 10 80;
+                         -fx-border-color: grey;
+                         -fx-border-width: 0 0 0.3 0;">
+
+                <ImageView fx:id="logoImage"
+                           fitHeight="70"
+                           fitWidth="150"
+                           preserveRatio="true"
+                           pickOnBounds="true"
+                           smooth="true"
+                           cache="true"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <!-- Main navigation buttons -->
+                <HBox alignment="CENTER" spacing="60">
+
+                    <!-- Home -->
+                    <VBox alignment="CENTER" spacing="5">
+                        <Button fx:id="btnHome" text="Home"
+                                style="-fx-background-color: transparent; -fx-font-weight: 2; -fx-text-fill: #cccccc; -fx-font-size: 16;"/>
+                        <Circle fx:id="dotHome" radius="4" fill="transparent"/>
+                    </VBox>
+
+                    <!-- Movies -->
+                    <VBox alignment="CENTER" spacing="5">
+                        <Button fx:id="btnMovies" text="Movies"
+                                style="-fx-background-color: transparent; -fx-font-weight: 2; -fx-text-fill: #cccccc; -fx-font-size: 16;"/>
+                        <Circle fx:id="dotMovies" radius="4" fill="transparent"/>
+                    </VBox>
+
+                    <!-- Series -->
+                    <VBox alignment="CENTER" spacing="5">
+                        <Button fx:id="btnSeries" text="Series"
+                                style="-fx-background-color: transparent; -fx-font-weight: 4; -fx-text-fill: #cccccc; -fx-font-size: 16;"/>
+                        <Circle fx:id="dotSeries" radius="4" fill="transparent"/>
+                    </VBox>
+
+                    <!-- My List -->
+                    <VBox alignment="CENTER" spacing="5">
+                        <Button fx:id="btnMyList" text="My List v"
+                                style="-fx-background-color: transparent; -fx-font-weight: 2; -fx-text-fill: #cccccc; -fx-font-size: 16;"/>
+                        <Circle fx:id="dotMyList" radius="4" fill="transparent"/>
+                    </VBox>
+
+                    <!-- Search Button -->
+                    <Button fx:id="btnResearch"
+                            prefWidth="40" prefHeight="40"
+                            style="-fx-background-color: transparent;
+                                   -fx-background-image: url('/assets/images/research.png');
+                                   -fx-background-repeat: no-repeat;
+                                   -fx-background-position: center;
+                                   -fx-background-size: 50 50;"/>
+
+                    <!-- Notification Button -->
+                    <Button fx:id="btnNotification" style="-fx-background-color: transparent; -fx-cursor: hand;">
+                        <graphic>
+                            <StackPane fx:id="bellContainer" style="-fx-background-color: transparent;">
+                                <ImageView fx:id="bellIcon"
+                                           fitWidth="23" fitHeight="23"
+                                           pickOnBounds="true"
+                                           preserveRatio="true"/>
+                                <Circle fx:id="notificationCircle"
+                                        radius="4"
+                                        fill="#f72918"
+                                        stroke="#ffffff"
+                                        strokeWidth="2"
+                                        translateX="12"
+                                        translateY="-12"
+                                        visible="false"/>
+                            </StackPane>
+                        </graphic>
+                    </Button>
+
+                    <!-- Profile Button -->
+                    <Button fx:id="profile"
+                            prefWidth="40" prefHeight="40"
+                            style="-fx-background-color: transparent;
+                                   -fx-background-image: url('/assets/images/profile.png');
+                                   -fx-background-repeat: no-repeat;
+                                   -fx-background-position: center;
+                                   -fx-background-size: 40 40;"/>
+                </HBox>
+            </HBox>
+
+            <!-- CAROUSEL CONTENT -->
+            <StackPane fx:id="carouselContainer" prefHeight="620">
+
+                <!-- Dark gradient overlay -->
+                <Pane style="-fx-background-color: linear-gradient(to top, rgba(0,0,0,0.3), rgba(0,0,0,0));"
+                      StackPane.alignment="CENTER"/>
+				<!-- Carousel Indicators -->
+<HBox fx:id="carouselIndicators"
+      alignment="BOTTOM_CENTER"
+      spacing="10"
+      StackPane.alignment="BOTTOM_CENTER"
+      style="-fx-padding: 0 0 20 0;">
+</HBox>
+				
+                <!-- Movie info -->
+                <VBox alignment="BOTTOM_LEFT" spacing="10"
+                      style="-fx-padding: 40;"
+                      StackPane.alignment="BOTTOM_LEFT">
+
+                    <Label fx:id="carouselTitle"
+                           style="-fx-text-fill: white;
+                                  -fx-font-size: 40;
+                                  -fx-font-weight: bold;"/>
+
+                    <Label fx:id="carouselDescription"
+                           wrapText="true"
+                           maxWidth="500"
+                           style="-fx-text-fill: #cccccc;
+                                  -fx-font-size: 16;"/>
+                </VBox>
+            </StackPane>
+        </VBox>
+    </StackPane>
+    <VBox spacing="20" style="-fx-padding: 20; -fx-background-color: black;">
+    
+    <!-- Example: Action Category -->
+   <VBox spacing="10" style="-fx-padding: 20;">
+    <Label text="Action" style="-fx-text-fill: black; -fx-font-size: 20;"/>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <!-- Left arrow -->
+        <Button fx:id="btnLeftAction" text="." 
+                style="-fx-font-size: 20; -fx-background-color: transparent; -fx-text-fill: white;"/>
+
+        <!-- Scrollable movies -->
+        <ScrollPane fx:id="scrollAction" hbarPolicy="NEVER" vbarPolicy="NEVER"
+                     style="-fx-background-color: transparent;">
+            <HBox fx:id="actionCarousel" spacing="10"/>
+        </ScrollPane>
+
+        <!-- Right arrow -->
+        <Button fx:id="btnRightAction" text=">" 
+                style="-fx-font-size: 20; -fx-background-color: transparent; -fx-text-fill: white;"/>
+    </HBox>
+</VBox>
+
+    <!-- Example: Comédie Category -->
+    <VBox spacing="10">
+        <Label text="Comédie"
+               style="-fx-text-fill: black; -fx-font-size: 24; -fx-font-weight: bold;"/>
+        <ScrollPane hbarPolicy="AS_NEEDED" vbarPolicy="NEVER" fitToHeight="true"
+                    style="-fx-background-color: transparent;">
+            <HBox fx:id="comedyCarousel" spacing="15">
+                <!-- Dynamically populate movies -->
+            </HBox>
+        </ScrollPane>
+    </VBox>
+
+    <!-- Example: SF Category -->
+    <VBox spacing="10">
+        <Label text="SF"
+               style="-fx-text-fill: black; -fx-font-size: 24; -fx-font-weight: bold;"/>
+        <ScrollPane hbarPolicy="AS_NEEDED" vbarPolicy="NEVER" fitToHeight="true"
+                    style="-fx-background-color: transparent;">
+            <HBox fx:id="sfCarousel" spacing="15">
+                <!-- Dynamically populate movies -->
+            </HBox>
+        </ScrollPane>
+    </VBox>
+
+</VBox>
+</VBox>
+</ScrollPane>

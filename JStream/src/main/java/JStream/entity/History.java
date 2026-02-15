@@ -2,7 +2,7 @@ package JStream.entity;
 
 import java.security.Timestamp;
 
-public class History {//watch history
+public class History {
 	private int id;
 	private int userID;
 	private int filmID;

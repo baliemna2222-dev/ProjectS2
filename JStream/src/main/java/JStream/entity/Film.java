@@ -9,7 +9,7 @@ public class Film {
 	private String synopsis;
 	private String casting;
 	private String video_url;
-	private String image_url; //l'image d'aperçu affichée avant de cliquer sur un film/série/épisode (image de couverture)
+	private String image_url; 
 	private Category category;
 	private LocalDateTime release_date;
 	private Timestamp updated_at;
