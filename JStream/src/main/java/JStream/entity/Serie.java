@@ -9,7 +9,7 @@ public class Serie {
 	private String title;
 	private String synopsis;
 	private String casting;
-	private String covert_url;
+	private String covertUrl;
 	private Category category;
 	private List<Season> seasons;
 	private Timestamp created_at;
@@ -21,7 +21,7 @@ public class Serie {
 		this.title = title;
 		this.synopsis = synopsis;
 		this.casting = casting;
-		this.covert_url = covert_url;
+		this.covertUrl = covert_url;
 		this.category = category;
 		seasons=new ArrayList<Season>();
 		this.created_at = created_at;
@@ -45,11 +45,11 @@ public class Serie {
 	public void setSynopsis(String synopsis) {
 		this.synopsis = synopsis;
 	}
-	public String getCovert_url() {
-		return covert_url;
+	public String getCovertUrl() {
+		return covertUrl;
 	}
 	public void setCovert_url(String covert_url) {
-		this.covert_url = covert_url;
+		this.covertUrl = covert_url;
 	}
 	public Category getCategory() {
 		return category;
