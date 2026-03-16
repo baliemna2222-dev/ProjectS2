@@ -94,4 +94,15 @@ public class BellController {
         hide.setOnFinished(e -> notificationDot.setVisible(false));
         hide.play();
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }

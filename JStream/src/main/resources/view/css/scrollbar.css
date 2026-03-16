@@ -1,0 +1,105 @@
+/* Scrollbar track (background) */
+.scroll-bar:vertical,
+/* Hide increment/decrement buttons (top/bottom arrows) */
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: black;
+    -fx-padding: 0;
+    -fx-shape: "";
+    -fx-pref-width: 0;
+    -fx-pref-height: 0;
+}
+.scroll-bar:horizontal {
+    -fx-background-color: #121212; /* deep dark track */
+    -fx-padding: 2;               /* give a little space for the thumb */
+    -fx-background-insets: 0;
+}
+
+/* Scrollbar thumb (draggable part) */
+.scroll-bar .thumb {
+    -fx-background-color: #4f46e5; /* modern purple/blue */
+    -fx-background-radius: 12;      /* thick rounded corners */
+    -fx-min-height: 20;             /* make it more visible */
+    -fx-min-width: 20;              /* horizontal thumb */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 8, 0, 0, 0); /* subtle glow */
+}
+
+/* Thumb hover effect */
+.scroll-bar .thumb:hover {
+    -fx-background-color: #6366f1; /* lighter purple */
+    -fx-background-radius: 14;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.9), 10, 0, 0, 0);
+}
+
+/* Thumb pressed effect */
+.scroll-bar .thumb:pressed {
+    -fx-background-color: #818cf8;
+    -fx-background-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,1), 12, 0, 0, 0);
+}
+
+/* Hide increment/decrement buttons */
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-shape: "";
+}
+
+/* Vertical scrollbar width */
+.scroll-bar:vertical {
+    -fx-pref-width: 10px;   /* thicker and visible */
+}
+
+/* Horizontal scrollbar height */
+.scroll-bar:horizontal {
+    -fx-pref-height: 10px;
+}
+.btn-search{
+    -fx-background-color: transparent;
+    -fx-background-image: url("/assets/images/research.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-background-size: 45 45;
+}
+
+.input-search{
+
+    -fx-background-color: transparent;
+
+    -fx-border-color: black black white white;
+    -fx-border-width: 0 0 1.5 0;
+
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: rgba(255,255,255,0.45);
+
+    -fx-font-size: 16px;
+
+    -fx-padding: 6 0 6 0;
+}
+.input-search:focused{
+
+    -fx-border-color: transparent transparent white transparent;
+    -fx-border-width: 0 0 2 0;
+
+}
+.input-search:focused{
+    -fx-border-color: transparent transparent white transparent;
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.25), 8, 0.2, 0, 2);
+}
+.suggestions-box{
+    -fx-background-color: #181818;
+    -fx-background-radius: 8;
+    -fx-padding: 6;
+    -fx-spacing: 4;
+}
+
+.suggestion-item{
+    -fx-text-fill: white;
+    -fx-padding: 8 10;
+    -fx-background-radius: 6;
+}
+
+.suggestion-item:hover{
+    -fx-background-color: #2a2a2a;
+}

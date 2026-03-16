@@ -1,7 +1,9 @@
 package JStream.controller;
 
 import java.io.File;
+import java.util.List;
 
+import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
@@ -10,9 +12,14 @@ import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Control;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -21,12 +28,25 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Popup;
 import javafx.util.Duration;
 import javafx.scene.effect.InnerShadow;
-
+import javafx.animation.FadeTransition;
+import javafx.animation.TranslateTransition;
+import javafx.application.Platform;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.util.Duration;
+import javafx.scene.layout.StackPane;
 public class HomepageController {
 
 	@FXML
@@ -47,116 +67,365 @@ public class HomepageController {
 	};
 	@FXML
 	private HBox carouselIndicators;
-
+	private double posterWidth = 160; 
 	private Rectangle[] indicators;
 
 	private final String[] titles = {"Movie 1", "Movie 2", "Movie 3"};
 	private final String[] descriptions = {"Description 1", "Description 2", "Description 3"};
-	 @FXML
-	    private Button btnMovies, btnSeries, btnMyList , btnHome;
-
-	    @FXML
-	    private Circle dotMovies, dotSeries, dotMyList ,dotHome;
+	
 	    @FXML
 	    private ImageView bellIcon;
 
-	    @FXML
-	    private StackPane bellContainer;
-
+	   
 	    private Circle notificationDot;
 	    private AudioClip bellSound;
 	    private boolean isNotificationVisible = false; 
 	    
 	    @FXML
-	    private HBox actionCarousel;
+	    private Pane featuredBackground;
+
 	    @FXML
-	    private ScrollPane scrollAction;
+	    private Label featuredTitle;
+
 	    @FXML
-	    private Button btnLeftAction, btnRightAction;
+	    private Label featuredDescription;
 
-	@FXML
-	public void initialize() {
-	    logoImage.setImage(new Image(getClass().getResourceAsStream("/assets/images/logo.png")));
-	    createIndicators();
-	    updateCarouselBackground();
-	    startCarousel();
-	    btnHome.setOnAction(e -> selectButton(btnHome, dotHome));
-	    btnMovies.setOnAction(e -> selectButton(btnMovies, dotMovies));
-        btnSeries.setOnAction(e -> selectButton(btnSeries, dotSeries));
-        btnMyList.setOnAction(e -> selectButton(btnMyList, dotMyList));
-        selectButton(btnHome, dotHome);
-        bellIcon.setImage(new Image(getClass().getResourceAsStream("/assets/images/bellwhiter.png")));
+	    @FXML
+	    private HBox featuredIndicators;
+	    @FXML
+	    private HBox comedyCarousel;
+	    @FXML
+	    private ScrollPane comedyScroll;
 
-        // Load sound
-        bellSound = new AudioClip(getClass().getResource("/assets/sounds/notification.mp3").toString());
+	    @FXML
+	    private Button btnLeftComedy, btnRightComedy;
+	    @FXML
+	    private Timeline autoScrollTimeline;
+	    @FXML
+	    private Label comedyLabel; 
+	 // Current mouse X inside scrollPane
+	    private double mouseX = -1;
 
-        // Create red notification dot
-        notificationDot = new Circle(5, Color.BLUE);
-        notificationDot.setTranslateX(13); // position top-right of bell
-        notificationDot.setTranslateY(-13);
-        notificationDot.setScaleX(0); // start hidden with scale 0
-        notificationDot.setScaleY(0);
-        bellContainer.getChildren().add(notificationDot);
+	    // Timeline for continuous scrolling
+	    private Timeline scrollTimeline;
+	    @FXML private Button btnHome, btnMovies, btnSeries, btnTvShows, btnMyList;
+	    @FXML private Rectangle lineHome, lineMovies, lineSeries, lineTvShows, lineMyList;
 
-        bellContainer.setOnMouseEntered(e -> {
-            shakeBell();
-            bellSound.play();
-            if (!isNotificationVisible) {
-                showNotification();
-            }
-        });
+	    private Button activeButton;
+	    private Rectangle activeLine;
+	    
+	    @FXML
+	    private TextField searchInput;
+
+	    private boolean opened = false;
+	    
+	    private Popup suggestionsPopup = new Popup();
+	    private VBox suggestionsContent = new VBox();
+	    
+	    @FXML
+	    private StackPane bellContainer;
+
+	    private Popup notificationPopup = new Popup();
+	    private VBox notificationContent = new VBox();
+	    private boolean popupVisible = false;
+	    @FXML
+	    private void initialize() {
+	    	/*Header section*/
+	        activeButton = btnHome; 
+	        activeLine = lineHome;
+	        
+	        setupButton(btnHome, lineHome);
+	        setupButton(btnMovies, lineMovies);
+	        setupButton(btnSeries, lineSeries);
+	        setupButton(btnTvShows, lineTvShows);
+	        setupButton(btnMyList, lineMyList);
+
+	        animateLine(activeLine, activeButton.getWidth());
+	        setButtonWhite(activeButton);
+	        
+	        
+		logoImage.setImage(new Image(getClass().getResourceAsStream("/assets/images/logo/Raksha.png")));
+	    
+		/*Bell notification animation!*/
+		 bellIcon.setImage(new Image(getClass().getResourceAsStream("/assets/images/bellwhiter.png")));
+
+	        // Load sound
+	        bellSound = new AudioClip(getClass().getResource("/assets/sounds/notification.mp3").toString());
+
+	        // Create red notification dot
+	        notificationDot = new Circle(4, Color.BLUE);
+	        notificationDot.setTranslateX(10); // position top-right of bell
+	        notificationDot.setTranslateY(-12);
+	        notificationDot.setScaleX(0); // start hidden with scale 0
+	        notificationDot.setScaleY(0);
+	        bellContainer.getChildren().add(notificationDot);
+
+	        bellContainer.setOnMouseEntered(e -> {
+	            shakeBell();
+	            bellSound.play();
+	            if (!isNotificationVisible) {
+	                showNotification();
+	            }
+	        });
+	        
+	       //search button
+	        suggestionsContent.setStyle(
+	                "-fx-background-color: #111;" +
+	                "-fx-padding: 5;" +
+	                "-fx-spacing: 2;" +
+	                "-fx-background-radius: 6;"
+	            );
+
+	            suggestionsPopup.getContent().add(suggestionsContent);
+
+	            // show suggestions on typing
+	            searchInput.textProperty().addListener((obs, oldText, newText) -> {
+	                if(newText.isEmpty()){
+	                    suggestionsPopup.hide();
+	                } else {
+	                    showSuggestions(newText);
+	                }
+	            });
+
+	            // hide popup when focus lost
+	            searchInput.focusedProperty().addListener((obs, oldVal, newVal) -> {
+	                if(!newVal){
+	                    suggestionsPopup.hide();
+	                }
+	            });
+		/*CarouselSection*/
+		
+	    
+       
+        comedyScroll.setStyle("-fx-background: black; -fx-background-color: black;");
+        comedyScroll.setPannable(false); // disables default scroll drag
+        setupComedyLabelGlow();
+        loadComedyCategory();
         
-        loadCategory(actionCarousel, "/assets/images/films");
-
 	}
-	public void loadCategory(HBox carousel, String folderPath) {
-	  
-	    try {
-	        File folder = new File(getClass().getResource(folderPath).toURI());
-	        File[] files = folder.listFiles((dir, name) -> 
-	            name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png")
-	        );
+	    private void setupButton(Button btn, Rectangle line) {
+	        // Hover effect
+	        btn.setOnMouseEntered(e -> {
+	            animateLine(line, btn.getWidth());
+	            setButtonWhite(btn);
+	        });
 
-	        if (files == null) return;
+	        btn.setOnMouseExited(e -> {
+	            if (btn != activeButton) {
+	                animateLine(line, 0);
+	                setButtonGray(btn);
+	            }
+	        });
 
-	        for (File f : files) {
-	            Image img = new Image(f.toURI().toString());
-	            ImageView movie = new ImageView(img);
+	        // Click effect
+	        btn.setOnAction(e -> setActive(btn, line));
+	    }
 
-	            movie.setFitWidth(150);
-	            movie.setFitHeight(220);
-	            movie.setPreserveRatio(true);
-	            movie.setSmooth(true);
-	            movie.setCache(true);
-
-	            // Hover effect
-	            movie.setOnMouseEntered(e -> {
-	                movie.toFront();
-	                ScaleTransition st = new ScaleTransition(Duration.millis(200), movie);
-	                st.setToX(1.2);
-	                st.setToY(1.2);
-	                st.play();
-	                movie.setTranslateY(-20);
-	                movie.setEffect(new DropShadow(20, Color.BLACK));
-	            });
-
-	            movie.setOnMouseExited(e -> {
-	                ScaleTransition st = new ScaleTransition(Duration.millis(200), movie);
-	                st.setToX(1);
-	                st.setToY(1);
-	                st.play();
-	                movie.setTranslateY(0);
-	                movie.setEffect(null);
-	            });
-
-	            carousel.getChildren().add(movie);
+	    private void setActive(Button btn, Rectangle line) {
+	        // Reset old active
+	        if (activeButton != null && activeLine != null) {
+	            setButtonGray(activeButton);
+	            animateLine(activeLine, 0);
 	        }
 
-	    } catch (Exception ex) {
-	        ex.printStackTrace();
+	        // Set new active
+	        activeButton = btn;
+	        activeLine = line;
+	        setButtonWhite(activeButton);
+	        animateLine(activeLine, activeButton.getWidth());
 	    }
-	}
 
+	    private void animateLine(Rectangle line, double targetWidth) {
+	        Timeline timeline = new Timeline();
+	        KeyValue kv = new KeyValue(line.widthProperty(), targetWidth);
+	        KeyFrame kf = new KeyFrame(Duration.millis(200), kv); // smooth 200ms
+	        timeline.getKeyFrames().add(kf);
+	        timeline.play();
+	    }
+
+	    private void setButtonWhite(Button btn) {
+	        btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 16;");
+	    }
+
+	    private void setButtonGray(Button btn) {
+	        btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 16;");
+	    }
+	
+	    
+	    @FXML
+	    private void toggleSearch() {
+
+	        Timeline animation;
+
+	        if(!opened){
+
+	            animation = new Timeline(
+	                    new KeyFrame(Duration.millis(250),
+	                            new KeyValue(searchInput.prefWidthProperty(), 220)
+	                    )
+	            );
+
+	            searchInput.requestFocus();
+	            opened = true;
+
+	        }else{
+
+	            animation = new Timeline(
+	                    new KeyFrame(Duration.millis(250),
+	                            new KeyValue(searchInput.prefWidthProperty(), 0)
+	                    )
+	            );
+
+	            opened = false;
+	        }
+
+	        animation.play();
+	    }
+	    private void showSuggestions(String text){
+
+	        suggestionsContent.getChildren().clear();
+
+	        List<String> movies = List.of(
+	            "Interstellar",
+	            "Inception",
+	            "Inside Out",
+	            "Iron Man",
+	            "Indiana Jones"
+	        );
+
+	        for(String movie : movies){
+
+	            if(movie.toLowerCase().contains(text.toLowerCase())){
+
+	                Label item = new Label(movie);
+	                item.setStyle(
+	                    "-fx-text-fill: white;" +
+	                    "-fx-padding: 8 10;" +
+	                    "-fx-background-radius: 4;"
+	                );
+
+	                item.setOnMouseEntered(e -> item.setStyle(
+	                    "-fx-background-color: #222;" +
+	                    "-fx-text-fill: white;" +
+	                    "-fx-padding: 8 10;" +
+	                    "-fx-background-radius: 4;"
+	                ));
+
+	                item.setOnMouseExited(e -> item.setStyle(
+	                    "-fx-text-fill: white;" +
+	                    "-fx-padding: 8 10;" +
+	                    "-fx-background-radius: 4;"
+	                ));
+
+	                item.setOnMouseClicked(e -> {
+	                    searchInput.setText(movie);
+	                    suggestionsPopup.hide();
+	                });
+
+	                suggestionsContent.getChildren().add(item);
+	            }
+	        }
+
+	        if(!suggestionsPopup.isShowing()){
+	            // position popup under the search field
+	            Bounds bounds = searchInput.localToScreen(searchInput.getBoundsInLocal());
+	            suggestionsPopup.show(searchInput, bounds.getMinX(), bounds.getMaxY() + 2);
+	        }
+	    }
+	    
+	    private void setupNotificationPopup() {
+	        // Style the VBox
+	        notificationContent.setStyle(
+	            "-fx-background-color: #1e1e1e;" + // dark modern background
+	            "-fx-background-radius: 10;" +
+	            "-fx-padding: 10;" +
+	            "-fx-spacing: 8;" +
+	            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 10,0,0,2);"
+	        );
+	        notificationContent.setPrefWidth(250); // width of popup
+	        notificationContent.setPrefHeight(150); // height, adjust as needed
+
+	        // Empty for now
+	        Label emptyLabel = new Label("No notifications");
+	        emptyLabel.setStyle("-fx-text-fill: #ccc; -fx-font-size: 14;");
+	        notificationContent.getChildren().add(emptyLabel);
+
+	        // Add content to popup
+	        notificationPopup.getContent().add(notificationContent);
+	        notificationPopup.setAutoHide(true); // hides automatically when clicking outside
+
+	        // Show popup on hover
+	        bellContainer.setOnMouseEntered(e -> showNotificationPopup());
+	        bellContainer.setOnMouseExited(e -> hideNotificationPopup());
+
+	        // Optional: toggle on click
+	        bellContainer.setOnMouseClicked(e -> {
+	            if (popupVisible) {
+	                hideNotificationPopup();
+	            } else {
+	                showNotificationPopup();
+	            }
+	        });
+	    }
+	    private void showNotificationPopup() {
+	        if (popupVisible) return;
+
+	        Bounds bounds = bellContainer.localToScreen(bellContainer.getBoundsInLocal());
+	        notificationPopup.show(bellContainer, bounds.getMinX(), bounds.getMaxY() + 5);
+
+	        // Fade in
+	        FadeTransition fade = new FadeTransition(Duration.millis(250), notificationContent);
+	        notificationContent.setOpacity(0);
+	        fade.setToValue(1);
+	        fade.play();
+
+	        popupVisible = true;
+	    }
+
+	    private void hideNotificationPopup() {
+	        if (!popupVisible) return;
+
+	        FadeTransition fade = new FadeTransition(Duration.millis(200), notificationContent);
+	        fade.setToValue(0);
+	        fade.setOnFinished(e -> notificationPopup.hide());
+	        fade.play();
+
+	        popupVisible = false;
+	    }
+	 private void setupComedyLabelGlow() {
+		  DropShadow glow = new DropShadow();
+		    glow.setRadius(25);
+		    glow.setColor(Color.CYAN);
+		    comedyLabel.setEffect(glow);
+
+		    // Animate gradient shift
+		    final DoubleProperty shift = new SimpleDoubleProperty(0);
+
+		    shift.addListener((obs, oldVal, newVal) -> {
+		        double s = newVal.doubleValue();
+
+		        // Create horizontal gradient
+		        comedyLabel.setTextFill(new LinearGradient(
+		                s - 1, 0, s + 1, 0, // shift stops horizontally
+		                false, // no repeat
+		                CycleMethod.NO_CYCLE,
+		                new Stop(0.0, Color.web("#00c6ff")), // bright cyan
+		                new Stop(0.25, Color.web("#0072ff")), // medium blue
+		                new Stop(0.5, Color.web("#00f0ff")),  // light cyan
+		                new Stop(0.75, Color.web("#0072ff")),
+		                new Stop(1.0, Color.web("#00c6ff"))
+		        ));
+		    });
+
+		    // Timeline for smooth infinite movement
+		    Timeline timeline = new Timeline(
+		            new KeyFrame(Duration.ZERO, new KeyValue(shift, 0)),
+		            new KeyFrame(Duration.seconds(8), new KeyValue(shift, 1))
+		    );
+		    timeline.setCycleCount(Animation.INDEFINITE);
+		    timeline.setAutoReverse(false);
+		    timeline.play();
+		}
 	private void updateIndicators() {
 
 	    for (int i = 0; i < indicators.length; i++) {
@@ -187,23 +456,7 @@ public class HomepageController {
 	    }
 	}
 
-	private void selectButton(Button selectedButton, Circle selectedDot) {
-	    // Reset all dots
-		dotHome.setFill(javafx.scene.paint.Color.TRANSPARENT);
-	    dotMovies.setFill(javafx.scene.paint.Color.TRANSPARENT);
-	    dotSeries.setFill(javafx.scene.paint.Color.TRANSPARENT);
-	    dotMyList.setFill(javafx.scene.paint.Color.TRANSPARENT);
-
-	    // Reset button colors
-	    btnHome.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-font-size: 16;");
-	    btnMovies.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-font-size: 16;");
-	    btnSeries.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-font-size: 16;");
-	    btnMyList.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-font-size: 16;");
-
-	    // Highlight selected
-	    selectedButton.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");
-	    selectedDot.setFill(javafx.scene.paint.Color.DODGERBLUE); // small circle dot
-	}
+	
 
 	private void startCarousel() {
 	    Timeline timeline = new Timeline(
@@ -287,5 +540,221 @@ public class HomepageController {
         hide.getChildren().addAll(fade, scale);
         hide.setOnFinished(e -> notificationDot.setVisible(false));
         hide.play();
+    }
+    public void animateTopCarousel(StackPane carouselContainer) {
+        // Fade in
+        FadeTransition fade = new FadeTransition(Duration.seconds(1.2), carouselContainer);
+        fade.setFromValue(0);
+        fade.setToValue(1);
+
+        // Slide from top
+        TranslateTransition slide = new TranslateTransition(Duration.seconds(1.2), carouselContainer);
+        slide.setFromY(-50);  // start slightly above
+        slide.setToY(0);
+
+        // Play both together
+        fade.play();
+        slide.play();
+    }
+    private void loadComedyCategory() {
+        try {
+            File folder = new File(getClass().getResource("/assets/images/films").toURI());
+            File[] files = folder.listFiles((dir, name) ->
+                    name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png")
+            );
+            if (files == null) return;
+
+            for (File f : files) {
+                Image img = new Image(f.toURI().toString());
+                VBox box = createPosterBox(img);
+                comedyCarousel.getChildren().add(box);
+            }
+
+            setupComedyScrolling(); // start scrolling after loading posters
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private VBox createPosterBox(Image img) {
+        ImageView poster = new ImageView(img);
+        poster.setFitWidth(150);
+        poster.setFitHeight(220);
+        poster.setPreserveRatio(true);
+        poster.setSmooth(true);
+        poster.setCache(true);
+
+        // Hover effect
+        poster.setOnMouseEntered(e -> {
+            ScaleTransition st = new ScaleTransition(Duration.millis(200), poster);
+            st.setToX(1.15);
+            st.setToY(1.15);
+            st.play();
+            poster.setEffect(new DropShadow(20, Color.BLACK));
+        });
+        poster.setOnMouseExited(e -> {
+            ScaleTransition st = new ScaleTransition(Duration.millis(200), poster);
+            st.setToX(1.0);
+            st.setToY(1.0);
+            st.play();
+            poster.setEffect(null);
+        });
+
+        VBox box = new VBox(poster);
+        box.setStyle("-fx-padding: 5; -fx-alignment: center;");
+        return box;
+    }
+
+    /** Smooth, infinite scrolling with mouse acceleration */
+    private void setupComedyScrolling() {
+
+        comedyScroll.setPannable(false);
+
+        comedyScroll.setOnMouseMoved(e -> mouseX = e.getX());
+        comedyScroll.setOnMouseExited(e -> mouseX = -1);
+
+        scrollTimeline = new Timeline(new KeyFrame(Duration.millis(16), e -> {
+
+            if (comedyCarousel.getChildren().isEmpty()) return;
+
+            double width = comedyScroll.getWidth();
+            double speed = 0.7;
+
+            // Mouse acceleration
+            if (mouseX != -1) {
+                if (mouseX < width * 0.2)
+                    speed = -2 * (1 - mouseX / (width * 0.2));
+                else if (mouseX > width * 0.8)
+                    speed = 2 * ((mouseX - width * 0.8) / (width * 0.2));
+            }
+
+            comedyCarousel.setTranslateX(comedyCarousel.getTranslateX() - speed);
+
+            // 🔥 Dynamic width calculation
+            VBox first = (VBox) comedyCarousel.getChildren().get(0);
+            double firstWidth = first.getBoundsInParent().getWidth()
+                    + comedyCarousel.getSpacing();
+
+            // Move first to end
+            if (comedyCarousel.getTranslateX() <= -firstWidth) {
+                comedyCarousel.getChildren().remove(0);
+                comedyCarousel.getChildren().add(first);
+                comedyCarousel.setTranslateX(
+                        comedyCarousel.getTranslateX() + firstWidth
+                );
+            }
+
+            // Move last to front
+            VBox last = (VBox) comedyCarousel.getChildren()
+                    .get(comedyCarousel.getChildren().size() - 1);
+
+            double lastWidth = last.getBoundsInParent().getWidth()
+                    + comedyCarousel.getSpacing();
+
+            if (comedyCarousel.getTranslateX() >= 0) {
+                comedyCarousel.getChildren().remove(last);
+                comedyCarousel.getChildren().add(0, last);
+                comedyCarousel.setTranslateX(
+                        comedyCarousel.getTranslateX() - lastWidth
+                );
+            }
+
+        }));
+
+        scrollTimeline.setCycleCount(Timeline.INDEFINITE);
+        scrollTimeline.play();
+    }
+    public void setFeaturedMovie(String image, String title, String description) {
+
+        featuredBackground.setStyle(
+            "-fx-background-image: url('" + image + "');" +
+            "-fx-background-size: cover;" +
+            "-fx-background-position: center;"
+        );
+
+        featuredTitle.setText(title);
+        featuredDescription.setText(description);
+    }
+    private void setRating(int stars){
+
+        heroStars.getChildren().clear();
+
+        for(int i=0;i<5;i++){
+
+            Label star = new Label("★");
+
+            if(i < stars)
+                star.setStyle("-fx-text-fill:#00aaff; -fx-font-size:18;");
+            else
+                star.setStyle("-fx-text-fill:#555; -fx-font-size:18;");
+
+            heroStars.getChildren().add(star);
+        }
+    }
+    @FXML
+    private MediaView heroTrailer;
+
+    private MediaPlayer mediaPlayer;
+    @FXML
+    private ImageView heroBackground;
+
+    @FXML
+    private ImageView heroTitleImage;
+
+    @FXML
+    private HBox heroStars;
+
+    @FXML
+    private Label heroCategories;
+
+    @FXML
+    private Label heroDescription;
+
+    @FXML
+    private Button playButton;
+
+    @FXML
+    private Button infoButton;
+
+    @FXML
+    private Button trailerButton;
+
+    @FXML
+    private HBox heroIndicators;
+    @FXML
+    private void playTrailer(){
+
+        Media media = new Media(getClass()
+            .getResource("/assets/trailers/trailer.mp4")
+            .toExternalForm());
+
+        mediaPlayer = new MediaPlayer(media);
+
+        heroTrailer.setMediaPlayer(mediaPlayer);
+
+        heroBackground.setVisible(false);
+        heroTrailer.setVisible(true);
+
+        mediaPlayer.play();
+    }
+    private void changeSlide(Image image){
+
+        FadeTransition fadeOut =
+                new FadeTransition(Duration.millis(400), heroBackground);
+
+        fadeOut.setToValue(0);
+
+        fadeOut.setOnFinished(e -> {
+
+            heroBackground.setImage(image);
+
+            FadeTransition fadeIn =
+                    new FadeTransition(Duration.millis(400), heroBackground);
+
+            fadeIn.setToValue(1);
+            fadeIn.play();
+        });
+
+        fadeOut.play();
     }
 }
