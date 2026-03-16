@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Serie {
-	private int serie_id;
+	private int serieId;
 	private String title;
 	private String synopsis;
 	private String casting;
@@ -15,9 +15,9 @@ public class Serie {
 	private Timestamp createdAt;
 	private Timestamp updatedAt; 
 	public Serie() {}
-	public Serie(int serie_id, String title, String synopsis,String casting, String covertUrl, Category category,
+	public Serie(int serieId, String title, String synopsis,String casting, String covertUrl, Category category,
 			Timestamp createdAt,Timestamp updatedAt) {
-		this.serie_id = serie_id;
+		this.serieId = serieId;
 		this.title = title;
 		this.synopsis = synopsis;
 		this.casting = casting;
@@ -27,11 +27,11 @@ public class Serie {
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
 	}
-	public int getSerie_id() {
-		return serie_id;
+	public int getSerieId() {
+		return serieId;
 	}
 	public void setSerie_id(int serie_id) {
-		this.serie_id = serie_id;
+		this.serieId = serieId;
 	}
 	public String getTitle() {
 		return title;
