@@ -12,20 +12,20 @@ public class Serie {
 	private String covertUrl;
 	private Category category;
 	private List<Season> seasons;
-	private Timestamp created_at;
-	private Timestamp updated_at; 
+	private Timestamp createdAt;
+	private Timestamp updatedAt; 
 	public Serie() {}
-	public Serie(int serie_id, String title, String synopsis,String casting, String covert_url, Category category,
-			Timestamp created_at,Timestamp updated_at) {
+	public Serie(int serie_id, String title, String synopsis,String casting, String covertUrl, Category category,
+			Timestamp createdAt,Timestamp updatedAt) {
 		this.serie_id = serie_id;
 		this.title = title;
 		this.synopsis = synopsis;
 		this.casting = casting;
-		this.covertUrl = covert_url;
+		this.covertUrl = covertUrl;
 		this.category = category;
 		seasons=new ArrayList<Season>();
-		this.created_at = created_at;
-		this.updated_at = updated_at;
+		this.createdAt = createdAt;
+		this.updatedAt = updatedAt;
 	}
 	public int getSerie_id() {
 		return serie_id;
@@ -48,8 +48,8 @@ public class Serie {
 	public String getCovertUrl() {
 		return covertUrl;
 	}
-	public void setCovert_url(String covert_url) {
-		this.covertUrl = covert_url;
+	public void setCovertUrl(String covertUrl) {
+		this.covertUrl = covertUrl;
 	}
 	public Category getCategory() {
 		return category;
@@ -63,11 +63,11 @@ public class Serie {
 	public void setSeasons(List<Season> seasons) {
 		this.seasons = seasons;
 	}
-	public Timestamp getCreated_at() {
-		return created_at;
+	public Timestamp getCreatedAt() {
+		return createdAt;
 	}
-	public void setCreated_at(Timestamp created_at) {
-		this.created_at = created_at;
+	public void setCreated_at(Timestamp createdAt) {
+		this.createdAt = createdAt;
 	}	
 	public String getCasting() {
 		return casting;
@@ -75,11 +75,11 @@ public class Serie {
 	public void setCasting(String casting) {
 		this.casting = casting;
 	}
-	public Timestamp getUpdated_at() {
-		return updated_at;
+	public Timestamp getUpdatedAt() {
+		return updatedAt;
 	}
-	public void setUpdated_at(Timestamp updated_at) {
-		this.updated_at = updated_at;
+	public void setUpdated_at(Timestamp updatedAt) {
+		this.updatedAt = updatedAt;
 	}
 	
 	
