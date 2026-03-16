@@ -1,6 +1,5 @@
 package JStream.entity;
 
-
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
