@@ -203,6 +203,7 @@ public class HomepageController {
         loadComedyCategory();
         
 	}
+	    /* buttons animation */
 	    private void setupButton(Button btn, Rectangle line) {
 	        // Hover effect
 	        btn.setOnMouseEntered(e -> {
@@ -697,6 +698,8 @@ public class HomepageController {
     private MediaPlayer mediaPlayer;
     @FXML
     private ImageView heroBackground;
+
+  
 
     @FXML
     private ImageView heroTitleImage;

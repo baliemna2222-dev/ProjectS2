@@ -1,50 +1,88 @@
 package JStream.entity;
 
-import java.security.Timestamp;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
+import java.time.Duration;
 
 public class Episode {
-	private int ep_id ;
-	private int seasonID;
-	private int numEpisode;
-	private LocalDateTime duration;
-	private String resume;
-	private String video_url;
-	private String covert_url;
-	private Timestamp created_at;
-	private Timestamp updated_at;
-	public Episode() {}
-	public Episode(int ep_id, int seasonID, int numEpisode, LocalDateTime duration, String resume, String video_url,
-			String covert_url, Timestamp created_at, Timestamp updated_at) {
-		super();
-		this.ep_id = ep_id;
-		this.seasonID = seasonID;
-		this.numEpisode = numEpisode;
-		this.duration = duration;
-		this.resume = resume;
-		this.video_url = video_url;
-		this.covert_url = covert_url;
-		this.created_at = created_at;
-		this.updated_at = updated_at;
-	}
-	public int getEp_id() {return ep_id;}
-	public void setEp_id(int ep_id) {this.ep_id = ep_id;}
-	public int getSeasonID() {return seasonID;}
-	public void setSeasonID(int seasonID) {this.seasonID = seasonID;}
-	public int getNumEpisode() {return numEpisode;}
-	public void setNumEpisode(int numEpisode) {this.numEpisode = numEpisode;}
-	public LocalDateTime getDuration() {return duration;}
-	public void setDuration(LocalDateTime duration) {this.duration = duration;}
-	public String getResume() {return resume;}
-	public void setResume(String resume) {this.resume = resume;}
-	public String getVideo_url() {return video_url;}
-	public void setVideo_url(String video_url) {this.video_url = video_url;}
-	public String getCovert_url() {return covert_url;}
-	public void setCovert_url(String covert_url) {this.covert_url = covert_url;}
-	public Timestamp getCreated_at() {return created_at;}
-	public void setCreated_at(Timestamp created_at) {this.created_at = created_at;}
-	public Timestamp getUpdated_at() {return updated_at;}
-	public void setUpdated_at(Timestamp updated_at) {this.updated_at = updated_at;}
-	
 
+    private int epId;           // Primary key
+    private int seasonId;       // Foreign key to Season
+    private int numEpisode;     // Episode number in the season
+    private String title;       // Episode title
+    private Duration duration;  // Episode duration
+    private String resume;      // Episode summary / synopsis
+    private String videoUrl;    // Video file URL
+    private String covertUrl;   // Cover image /
+    private int rating;      // Episode rating
+    private Timestamp createdAt;
+    private Timestamp releasedAt;
+
+    public Episode() {}
+
+    public Episode(int epId, int seasonId, int numEpisode, String title, Duration duration,
+                   String resume, String videoUrl, String covertUrl,
+                   int rating, Timestamp createdAt, Timestamp updatedAt) {
+        this.epId = epId;
+        this.seasonId = seasonId;
+        this.numEpisode = numEpisode;
+        this.title = title;
+        this.duration = duration;
+        this.resume = resume;
+        this.videoUrl = videoUrl;
+        this.covertUrl = covertUrl;
+        this.rating = rating;
+        this.createdAt = createdAt;
+        this.releasedAt = updatedAt;
+    }
+
+    // Getters and Setters
+    public int getEpId() { return epId; }
+    public void setEpId(int epId) { this.epId = epId; }
+
+    public int getSeasonId() { return seasonId; }
+    public void setSeasonId(int seasonId) { this.seasonId = seasonId; }
+
+    public int getNumEpisode() { return numEpisode; }
+    public void setNumEpisode(int numEpisode) { this.numEpisode = numEpisode; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public Duration getDuration() { return duration; }
+    public void setDuration(Duration duration) { this.duration = duration; }
+
+    public String getResume() { return resume; }
+    public void setResume(String resume) { this.resume = resume; }
+
+    public String getVideoUrl() { return videoUrl; }
+    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+
+    public String getCovertUrl() { return covertUrl; }
+    public void setCovertUrl(String covertUrl) { this.covertUrl = covertUrl; }
+
+    public int getRating() { return rating; }
+    public void setRating(int rating) { this.rating = rating; }
+
+    public Timestamp getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    public Timestamp getUpdatedAt() { return releasedAt; }
+    public void setUpdatedAt(Timestamp updatedAt) { this.releasedAt = updatedAt; }
+
+    @Override
+    public String toString() {
+        return "Episode{" +
+                "epId=" + epId +
+                ", seasonId=" + seasonId +
+                ", numEpisode=" + numEpisode +
+                ", title='" + title + '\'' +
+                ", duration=" + duration +
+                ", resume='" + resume + '\'' +
+                ", videoUrl='" + videoUrl + '\'' +
+                ", covertUrl='" + covertUrl + '\'' +
+                ", rating=" + rating +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + releasedAt +
+                '}';
+    }
 }

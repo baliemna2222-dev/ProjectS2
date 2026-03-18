@@ -21,7 +21,18 @@ public class Database {
         }
     }
 
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+    private static Connection connection;
+
+    // Singleton connection
+    public static Connection getConnection() {
+        if (connection == null) {
+            try {
+                connection = DriverManager.getConnection(URL, USER, PASSWORD);
+                System.out.println("Database connected successfully!");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return connection;
     }
 }

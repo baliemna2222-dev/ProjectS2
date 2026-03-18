@@ -1,6 +1,6 @@
 package JStream.entity;
 
-import java.security.Timestamp;
+import java.sql.Timestamp;
 
 public class Category {
 	private int category_id;

@@ -1,207 +1,99 @@
 package JStream.dao;
 
-import JStream.entity.Film;
-import JStream.entity.Category;
-import JStream.utils.Database;
-
+import JStream.entity.FeaturedItem;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 public class FilmDAO {
 
-    // ── CREATE ────────────────────────────────────────────────────
-    public void save(Film film) {
-        String sql = """
-            INSERT INTO films (title, synopsis, casting, video_url, image_url,
-                               categorie_id, release_date, duration)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """;
+    private final Connection connection;
 
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            ps.setString(1, film.getTitle());
-            ps.setString(2, film.getSynopsis());
-            ps.setString(3, film.getCasting());
-            ps.setString(4, film.getVideo_url());
-            ps.setString(5, film.getImage_url());
-            ps.setInt   (6, film.getCategory().getCategory_id());
-            ps.setObject(7, film.getRelease_date());   // LocalDateTime → DATETIME
-            ps.setDouble(8, film.getDuration());
-            ps.executeUpdate();
-
-            ResultSet keys = ps.getGeneratedKeys();
-            if (keys.next()) film.setFilm_id(keys.getInt(1));
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public FilmDAO(Connection connection) {
+        this.connection = connection;
     }
 
-    // ── READ — tous ───────────────────────────────────────────────
-    public List<Film> findAll() {
-        List<Film> list = new ArrayList<>();
-        String sql = """
-            SELECT f.*, c.id AS cat_id, c.name AS cat_name, c.description AS cat_desc
-            FROM films f
-            LEFT JOIN categories c ON f.categorie_id = c.id
-            ORDER BY f.title
-            """;
+    public List<FeaturedItem> getLatestFeatured(int limit) throws SQLException {
+        List<FeaturedItem> featured = new ArrayList<>();
 
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) list.add(mapRow(rs));
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    // ── READ — par id ─────────────────────────────────────────────
-    public Film findById(int id) {
-        String sql = """
-            SELECT f.*, c.id AS cat_id, c.name AS cat_name, c.description AS cat_desc
-            FROM films f
-            LEFT JOIN categories c ON f.categorie_id = c.id
-            WHERE f.film_id = ?
-            """;
-
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, id);
+        // --- Latest films with multiple categories ---
+        String filmSql =
+            "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+            "FROM film f " +
+            "JOIN film_category fc ON f.film_id = fc.film_id " +
+            "JOIN category c ON fc.category_id = c.category_id " +
+            "GROUP BY f.film_id " +
+            "ORDER BY f.release_date DESC LIMIT ?";
+        try (PreparedStatement ps = connection.prepareStatement(filmSql)) {
+            ps.setInt(1, limit);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapRow(rs);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+            while (rs.next()) {
+                // Convert comma-separated string to List<String>
+                List<String> categories = List.of(rs.getString("categories").split(","));
+                
+                featured.add(new FeaturedItem(
+                        rs.getInt("film_id"),
+                        rs.getString("title"),
+                        rs.getString("synopsis"),
+                        rs.getString("video_url"),
+                        rs.getString("image_url"),
+                        rs.getString("title_image_url"),
+                        rs.getString("poster_url"),
+                        categories,                        // ✅ multiple categories
+                        rs.getString("age_rating"),
+                        rs.getInt("rating")
+                ));
+            }
         }
-        return null;
-    }
 
-    // ── READ — par catégorie ──────────────────────────────────────
-    public List<Film> findByCategorie(int categorieId) {
-        List<Film> list = new ArrayList<>();
-        String sql = """
-            SELECT f.*, c.id AS cat_id, c.name AS cat_name, c.description AS cat_desc
-            FROM films f
-            LEFT JOIN categories c ON f.categorie_id = c.id
-            WHERE f.categorie_id = ?
-            ORDER BY f.title
-            """;
-
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, categorieId);
+        // --- Latest ongoing seasons with multiple categories ---
+        String seasonSql =
+                "SELECT s.*, se.serie_id, se.title ,se.age_rating AS serie_title,age_rating, " +
+                "       GROUP_CONCAT(c.name SEPARATOR ',') AS categories, " +
+                "       COALESCE(MAX(e.num_episode), 0) AS last_episode " +
+                "FROM season s " +
+                "JOIN serie se ON s.serie_id = se.serie_id " +
+                "JOIN serie_category sc ON se.serie_id = sc.serie_id " +
+                "JOIN category c ON sc.category_id = c.category_id " +
+                "LEFT JOIN episode e ON e.season_id = s.season_id " +
+                "WHERE s.season_id = ( " +
+                "    SELECT s2.season_id " +
+                "    FROM season s2 " +
+                "    LEFT JOIN episode e2 ON e2.season_id = s2.season_id " +
+                "    WHERE s2.serie_id = s.serie_id " +
+                "    GROUP BY s2.season_id " +
+                "    ORDER BY MAX(e2.released_at) DESC " +
+                "    LIMIT 1 " +
+                ") " +
+                "GROUP BY s.season_id " +
+                "ORDER BY MAX(e.released_at) DESC " +
+                "LIMIT ?";
+        try (PreparedStatement ps = connection.prepareStatement(seasonSql)) {
+            ps.setInt(1, limit);
             ResultSet rs = ps.executeQuery();
-            while (rs.next()) list.add(mapRow(rs));
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+            while (rs.next()) {
+            	 List<String> categories = new ArrayList<>(new LinkedHashSet<>(List.of(rs.getString("categories").split(","))));
+            	   
+                featured.add(new FeaturedItem(
+                        rs.getInt("season_id"),
+                        rs.getInt("serie_id"),
+                        rs.getString("serie_title"),
+                        rs.getString("synopsis"),
+                        rs.getString("trailer_url"),
+                        rs.getString("image_url"),
+                        rs.getString("title_url"),
+                        rs.getString("poster_url"),
+                        categories,    
+                        rs.getString("age_rating"),// ✅ multiple categories
+                        rs.getInt("rating"),
+                        rs.getString("status"),
+                        rs.getInt("season_num"),
+                        rs.getInt("last_episode")
+                ));
+            }
         }
-        return list;
-    }
 
-    // ── READ — recherche par titre ────────────────────────────────
-    public List<Film> search(String keyword) {
-        List<Film> list = new ArrayList<>();
-        String sql = """
-            SELECT f.*, c.id AS cat_id, c.name AS cat_name, c.description AS cat_desc
-            FROM films f
-            LEFT JOIN categories c ON f.categorie_id = c.id
-            WHERE f.title LIKE ?
-            ORDER BY f.title
-            """;
-
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, "%" + keyword + "%");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) list.add(mapRow(rs));
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    // ── UPDATE ────────────────────────────────────────────────────
-    public void update(Film film) {
-        String sql = """
-            UPDATE films
-            SET title = ?, synopsis = ?, casting = ?, video_url = ?, image_url = ?,
-                categorie_id = ?, release_date = ?, duration = ?
-            WHERE film_id = ?
-            """;
-
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, film.getTitle());
-            ps.setString(2, film.getSynopsis());
-            ps.setString(3, film.getCasting());
-            ps.setString(4, film.getVideo_url());
-            ps.setString(5, film.getImage_url());
-            ps.setInt   (6, film.getCategory().getCategory_id());
-            ps.setObject(7, film.getRelease_date());
-            ps.setDouble(8, film.getDuration());
-            ps.setInt   (9, film.getFilm_id());
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // ── DELETE ────────────────────────────────────────────────────
-    public void delete(int id) {
-        String sql = "DELETE FROM films WHERE film_id = ?";
-
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, id);
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // ── Helper : ResultSet → objet Film ──────────────────────────
-    private Film mapRow(ResultSet rs) throws SQLException {
-
-        // Reconstruire l'objet Category depuis le JOIN
-        Category category = new Category(
-            rs.getInt("cat_id"),
-            rs.getString("cat_name"),
-            rs.getString("cat_desc"),
-            null
-        );
-
-        // Convertir DATETIME → LocalDateTime
-        LocalDateTime releaseDate = null;
-        Timestamp ts = rs.getTimestamp("release_date");
-        if (ts != null) releaseDate = ts.toLocalDateTime();
-
-        return new Film(
-            rs.getInt("film_id"),
-            rs.getString("title"),
-            rs.getString("synopsis"),
-            rs.getString("casting"),
-            rs.getString("video_url"),
-            rs.getString("image_url"),
-            category,
-            releaseDate,
-            rs.getTimestamp("updated_at"),
-            rs.getDouble("duration")
-        );
+        return featured;
     }
 }
