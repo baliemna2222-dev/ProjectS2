@@ -10,7 +10,7 @@ public class Serie {
     private String synopsis;
     private String casting;
     private String covertUrl;
-
+    private String titleUrl;
     private List<Category> categories;  // ✅ multiple categories
 
     private List<Season> seasons;
@@ -28,8 +28,9 @@ public class Serie {
     // Full constructor
     public Serie(int serieId, String title, String synopsis, String casting, String covertUrl,
                  List<Category> categories, Timestamp createdAt, Timestamp updatedAt,
-                 int rating, String age_rating) {
+                 int rating, String age_rating,String titleUrl) {
         this.serieId = serieId;
+        this.titleUrl=titleUrl;
         this.title = title;
         this.synopsis = synopsis;
         this.casting = casting;
@@ -42,7 +43,15 @@ public class Serie {
         this.age_rating = age_rating;
     }
 
-    // Getters and setters
+    public String getTitleUrl() {
+		return titleUrl;
+	}
+
+	public void setTitleUrl(String titleUrl) {
+		this.titleUrl = titleUrl;
+	}
+
+	// Getters and setters
     public int getSerieId() { return serieId; }
     public void setSerieId(int serieId) { this.serieId = serieId; }
 

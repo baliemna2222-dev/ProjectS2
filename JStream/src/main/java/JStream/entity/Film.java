@@ -13,7 +13,7 @@ public class Film {
     private String image_url;
     private String title_image_url;
     private String poster_url;
-
+    
     private List<Category> categories; 
 
     private LocalDateTime release_date;

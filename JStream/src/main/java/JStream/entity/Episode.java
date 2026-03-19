@@ -9,7 +9,7 @@ public class Episode {
     private int seasonId;       // Foreign key to Season
     private int numEpisode;     // Episode number in the season
     private String title;       // Episode title
-    private Duration duration;  // Episode duration
+    private int duration;  // Episode duration
     private String resume;      // Episode summary / synopsis
     private String videoUrl;    // Video file URL
     private String covertUrl;   // Cover image /
@@ -19,7 +19,7 @@ public class Episode {
 
     public Episode() {}
 
-    public Episode(int epId, int seasonId, int numEpisode, String title, Duration duration,
+    public Episode(int epId, int seasonId, int numEpisode, String title, int duration,
                    String resume, String videoUrl, String covertUrl,
                    int rating, Timestamp createdAt, Timestamp updatedAt) {
         this.epId = epId;
@@ -48,8 +48,8 @@ public class Episode {
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
-    public Duration getDuration() { return duration; }
-    public void setDuration(Duration duration) { this.duration = duration; }
+    public int getDuration() { return duration; }
+    public void setDuration(int duration) { this.duration = duration; }
 
     public String getResume() { return resume; }
     public void setResume(String resume) { this.resume = resume; }
@@ -85,4 +85,12 @@ public class Episode {
                 ", updatedAt=" + releasedAt +
                 '}';
     }
+
+	public Timestamp getReleasedAt() {
+		return releasedAt;
+	}
+
+	public void setReleasedAt(Timestamp releasedAt) {
+		this.releasedAt = releasedAt;
+	}
 }

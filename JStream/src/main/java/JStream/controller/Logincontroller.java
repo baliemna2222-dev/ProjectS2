@@ -5,6 +5,7 @@ import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
+import JStream.entity.Session;
 import JStream.entity.User;
 import JStream.service.UserService;
 import javafx.animation.TranslateTransition;
@@ -102,6 +103,7 @@ public class Logincontroller implements Initializable {
 
         User user = userService.login(username, password);
         if(user != null) {
+        	Session.login(user.getId(), user.getUsername());
             goToHomepage();
         } else {
             loginError.setText("Invalid username or password");
@@ -130,9 +132,12 @@ public class Logincontroller implements Initializable {
         }
 
         boolean success = userService.register(username, email, password);
-
+        
         if(success) {
-            goToHomepage();
+        	User user = userService.login(username, password);
+        	 Session.login(user.getId(), user.getUsername());
+        	 goToHomepage();
+            
         } else {
             // Provide clear feedback on what failed
             if(userService.usernameExists(username)) {
