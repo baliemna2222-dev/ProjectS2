@@ -15,7 +15,7 @@ public class Film {
     private String poster_url;
     
     private List<Category> categories; 
-
+    
     private LocalDateTime release_date;
     private Timestamp updated_at;
     private double duration;
@@ -157,5 +157,9 @@ public class Film {
 	public void setRating(int rating) {
 		this.rating = rating;
 	}
+	 public String getCategoriesAsString() {
+	        if (categories == null || categories.isEmpty()) return "";
+	        return String.join(", ", categories.stream().map(Category::getName).toList());
+	    }
 }
    

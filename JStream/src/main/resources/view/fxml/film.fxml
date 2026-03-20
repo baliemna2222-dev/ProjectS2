@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Rectangle?>
 
-<StackPane fx:id="rootPane" prefHeight="700" style="-fx-background-color:black;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.FilmController">
+<StackPane fx:id="rootPane" prefHeight="700" style="-fx-background-color:black;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.FeaturedController">
     
         <HBox mouseTransparent="true" prefHeight="700" prefWidth="1550">
             <Region mouseTransparent="true" prefWidth="700" /> <!-- left space -->
