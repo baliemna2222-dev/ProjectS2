@@ -4,6 +4,7 @@ import JStream.entity.Category;
 import JStream.entity.Episode;
 import JStream.entity.FeaturedItem;
 import JStream.entity.Film;
+import JStream.entity.MyListManager;
 import JStream.entity.Season;
 import JStream.entity.Serie;
 import JStream.entity.Session;
@@ -73,14 +74,39 @@ public class FeaturedController {
     public void initialize() {
         featuredService = new FeaturedService();
         myListService = new MylistService();
+        
+        MyListManager.getInstance().addListener((filmId, serieId) -> {
+            Platform.runLater(() -> {
+                if (currentItem != null) {
+                    int currentFilmId = "film".equalsIgnoreCase(currentItem.getType()) ? currentItem.getId() : 0;
+                    int currentSerieId = "serie".equalsIgnoreCase(currentItem.getType()) ? currentItem.getSerieId() : 0;
+
+                    // If the updated item matches this controller's current item, refresh the button
+                    if (currentFilmId == filmId && currentSerieId == serieId) {
+                        updateAddButton(addToListButton, currentItem);
+                    }
+                }
+            });
+        });
         setupCarousel();
+       
+    }
+    private void pumpButton(Button button) {
+        ScaleTransition st = new ScaleTransition(Duration.millis(150), button);
+        st.setFromX(1.0);
+        st.setFromY(1.0);
+        st.setToX(1.2);
+        st.setToY(1.2);
+        st.setAutoReverse(true);
+        st.setCycleCount(2);
+        st.play();
     }
     private void handleAddToList() {
         if (currentItem == null) return;
 
         int userId = Session.getUserId();
-        int filmId = currentItem.getType().equalsIgnoreCase("film") ? currentItem.getId() : 0;
-        int serieId = currentItem.getType().equalsIgnoreCase("serie") ? currentItem.getSerieId() : 0;
+        int filmId = "film".equalsIgnoreCase(currentItem.getType()) ? currentItem.getId() : 0;
+        int serieId = "serie".equalsIgnoreCase(currentItem.getType()) ? currentItem.getSerieId() : 0;
 
         boolean alreadyAdded = myListService.isInList(userId, filmId, serieId);
 
@@ -90,7 +116,11 @@ public class FeaturedController {
             myListService.addItem(userId, filmId, serieId);
         }
 
-        updateAddButton(addToListButton,currentItem);
+        // Update this controller's button immediately
+        updateAddButton(addToListButton, currentItem);
+
+        // Notify all other controllers to update
+        MyListManager.getInstance().notifyItemUpdated(filmId, serieId);
     }
    
     private void updateAddButton(Button button, FeaturedItem item) {
@@ -105,9 +135,11 @@ public class FeaturedController {
         if(alreadyAdded) {
             button.setText("✔ Added");
             button.setStyle("-fx-background-color:#00aaff;-fx-font-weight:bold;-fx-text-fill:white;-fx-font-size:16;-fx-padding:6 25;-fx-background-radius:2;");
+            pumpButton(button);
         } else {
             button.setText("➕ My List");
             button.setStyle("-fx-background-color:transparent;-fx-border-color:#00aaff;-fx-border-width:2;-fx-text-fill:#00aaff;-fx-font-size:16;-fx-padding:6 20;-fx-background-radius:2;");
+            pumpButton(button);
         }
     }
     private void setupCarousel() {
@@ -504,7 +536,7 @@ public class FeaturedController {
 
         popup.showAndWait();
     }
-    private void showFilmPopup(FeaturedItem item) {
+    public void showFilmPopup(FeaturedItem item) {
         Stage popup = new Stage();
         popup.initOwner(rootPane.getScene().getWindow());
         popup.initModality(Modality.WINDOW_MODAL);
@@ -669,7 +701,7 @@ public class FeaturedController {
         popup.showAndWait();
     }
   
-        private void showSeriePopup(FeaturedItem item) {
+        public void showSeriePopup(FeaturedItem item) {
             if (item == null || !"serie".equalsIgnoreCase(item.getType())) return;
 
             Serie serie;

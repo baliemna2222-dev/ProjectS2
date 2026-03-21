@@ -20,123 +20,17 @@
                        -fx-background-insets: 0;">
         
         <StackPane> <!-- StackPane to allow floating header -->
-            
+             
             <!-- ================= MAIN CONTENT ================= -->
             <VBox>
+             <!-- ================= FeaturedCarousel ================= -->
+                 <fx:include source="Featured.fxml"/> 
+               
+                <!-- ================= CategoryCarousel ================= -->
                 
-                <!-- ================= CAROUSEL ================= -->
-             <StackPane fx:id="heroCarousel" prefHeight="700" prefWidth="Infinity">
-
-    <!-- BACKGROUND IMAGE -->
-    <ImageView fx:id="heroBackground"
-               fitWidth="1550"
-               preserveRatio="true"
-               StackPane.alignment="CENTER" />
-
-    <!-- TRAILER VIDEO (hidden initially) -->
-    <MediaView fx:id="heroTrailer"
-               visible="false"
-               fitWidth="1550"
-               preserveRatio="true"/>
-
-    <!-- DARK + BLUE SHINY GRADIENT -->
-    <Rectangle StackPane.alignment="BOTTOM_CENTER"
-               height="300"
-               style="-fx-fill: linear-gradient(to top,
-                      rgba(0,0,0,0.95),
-                      rgba(0,0,0,0.5),
-                      rgba(0,60,255,0.2),
-                      transparent);" />
-
-    <!-- CONTENT -->
-    <VBox spacing="15"
-          alignment="BOTTOM_LEFT"
-          StackPane.alignment="BOTTOM_LEFT"
-          style="-fx-padding: 60;">
-
-        <!-- TITLE IMAGE -->
-        <ImageView fx:id="heroTitleImage"
-                   fitWidth="400"
-                   preserveRatio="true" />
-
-        <!-- RATING + CATEGORIES -->
-        <HBox spacing="15" alignment="CENTER_LEFT">
-
-            <!-- STARS -->
-            <HBox fx:id="heroStars" spacing="4"/>
-
-            <!-- CATEGORIES -->
-            <Label fx:id="heroCategories"
-                   text="Action • Sci-Fi • Adventure"
-                   style="-fx-text-fill:#00aaff;
-                          -fx-font-size:14;
-                          -fx-font-weight:bold;" />
-
-        </HBox>
-
-        <!-- DESCRIPTION -->
-        <Label fx:id="heroDescription"
-               wrapText="true"
-               maxWidth="550"
-               style="-fx-text-fill:#dddddd;
-                      -fx-font-size:16;" />
-
-        <!-- BUTTONS -->
-        <HBox spacing="15">
-
-            <Button fx:id="playButton"
-                    text="▶ Play"
-                    style="-fx-background-color:#008cff;
-                           -fx-text-fill:white;
-                           -fx-font-size:16;
-                           -fx-font-weight:bold;
-                           -fx-background-radius:0;
-                           -fx-padding:8 25;
-                           -fx-effect:dropshadow(gaussian,#00aaff,15,0.6,0,0);" />
-
-            <Button fx:id="infoButton"
-                    text="ⓘ More Info"
-                    style="-fx-background-color:rgba(50,50,60,0.7);
-                           -fx-text-fill:white;
-                           -fx-font-size:16;
-                           -fx-font-weight:bold;
-                           -fx-background-radius:6;
-                           -fx-padding:8 25;" />
-
-            <!-- TRAILER BUTTON -->
-            <Button fx:id="trailerButton"
-                    text="🎬 Trailer"
-                   
-                    style="-fx-background-color:transparent;
-                           -fx-border-color:#00aaff;
-                           -fx-border-radius:1;
-                           -fx-text-fill:#00aaff;
-                           -fx-font-size:16;
-                           -fx-padding:8 20;" />
-
-        </HBox>
-
-    </VBox>
-
-    <!-- SLIDE INDICATORS -->
-    <HBox fx:id="heroIndicators"
-          alignment="BOTTOM_CENTER"
-          spacing="10"
-          StackPane.alignment="BOTTOM_CENTER"
-          style="-fx-padding:0 0 20 0;" />
-
-</StackPane>
-                <!-- ================= MOVIE CATEGORY ================= -->
-                <VBox spacing="20" style="-fx-padding: 20; -fx-background-color: black;">
-                    <VBox spacing="10">
-                        <Label fx:id="comedyLabel" text="COMEDY" 
-                               style="-fx-font-weight: 900; -fx-font-size: 30px; -fx-text-fill: linear-gradient(to right,#00c6ff,#0072ff,#00f0ff);"/>
-                        <ScrollPane fx:id="comedyScroll" hbarPolicy="NEVER" vbarPolicy="NEVER" fitToHeight="true" style="-fx-background-color: black;">
-                            <HBox fx:id="comedyCarousel" spacing="15" style="-fx-background-color:black;"/>
-                        </ScrollPane>
-                    </VBox>
-                </VBox>
-
+				 <VBox fx:id="categoryContainer" spacing="30" style="-fx-padding: 20;">
+        <!-- Carousels will be added here dynamically -->
+   				 </VBox>
             </VBox>
             
             <!-- ================= FLOATING HEADER ================= -->

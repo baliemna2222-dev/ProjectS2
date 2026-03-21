@@ -40,7 +40,7 @@
 
          
 
-        <HBox alignment="BOTTOM_LEFT" spacing="20" style="-fx-padding:0 0 70 0;" StackPane.alignment="BOTTOM_CENTER">
+        <HBox alignment="BOTTOM_LEFT" spacing="20" style="-fx-padding:0 0 30 0;" StackPane.alignment="BOTTOM_CENTER">
            <HBox alignment="BOTTOM_LEFT" spacing="16" style="-fx-padding: 50 50 100 50;" StackPane.alignment="BOTTOM_CENTER">
              <Button fx:id="playButton" style="-fx-background-color:#008cff;-fx-text-fill:white;-fx-font-size:16;-fx-font-weight:bold;-fx-padding:6 20;-fx-background-radius:4;-fx-effect:dropshadow(gaussian,#00aaff,10,0,0,0);" text="▶ Watch now" />
              <Button fx:id="watchTrailerButton" style="-fx-background-color:#333;-fx-text-fill:white;-fx-font-size:16;-fx-font-weight:bold;-fx-padding:6 20;-fx-background-radius:4;" text="🎬 Watch Trailer" />

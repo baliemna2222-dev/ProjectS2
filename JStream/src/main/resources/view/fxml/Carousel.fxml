@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<VBox xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="JStream.controller.CarouselController"
+      spacing="10"
+      style="-fx-padding:0 20 0 40;">
+
+    <!-- CATEGORY TITLE -->
+    <Label fx:id="categoryTitle"
+           text="Trending Now"
+           style="-fx-text-fill:white; -fx-font-size:24; -fx-font-weight:bold;" />
+
+    <!-- PAGINATION RECTANGLES -->
+    <HBox fx:id="paginationBox" spacing="5" alignment="CENTER_RIGHT" />
+
+    <!-- CAROUSEL -->
+    <StackPane fx:id="carouselPane" prefHeight="340">
+
+       
+        <!-- VIEWPORT -->
+        <Pane fx:id="viewport" prefHeight="320">
+            <HBox fx:id="contentBox"
+                  spacing="20"
+                  layoutX="0"
+                  style="-fx-padding:10 0 10 0;" />
+        </Pane>
+		 <!-- LEFT ARROW -->
+        <Button fx:id="leftBtn"
+                text="❮"
+                onAction="#scrollLeft"
+                style="-fx-background-color:rgba(0,0,0,0.5);
+                       -fx-text-fill:white;
+                       -fx-font-size:28;"
+                StackPane.alignment="CENTER_LEFT"/>
+		
+        <!-- RIGHT ARROW -->
+        <Button fx:id="rightBtn"
+                text="❯"
+                onAction="#scrollRight"
+                style="-fx-background-color:rgba(0,0,0,0.5);
+                       -fx-text-fill:white;
+                       -fx-font-size:28;"
+                StackPane.alignment="CENTER_RIGHT"/>
+
+    </StackPane>
+
+</VBox>

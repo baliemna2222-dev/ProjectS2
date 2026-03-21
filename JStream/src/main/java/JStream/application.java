@@ -11,7 +11,7 @@ public class application extends Application {
     public void start(Stage stage) throws Exception {
 
 		FXMLLoader loader = new FXMLLoader();
-		loader.setLocation(getClass().getClassLoader().getResource("view/fxml/film.fxml"));
+		loader.setLocation(getClass().getClassLoader().getResource("view/fxml/HomePage.fxml"));
 		Parent root = loader.load();
         Scene scene = new Scene(root);
 
@@ -23,6 +23,7 @@ public class application extends Application {
     }
 
     public static void main(String[] args) {
+    	System.setProperty("javafx.fxml.ignoreVersionMismatch", "true");
         launch(args);
     }
 }

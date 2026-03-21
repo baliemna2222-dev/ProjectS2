@@ -1,8 +1,12 @@
 package JStream.controller;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
+import JStream.entity.Category;
+import JStream.entity.FeaturedItem;
+import JStream.service.FeaturedService;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
@@ -12,6 +16,7 @@ import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -93,16 +98,8 @@ public class HomepageController {
 	    @FXML
 	    private HBox featuredIndicators;
 	    @FXML
-	    private HBox comedyCarousel;
-	    @FXML
-	    private ScrollPane comedyScroll;
-
-	    @FXML
-	    private Button btnLeftComedy, btnRightComedy;
-	    @FXML
 	    private Timeline autoScrollTimeline;
-	    @FXML
-	    private Label comedyLabel; 
+	  
 	 // Current mouse X inside scrollPane
 	    private double mouseX = -1;
 
@@ -128,6 +125,7 @@ public class HomepageController {
 	    private Popup notificationPopup = new Popup();
 	    private VBox notificationContent = new VBox();
 	    private boolean popupVisible = false;
+	    
 	    @FXML
 	    private void initialize() {
 	    	/*Header section*/
@@ -194,15 +192,42 @@ public class HomepageController {
 	                }
 	            });
 		/*CarouselSection*/
-		
+	            loadCarouselsByCategory();
 	    
-       
-        comedyScroll.setStyle("-fx-background: black; -fx-background-color: black;");
-        comedyScroll.setPannable(false); // disables default scroll drag
-        setupComedyLabelGlow();
-        loadComedyCategory();
-        
+         
 	}
+	    @FXML private VBox categoryContainer;
+	    private final FeaturedService featuredService = new FeaturedService();
+
+	    private void loadCarouselsByCategory() {
+	        try {
+	            List<Category> categories = featuredService.getAllCategories();
+
+	            for (Category category : categories) {
+	                // 1️⃣ Get items for the category first
+	                List<FeaturedItem> items = featuredService.getItemsByCategory(category.getName());
+
+	                // 2️⃣ Skip empty categories
+	                if (items.isEmpty()) continue;
+
+	                // 3️⃣ Load FXML only if items exist
+	                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Carousel.fxml"));
+	                Node carouselNode = loader.load();
+
+	                // 4️⃣ Pass the items to the CarouselController
+	                CarouselController carouselController = loader.getController();
+	                carouselController.loadItems(items);      // set the items
+	                carouselController.setCategoryTitle(category.getName()); // set the title
+
+	                // 5️⃣ Add to VBox
+	                categoryContainer.getChildren().add(carouselNode);
+	            }
+
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
+	
 	    /* buttons animation */
 	    private void setupButton(Button btn, Rectangle line) {
 	        // Hover effect
@@ -393,40 +418,7 @@ public class HomepageController {
 
 	        popupVisible = false;
 	    }
-	 private void setupComedyLabelGlow() {
-		  DropShadow glow = new DropShadow();
-		    glow.setRadius(25);
-		    glow.setColor(Color.CYAN);
-		    comedyLabel.setEffect(glow);
-
-		    // Animate gradient shift
-		    final DoubleProperty shift = new SimpleDoubleProperty(0);
-
-		    shift.addListener((obs, oldVal, newVal) -> {
-		        double s = newVal.doubleValue();
-
-		        // Create horizontal gradient
-		        comedyLabel.setTextFill(new LinearGradient(
-		                s - 1, 0, s + 1, 0, // shift stops horizontally
-		                false, // no repeat
-		                CycleMethod.NO_CYCLE,
-		                new Stop(0.0, Color.web("#00c6ff")), // bright cyan
-		                new Stop(0.25, Color.web("#0072ff")), // medium blue
-		                new Stop(0.5, Color.web("#00f0ff")),  // light cyan
-		                new Stop(0.75, Color.web("#0072ff")),
-		                new Stop(1.0, Color.web("#00c6ff"))
-		        ));
-		    });
-
-		    // Timeline for smooth infinite movement
-		    Timeline timeline = new Timeline(
-		            new KeyFrame(Duration.ZERO, new KeyValue(shift, 0)),
-		            new KeyFrame(Duration.seconds(8), new KeyValue(shift, 1))
-		    );
-		    timeline.setCycleCount(Animation.INDEFINITE);
-		    timeline.setAutoReverse(false);
-		    timeline.play();
-		}
+	
 	private void updateIndicators() {
 
 	    for (int i = 0; i < indicators.length; i++) {
@@ -557,25 +549,7 @@ public class HomepageController {
         fade.play();
         slide.play();
     }
-    private void loadComedyCategory() {
-        try {
-            File folder = new File(getClass().getResource("/assets/images/films").toURI());
-            File[] files = folder.listFiles((dir, name) ->
-                    name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png")
-            );
-            if (files == null) return;
-
-            for (File f : files) {
-                Image img = new Image(f.toURI().toString());
-                VBox box = createPosterBox(img);
-                comedyCarousel.getChildren().add(box);
-            }
-
-            setupComedyScrolling(); // start scrolling after loading posters
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
+   
 
     private VBox createPosterBox(Image img) {
         ImageView poster = new ImageView(img);
@@ -606,65 +580,7 @@ public class HomepageController {
         return box;
     }
 
-    /** Smooth, infinite scrolling with mouse acceleration */
-    private void setupComedyScrolling() {
-
-        comedyScroll.setPannable(false);
-
-        comedyScroll.setOnMouseMoved(e -> mouseX = e.getX());
-        comedyScroll.setOnMouseExited(e -> mouseX = -1);
-
-        scrollTimeline = new Timeline(new KeyFrame(Duration.millis(16), e -> {
-
-            if (comedyCarousel.getChildren().isEmpty()) return;
-
-            double width = comedyScroll.getWidth();
-            double speed = 0.7;
-
-            // Mouse acceleration
-            if (mouseX != -1) {
-                if (mouseX < width * 0.2)
-                    speed = -2 * (1 - mouseX / (width * 0.2));
-                else if (mouseX > width * 0.8)
-                    speed = 2 * ((mouseX - width * 0.8) / (width * 0.2));
-            }
-
-            comedyCarousel.setTranslateX(comedyCarousel.getTranslateX() - speed);
-
-            // 🔥 Dynamic width calculation
-            VBox first = (VBox) comedyCarousel.getChildren().get(0);
-            double firstWidth = first.getBoundsInParent().getWidth()
-                    + comedyCarousel.getSpacing();
-
-            // Move first to end
-            if (comedyCarousel.getTranslateX() <= -firstWidth) {
-                comedyCarousel.getChildren().remove(0);
-                comedyCarousel.getChildren().add(first);
-                comedyCarousel.setTranslateX(
-                        comedyCarousel.getTranslateX() + firstWidth
-                );
-            }
-
-            // Move last to front
-            VBox last = (VBox) comedyCarousel.getChildren()
-                    .get(comedyCarousel.getChildren().size() - 1);
-
-            double lastWidth = last.getBoundsInParent().getWidth()
-                    + comedyCarousel.getSpacing();
-
-            if (comedyCarousel.getTranslateX() >= 0) {
-                comedyCarousel.getChildren().remove(last);
-                comedyCarousel.getChildren().add(0, last);
-                comedyCarousel.setTranslateX(
-                        comedyCarousel.getTranslateX() - lastWidth
-                );
-            }
-
-        }));
-
-        scrollTimeline.setCycleCount(Timeline.INDEFINITE);
-        scrollTimeline.play();
-    }
+   
     public void setFeaturedMovie(String image, String title, String description) {
 
         featuredBackground.setStyle(
@@ -760,4 +676,5 @@ public class HomepageController {
 
         fadeOut.play();
     }
+    
 }

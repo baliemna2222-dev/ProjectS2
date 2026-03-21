@@ -265,4 +265,119 @@ public class FeaturedDAO {
         }
         return episodes;
     }
+    public List<FeaturedItem> getItemsByCategory(String categoryName) throws SQLException {
+        List<FeaturedItem> items = new ArrayList<>();
+
+        // ---------------- FILMS ----------------
+        String filmSql =
+            "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+            "FROM film f " +
+            "JOIN film_category fc ON f.film_id = fc.film_id " +
+            "JOIN category c ON fc.category_id = c.category_id " +
+            "WHERE c.name = ? " +
+            "GROUP BY f.film_id";
+
+        try (PreparedStatement ps = connection.prepareStatement(filmSql)) {
+            ps.setString(1, categoryName);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                List<String> categories = List.of(rs.getString("categories").split(","));
+
+                items.add(new FeaturedItem(
+                    rs.getInt("film_id"),
+                    rs.getString("title"),
+                    rs.getString("synopsis"),
+                    rs.getString("video_url"),
+                    rs.getString("image_url"),
+                    rs.getString("title_image_url"),
+                    rs.getString("poster_url"),
+                    categories,
+                    rs.getString("age_rating"),
+                    rs.getInt("rating")
+                ));
+            }
+        }
+
+        // ---------------- SERIES (latest season) ----------------
+        String seasonSql =
+            "SELECT " +
+            "    s.season_id, " +
+            "    s.poster_url, " +
+            "    s.trailer_url, " +
+            "    s.season_num, " +
+            "    s.status, " +
+            "    se.serie_id, " +
+            "    se.title AS serie_title, " +
+            "    se.synopsis, " +
+            "    se.title_url, " +
+            "    se.covert_url, " +
+            "    se.age_rating, " +
+            "    se.rating, " +
+            "    GROUP_CONCAT(DISTINCT c.name SEPARATOR ',') AS categories, " +
+            "    COALESCE(MAX(e.num_episode),0) AS last_episode " +
+            "FROM season s " +
+            "JOIN serie se ON s.serie_id = se.serie_id " +
+            "JOIN serie_category sc ON se.serie_id = sc.serie_id " +
+            "JOIN category c ON sc.category_id = c.category_id " +
+            "LEFT JOIN episode e ON e.season_id = s.season_id " +
+            "WHERE c.name = ? " +
+            "AND s.season_id = ( " +
+            "   SELECT s2.season_id " +
+            "   FROM season s2 " +
+            "   LEFT JOIN episode e2 ON e2.season_id = s2.season_id " +
+            "   WHERE s2.serie_id = s.serie_id " +
+            "   GROUP BY s2.season_id " +
+            "   ORDER BY MAX(e2.released_at) DESC " +
+            "   LIMIT 1 " +
+            ") " +
+            "GROUP BY s.season_id";
+
+        try (PreparedStatement ps = connection.prepareStatement(seasonSql)) {
+            ps.setString(1, categoryName);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                List<String> categories = new ArrayList<>(
+                    new LinkedHashSet<>(List.of(rs.getString("categories").split(",")))
+                );
+
+                items.add(new FeaturedItem(
+                    rs.getInt("season_id"),
+                    rs.getInt("serie_id"),
+                    rs.getString("serie_title"),
+                    rs.getString("synopsis"),
+                    rs.getString("trailer_url"),
+                    rs.getString("covert_url"),
+                    rs.getString("title_url"),
+                    rs.getString("poster_url"), // ✅ latest season poster
+                    categories,
+                    rs.getString("age_rating"),
+                    rs.getInt("rating"),
+                    rs.getString("status"),
+                    rs.getInt("season_num"),
+                    rs.getInt("last_episode")
+                ));
+            }
+        }
+
+        return items;
+    }
+ // Get all categories from the database
+    public List<Category> getAllCategories() throws SQLException {
+        List<Category> categories = new ArrayList<>();
+        String sql = "SELECT * FROM category ORDER BY name"; // you can change order if you want
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Category cat = new Category();
+                cat.setCategory_id(rs.getInt("category_id"));
+                cat.setName(rs.getString("name"));
+                categories.add(cat);
+            }
+        }
+        return categories;
+    }
     }

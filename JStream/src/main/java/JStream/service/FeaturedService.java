@@ -11,6 +11,7 @@ import JStream.utils.Database;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FeaturedService {
@@ -20,8 +21,10 @@ public class FeaturedService {
     public FeaturedService() {
         Connection conn = Database.getConnection();
         dao = new FeaturedDAO(conn);
+        
     }
-
+    
+   
     // ----------------------- Featured items -----------------------
     public List<FeaturedItem> getLatestFeatured(int limit) throws SQLException {
         return dao.getLatestFeatured(limit);
@@ -69,5 +72,22 @@ public class FeaturedService {
     public List<Category> getCategoriesBySerie(int serieId) throws SQLException {
         // Helper if you want to get categories separately
         return dao.getFullSerie(serieId).getCategories();
+    }
+ // Get all categories
+    public List<Category> getAllCategories() {
+        try {
+            return dao.getAllCategories();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    public List<FeaturedItem> getItemsByCategory(String categoryName) {
+        try {
+            return dao.getItemsByCategory(categoryName); 
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 }
