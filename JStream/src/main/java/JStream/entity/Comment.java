@@ -8,11 +8,11 @@ public class Comment {
 	private int filmID;
 	private int serieID;
 	private String content;
-	private boolean Signal;
+	private boolean flagged; 
 	private Timestamp creates_at;
 	private Timestamp updated_at;
 	public Comment() {}
-	public Comment(int comment_id, int userID, int filmID, int serieID, String content, boolean signal,
+	public Comment(int comment_id, int userID, int filmID, int serieID, String content, boolean flagged,
 			Timestamp creates_at, Timestamp updated_at) {
 		super();
 		this.comment_id = comment_id;
@@ -20,7 +20,7 @@ public class Comment {
 		this.filmID = filmID;
 		this.serieID = serieID;
 		this.content = content;
-		Signal = signal;
+		flagged = flagged;
 		this.creates_at = creates_at;
 		this.updated_at = updated_at;
 	}
@@ -39,8 +39,8 @@ public class Comment {
 	public String getContent() {return content;}
 	public void setContent(String content) {this.content = content;}
 	
-	public boolean isSignal() {return Signal;}
-	public void setSignal(boolean signal) {Signal = signal;}
+	public boolean isFlagged()     { return flagged; }
+	public void setFlagged(boolean flagged) { this.flagged = flagged; }
 	
 	public Timestamp getCreates_at() {return creates_at;}
 	public void setCreates_at(Timestamp creates_at) {this.creates_at = creates_at;}
