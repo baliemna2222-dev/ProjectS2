@@ -13,7 +13,7 @@ public class Comment {
 	private Timestamp updated_at;
 	public Comment() {}
 	public Comment(int comment_id, int userID, int filmID, int serieID, String content, boolean flagged,
-			Timestamp creates_at, Timestamp updated_at) {
+			Timestamp creates_at, Timestamp updated_at){
 		this.comment_id = comment_id;
 		this.userID = userID;
 		this.filmID = filmID;
