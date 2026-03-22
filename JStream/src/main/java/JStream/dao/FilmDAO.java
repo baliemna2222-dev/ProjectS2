@@ -116,7 +116,7 @@ public class FilmDAO {
         return list;
     }
 
-    // ===== GET BY ID =====
+    // ===== GET BY ID ====
     public Film getFilmById(int filmId) {
         String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
                      "FROM films f " +

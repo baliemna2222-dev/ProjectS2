@@ -12,7 +12,7 @@ public class History {
     private Timestamp watchedAt;
     private Timestamp updatedAt;
 
-    public History() {}
+    public History(){}
 
     public History(int id, int userID, int filmID, int episodeID,
                    int progressionSecondes, boolean completed,

@@ -13,7 +13,7 @@ import java.util.List;
 
 public class EpisodeDAO {
 
-    // ===== INSERT =====
+    // ===== INSERT ====
     public boolean insertEpisode(Episode episode) {
         String sql = "INSERT INTO episodes (season_id, num_episode, title, duration, resume, " +
                      "video_url, covert_url, released_at) VALUES (?,?,?,?,?,?,?,?)";

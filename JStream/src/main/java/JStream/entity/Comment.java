@@ -2,7 +2,7 @@ package JStream.entity;
 
 import java.sql.Timestamp;
 
-public class Comment {
+public class Comment{
     private int comment_id;
     private int userID;
     private int filmID;
