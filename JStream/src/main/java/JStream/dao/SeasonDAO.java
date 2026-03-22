@@ -1,0 +1,138 @@
+package JStream.dao;
+
+import JStream.entity.Season;
+import JStream.utils.Database;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SeasonDAO {
+
+    // ===== INSERT =====
+    public boolean insertSeason(Season season) {
+        String sql = "INSERT INTO seasons (serie_id, season_num, title, synopsis, trailer_url, " +
+                     "poster_url, title_url, image_url, planned_episodes, status) " +
+                     "VALUES (?,?,?,?,?,?,?,?,?,?)";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setInt(1,    season.getSerieId());
+            ps.setInt(2,    season.getSeasonNum());
+            ps.setString(3, season.getTitle());
+            ps.setString(4, season.getSynopsis());
+            ps.setString(5, season.getTrailerUrl());
+            ps.setString(6, season.getPosterUrl());
+            ps.setString(7, season.getTitleUrl());
+            ps.setString(8, season.getImageUrl());
+            ps.setInt(9,    season.getPlannedEpisodes());
+            ps.setString(10,season.getStatus());
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                ResultSet rs = ps.getGeneratedKeys();
+                if (rs.next()) season.setSeasonId(rs.getInt(1));
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // ===== UPDATE =====
+    public boolean updateSeason(Season season) {
+        String sql = "UPDATE seasons SET title=?, synopsis=?, trailer_url=?, poster_url=?, " +
+                     "title_url=?, image_url=?, planned_episodes=?, status=?, rating=? " +
+                     "WHERE season_id=?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, season.getTitle());
+            ps.setString(2, season.getSynopsis());
+            ps.setString(3, season.getTrailerUrl());
+            ps.setString(4, season.getPosterUrl());
+            ps.setString(5, season.getTitleUrl());
+            ps.setString(6, season.getImageUrl());
+            ps.setInt(7,    season.getPlannedEpisodes());
+            ps.setString(8, season.getStatus());
+            ps.setInt(9,    season.getRating());
+            ps.setInt(10,   season.getSeasonId());
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // ===== DELETE =====
+    public boolean deleteSeason(int seasonId) {
+        String sql = "DELETE FROM seasons WHERE season_id = ?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, seasonId);
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // ===== GET ALL SEASONS OF A SERIE =====
+    public List<Season> getSeasonsBySerie(int serieId) {
+        List<Season> list = new ArrayList<>();
+        String sql = "SELECT * FROM seasons WHERE serie_id = ? ORDER BY season_num";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, serieId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) list.add(mapRow(rs));
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // ===== GET BY ID =====
+    public Season getSeasonById(int seasonId) {
+        String sql = "SELECT * FROM seasons WHERE season_id = ?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, seasonId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return mapRow(rs);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Season mapRow(ResultSet rs) throws SQLException {
+        Season s = new Season();
+        s.setSeasonId(rs.getInt("season_id"));
+        s.setSerieId(rs.getInt("serie_id"));
+        s.setSeasonNum(rs.getInt("season_num"));
+        s.setTitle(rs.getString("title"));
+        s.setSynopsis(rs.getString("synopsis"));
+        s.setTrailerUrl(rs.getString("trailer_url"));
+        s.setPosterUrl(rs.getString("poster_url"));
+        s.setTitleUrl(rs.getString("title_url"));
+        s.setImageUrl(rs.getString("image_url"));
+        s.setCreatedAt(rs.getTimestamp("created_at"));
+        s.setPlannedEpisodes(rs.getInt("planned_episodes"));
+        s.setStatus(rs.getString("status"));
+        s.setRating(rs.getInt("rating"));
+        return s;
+    }
+}
