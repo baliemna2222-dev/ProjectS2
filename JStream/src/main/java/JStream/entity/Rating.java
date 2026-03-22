@@ -11,7 +11,7 @@ public class Rating {
     private Timestamp created_at;
     private Timestamp updated_at;
 
-    public Rating(){}
+    public Rating() {}
 
     public Rating(int rating_id, int userID, int filmID, int serieID,
                   int note, Timestamp created_at, Timestamp updated_at) {

@@ -44,7 +44,7 @@ public class SeasonDAO {
         return false;
     }
 
-    // ===== UPDATE ====
+    // ===== UPDATE =====
     public boolean updateSeason(Season season) {
         String sql = "UPDATE seasons SET title=?, synopsis=?, trailer_url=?, poster_url=?, " +
                      "title_url=?, image_url=?, planned_episodes=?, status=?, rating=? " +

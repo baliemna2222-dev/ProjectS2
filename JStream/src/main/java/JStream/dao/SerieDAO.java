@@ -14,7 +14,7 @@ import java.util.List;
 
 public class SerieDAO {
 
-    // ===== INSERT ====
+    // ===== INSERT =====
     public boolean insertSerie(Serie serie) {
         String sql = "INSERT INTO series (title, synopsis, casting, covert_url, title_url, " +
                      "age_rating) VALUES (?,?,?,?,?,?)";

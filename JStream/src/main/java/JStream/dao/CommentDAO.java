@@ -100,7 +100,7 @@ public class CommentDAO {
         return list;
     }
 
-    // ===== GET ALL FLAGGED (admin moderation) ====
+    // ===== GET ALL FLAGGED (admin moderation) =====
     public List<Comment> getFlaggedComments() {
         List<Comment> list = new ArrayList<>();
         String sql = "SELECT * FROM comments WHERE flagged=TRUE ORDER BY created_at DESC";

@@ -13,7 +13,7 @@ import java.util.List;
 
 public class CategoryDAO {
 
-    // ===== INSERT ====
+    // ===== INSERT =====
     public boolean insertCategory(Category category) {
         String sql = "INSERT INTO categories (name, description) VALUES (?, ?)";
         try (Connection conn = Database.getConnection();

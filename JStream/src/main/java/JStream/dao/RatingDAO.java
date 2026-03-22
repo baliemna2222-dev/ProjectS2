@@ -12,7 +12,7 @@ import java.sql.Statement;
 
 public class RatingDAO {
 
-    // ===== UPSERT (one rating per user per content) ====
+    // ===== UPSERT (one rating per user per content) =====
     public boolean upsert(Rating rating) {
         String checkSql = "SELECT rating_id FROM ratings WHERE user_id=? AND film_id=? AND serie_id=?";
         try (Connection conn = Database.getConnection();

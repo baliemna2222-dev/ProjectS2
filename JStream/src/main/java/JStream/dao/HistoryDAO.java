@@ -13,7 +13,7 @@ import java.util.List;
 
 public class HistoryDAO {
 
-    // ===== (insert or update progress) ====
+    // ===== (insert or update progress) =====
     public boolean upsert(History history) {
         String checkSql = "SELECT id FROM history WHERE user_id=? AND film_id=? AND episode_id=?";
         try (Connection conn = Database.getConnection();
