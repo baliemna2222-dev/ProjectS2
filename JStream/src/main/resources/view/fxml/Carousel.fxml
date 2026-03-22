@@ -17,11 +17,11 @@
     <HBox fx:id="paginationBox" spacing="5" alignment="CENTER_RIGHT" />
 
     <!-- CAROUSEL -->
-    <StackPane fx:id="carouselPane" prefHeight="340">
+    <StackPane fx:id="carouselPane" prefHeight="360">
 
        
         <!-- VIEWPORT -->
-        <Pane fx:id="viewport" prefHeight="320">
+        <Pane fx:id="viewport" prefHeight="330">
             <HBox fx:id="contentBox"
                   spacing="20"
                   layoutX="0"

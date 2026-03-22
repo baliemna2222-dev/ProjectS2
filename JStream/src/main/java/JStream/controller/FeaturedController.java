@@ -8,21 +8,29 @@ import JStream.entity.MyListManager;
 import JStream.entity.Season;
 import JStream.entity.Serie;
 import JStream.entity.Session;
+import JStream.entity.WatchStatus;
+import JStream.service.EpisodeProgressService;
 import JStream.service.FeaturedService;
+import JStream.service.FilmProgressService;
 import JStream.service.MylistService;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -35,8 +43,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import javafx.stage.Modality;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
@@ -46,6 +56,7 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class FeaturedController {
 
@@ -54,6 +65,7 @@ public class FeaturedController {
     @FXML private ImageView heroTitleImage;
     @FXML private Label heroDescription;
     @FXML private HBox heroStars;
+    @FXML private HBox typeTag;    
     @FXML private Label heroCategories;
     @FXML private Label heroAge;
     @FXML private Label lastEpisodeLabel;    // Only for series
@@ -62,14 +74,16 @@ public class FeaturedController {
     @FXML private Button watchTrailerButton;
     @FXML private Button addToListButton;
     @FXML public Rectangle rect1, rect2, rect3, rect4, rect5;
-    
+    @FXML public Label typeLabel;
+    @FXML private Rectangle typeLine;
     private FeaturedService featuredService;
     private List<FeaturedItem> latestItems;
     private int currentIndex = 0;
     private Timeline autoSlide;
     private MylistService myListService;
     private FeaturedItem currentItem;
-    
+    private EpisodeProgressService episodeProgressService = new EpisodeProgressService();
+    FilmProgressService filmProgressService = new FilmProgressService();
     @FXML
     public void initialize() {
         featuredService = new FeaturedService();
@@ -89,8 +103,15 @@ public class FeaturedController {
             });
         });
         setupCarousel();
-       
+        DropShadow soft = new DropShadow();
+        soft.setColor(Color.BLACK);
+        soft.setRadius(5);
+        soft.setOffsetX(1);
+        soft.setOffsetY(1);
+
+        typeLabel.setEffect(soft);
     }
+   
     private void pumpButton(Button button) {
         ScaleTransition st = new ScaleTransition(Duration.millis(150), button);
         st.setFromX(1.0);
@@ -144,7 +165,7 @@ public class FeaturedController {
     }
     private void setupCarousel() {
         try {
-            latestItems = featuredService.getLatestFeatured(5);
+            latestItems = featuredService.getLatestFeatured(4);
             if (latestItems == null || latestItems.isEmpty()) return;
 
             Rectangle[] rects = {rect1, rect2, rect3, rect4, rect5};
@@ -204,6 +225,7 @@ public class FeaturedController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+      
     }
 
     private void displayFeatured(FeaturedItem item) {
@@ -233,33 +255,53 @@ public class FeaturedController {
         heroCategories.setText(item.getCategoriesAsString() != null ? item.getCategoriesAsString() : "");
 
         // Age rating
-        heroAge.setText(item.getAgeRating() != null ? item.getAgeRating() : "");
-        heroAge.setVisible(item.getAgeRating() != null && !item.getAgeRating().isEmpty());
+        String age = item.getAgeRating();
+        boolean hasAge = age != null && !age.isBlank();
 
+        heroAge.setText(hasAge ? age : "");
+        heroAge.setVisible(hasAge);
+        heroAge.setManaged(hasAge);
         // Stars
         heroStars.getChildren().clear();
-        int fullStars = item.getRating();
+        int fullStars = item.getRating(); // 0-5
+
         for (int i = 0; i < 5; i++) {
-            Label star = new Label("★");
-            star.setStyle("-fx-font-size:20;-fx-font-weight:bold;");
-            star.setTextFill(i < fullStars ? Color.DEEPSKYBLUE : Color.LIGHTGRAY);
+            Text star = new Text("★");
+            star.setStyle("-fx-font-size:20px; -fx-font-weight:bold;");
+            star.setFill(i < fullStars ? Color.DEEPSKYBLUE : Color.LIGHTGRAY); // use setFill for Text
             heroStars.getChildren().add(star);
         }
-
+        typeLabel.setText("     "+item.getType().toUpperCase());
+        
         // Series labels
-        if ("serie".equalsIgnoreCase(item.getType())) {
-            lastEpisodeLabel.setText("S" + item.getSeasonNumber() + ":E" + item.getLastEpisodeNumber());
-            seriesStatusLabel.setText(item.getSeasonStatus());
-            lastEpisodeLabel.setVisible(true);
-            seriesStatusLabel.setVisible(true);
-        } else {
-            lastEpisodeLabel.setVisible(false);
-            seriesStatusLabel.setVisible(false);
-        }
+        boolean isSerie = "serie".equalsIgnoreCase(item.getType());
+
+     // Last Episode
+     String lastEp = isSerie 
+         ? "S" + item.getSeasonNumber() + ":E" + item.getLastEpisodeNumber()
+         : "";
+
+     boolean hasLastEp = isSerie 
+         && item.getSeasonNumber() != 0 
+         && item.getLastEpisodeNumber() != 0;
+
+     lastEpisodeLabel.setText(hasLastEp ? lastEp : "");
+     lastEpisodeLabel.setVisible(hasLastEp);
+     lastEpisodeLabel.setManaged(hasLastEp);
+
+     // Series Status
+     String status = item.getSeasonStatus();
+     boolean hasStatus = isSerie && status != null && !status.isBlank();
+
+     seriesStatusLabel.setText(hasStatus ? status : "");
+     seriesStatusLabel.setVisible(hasStatus);
+     seriesStatusLabel.setManaged(hasStatus);
 
         // Trailer button
-        watchTrailerButton.setVisible(item.getTrailerUrl() != null && !item.getTrailerUrl().isEmpty());
-    
+     boolean hasTrailer = item.getTrailerUrl() != null && !item.getTrailerUrl().isBlank();
+     watchTrailerButton.setVisible(true);   // always visible
+     watchTrailerButton.setManaged(true);   // ensure layout includes it
+     watchTrailerButton.setDisable(!hasTrailer); // disable if no trailer
         currentItem = item;
         updateAddButton(addToListButton,currentItem);
     }
@@ -267,6 +309,7 @@ public class FeaturedController {
     private void highlightAndShow(Rectangle[] rects, int index) {
         currentIndex = index;
 
+        // --- Indicator animation ---
         ParallelTransition indicatorAnim = new ParallelTransition();
         for (int i = 0; i < rects.length; i++) {
             Rectangle rect = rects[i];
@@ -282,6 +325,7 @@ public class FeaturedController {
         if (latestItems == null || index >= latestItems.size()) return;
         FeaturedItem nextItem = latestItems.get(index);
 
+        // --- Nodes that fade + slide ---
         Node[] contentNodes = {heroTitleImage, heroDescription, heroStars, heroCategories,
                 heroAge, lastEpisodeLabel, seriesStatusLabel, playButton, watchTrailerButton, addToListButton};
 
@@ -293,11 +337,18 @@ public class FeaturedController {
 
         for (Node node : contentNodes) {
             TranslateTransition slideLeft = new TranslateTransition(Duration.millis(700), node);
-            slideLeft.setByX(-200); // slide left while fading
+            slideLeft.setByX(-200);
             FadeTransition fade = new FadeTransition(Duration.millis(700), node);
             fade.setToValue(0);
             fadeOut.getChildren().addAll(slideLeft, fade);
         }
+
+        // --- Slide out typeTag HBox separately (left → right, no fade) ---
+        TranslateTransition typeSlideOut = new TranslateTransition(Duration.millis(700), typeTag);
+        typeSlideOut.setByX(200); // move right
+        typeSlideOut.play();
+
+        fadeOut.play();
 
         fadeOut.setOnFinished(e -> {
             // --- Update content after fade out ---
@@ -307,14 +358,17 @@ public class FeaturedController {
             heroBackground.setOpacity(0);
             for (Node node : contentNodes) {
                 node.setOpacity(0);
-                node.setTranslateX(700); // start from right
+                node.setTranslateX(-700); // <-- slide in from LEFT now
             }
+
+            // typeTag HBox starts left for slide-in
+            typeTag.setTranslateX(200);
 
             // --- Fade in background ---
             FadeTransition bgFadeIn = new FadeTransition(Duration.millis(600), heroBackground);
             bgFadeIn.setToValue(1);
 
-            // --- Slide in text/content from right with fade ---
+            // --- Slide in other content (with fade) ---
             ParallelTransition slideIn = new ParallelTransition();
             for (Node node : contentNodes) {
                 TranslateTransition slide = new TranslateTransition(Duration.millis(600), node);
@@ -324,109 +378,128 @@ public class FeaturedController {
                 slideIn.getChildren().addAll(slide, fade);
             }
 
-           
-            new ParallelTransition(bgFadeIn, slideIn).play();
-        });
+            // --- Slide in typeTag HBox separately (no fade) ---
+            TranslateTransition typeSlideIn = new TranslateTransition(Duration.millis(600), typeTag);
+            typeSlideIn.setToX(0);
 
-        fadeOut.play();
+            // --- Play all together ---
+            new ParallelTransition(bgFadeIn, slideIn, typeSlideIn).play();
+        });
     }
     private void showTrailerPopup(Object item, int seasonIndex) {
-
         String trailerUrl = null;
-        
 
         // 🎬 FILM
         if (item instanceof Film) {
-            Film film = (Film) item;
-            trailerUrl = film.getVideo_url();
-            
+            trailerUrl = ((Film) item).getVideo_url();
         }
-
         // 📺 SERIE → use selected season
         else if (item instanceof Serie) {
             Serie serie = (Serie) item;
-
             if (serie.getSeasons() != null && !serie.getSeasons().isEmpty()) {
-
-                // ✅ secure index
-                if (seasonIndex < 0 || seasonIndex >= serie.getSeasons().size()) {
-                    seasonIndex = 0; // fallback
-                }
-
-                Season season = serie.getSeasons().get(seasonIndex);
-
-                trailerUrl = season.getTrailerUrl();
-                
+                if (seasonIndex < 0 || seasonIndex >= serie.getSeasons().size()) seasonIndex = 0;
+                trailerUrl = serie.getSeasons().get(seasonIndex).getTrailerUrl();
             }
         }
 
-        
-        // --- Get resource URL properly ---
+        if (trailerUrl == null) return;
+
+        // Get resource URL
         URL videoUrl = getClass().getResource(trailerUrl);
         if (videoUrl == null) {
             System.out.println("Video file not found: " + trailerUrl);
             return;
         }
-      
-        String videoPath;
-        try {
-            if (trailerUrl.startsWith("http://") || trailerUrl.startsWith("https://")) {
-                videoPath = trailerUrl; // use directly for web URLs
-            } else {
-              
-                URL resourceUrl = getClass().getResource(trailerUrl);
-                if (resourceUrl == null) {
-                    System.out.println("Video file not found: " + trailerUrl);
-                    videoPath = null;
-                } else {
-                    videoPath = resourceUrl.toExternalForm();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("Error loading video: " + ex.getMessage());
-            videoPath = null;
-        }
+
+        String videoPath = trailerUrl.startsWith("http") ? trailerUrl : videoUrl.toExternalForm();
+
         WebView webView = new WebView();
-        webView.setPrefSize(800, 500);
+        webView.setPrefSize(1500, 700);
 
         String html =
             "<html><body style='margin:0; background:black;'>" +
-            "<video width='100%' height='100%' controls autoplay>" +
+            "<video width='100%' height='100%' controls>" +
             "<source src='" + videoPath + "' type='video/mp4'>" +
             "Your browser does not support the video tag." +
             "</video></body></html>";
 
         webView.getEngine().loadContent(html);
 
+        // Screen bounds
+        Rectangle2D screenBounds = Screen.getPrimary().getBounds();
+        double fullWidth = screenBounds.getWidth();
+        double fullHeight = screenBounds.getHeight();
+        double smallWidth = 1200;
+        double smallHeight = 600;
+
         Stage popup = new Stage();
         popup.initOwner(rootPane.getScene().getWindow());
         popup.initModality(Modality.WINDOW_MODAL);
-        popup.setTitle("Trailer - " + currentItem.getTitle());
+        popup.setTitle("Trailer");
         popup.initStyle(StageStyle.TRANSPARENT);
+
+        // Start fullscreen
+        popup.setWidth(fullWidth);
+        popup.setHeight(fullHeight);
+        popup.setX(0);
+        popup.setY(0);
 
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: rgba(0,0,0,0.85);");
 
         VBox layout = new VBox(15);
         layout.setStyle("-fx-background-color: rgba(0,0,0,0.2); -fx-background-radius:15; -fx-padding:15; -fx-alignment:center;");
-        layout.setPrefSize(900, 600);
+        layout.setPrefSize(fullWidth, fullHeight);
 
+        // Resize button
+        Button toggleSize = new Button("🗗");
+        toggleSize.setStyle("-fx-background-color:#008cff;-fx-text-fill:white;-fx-font-weight:bold;-fx-background-radius:50%;-fx-padding:5 8;");
+        addHoverAnimation(toggleSize);
+
+        // Exit button
         Button exitButton = new Button("✕");
         exitButton.setStyle("-fx-background-color:#008cff;-fx-text-fill:white;-fx-font-weight:bold;-fx-background-radius:50%;-fx-padding:5 8;");
         exitButton.setOnAction(e -> popup.close());
         addHoverAnimation(exitButton);
-        HBox topBar = new HBox(exitButton);
+
+        final boolean[] isFullScreen = {true};
+
+        toggleSize.setOnAction(e -> {
+            if (isFullScreen[0]) {
+                // SMALL MODE centered
+                popup.setWidth(smallWidth);
+                popup.setHeight(smallHeight);
+                popup.setX((screenBounds.getWidth() - smallWidth) / 2);
+                popup.setY((screenBounds.getHeight() - smallHeight) / 2);
+                layout.setPrefSize(smallWidth, smallHeight);
+                isFullScreen[0] = false;
+            } else {
+                // FULLSCREEN mode (cover full screen)
+                popup.setWidth(fullWidth);
+                popup.setHeight(fullHeight);
+                popup.setX(0);
+                popup.setY(0);
+                layout.setPrefSize(fullWidth, fullHeight);
+                isFullScreen[0] = true;
+            }
+        });
+
+        // Top bar
+        HBox topBar = new HBox(10, toggleSize, exitButton);
         topBar.setAlignment(Pos.TOP_RIGHT);
+        topBar.setPadding(new Insets(10));
+        topBar.setPickOnBounds(false); // Fix click issue
+
         layout.getChildren().addAll(topBar, webView);
         root.getChildren().add(layout);
 
         Scene scene = new Scene(root);
         scene.setFill(Color.TRANSPARENT);
-
         popup.setScene(scene);
+
         popup.setOnHidden(e -> {
             webView.getEngine().load(null); // stop video
-            if (autoSlide != null) autoSlide.play(); // resume carousel
+            if (autoSlide != null) autoSlide.play();
         });
 
         popup.showAndWait();
@@ -446,16 +519,24 @@ public class FeaturedController {
         if (videoUrl == null) return;
 
         WebView webView = new WebView();
-        webView.setPrefSize(800, 500);
+        webView.setPrefSize(1500, 700);
 
+        // Video HTML with controls (autoplay optional)
         String html =
             "<html><body style='margin:0; background:black;'>" +
-            "<video width='100%' height='100%' controls autoplay>" +
+            "<video width='100%' height='100%' controls>" +
             "<source src='" + videoUrl.toExternalForm() + "' type='video/mp4'>" +
             "Your browser does not support the video tag." +
             "</video></body></html>";
 
         webView.getEngine().loadContent(html);
+
+        // Screen bounds
+        Rectangle2D screenBounds = Screen.getPrimary().getBounds();
+        double fullWidth = screenBounds.getWidth();
+        double fullHeight = screenBounds.getHeight();
+        double smallWidth = 1200;
+        double smallHeight = 600;
 
         Stage popup = new Stage();
         popup.initOwner(rootPane.getScene().getWindow());
@@ -463,25 +544,62 @@ public class FeaturedController {
         popup.setTitle("Trailer - " + currentItem.getTitle());
         popup.initStyle(StageStyle.TRANSPARENT);
 
+        // Start fullscreen (cover whole screen)
+        popup.setWidth(fullWidth);
+        popup.setHeight(fullHeight);
+        popup.setX(0);
+        popup.setY(0);
+
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: rgba(0,0,0,0.85);");
 
         VBox layout = new VBox(15);
         layout.setStyle("-fx-background-color: rgba(0,0,0,0.2); -fx-background-radius:15; -fx-padding:15; -fx-alignment:center;");
-        layout.setPrefSize(900, 600);
+        layout.setPrefSize(fullWidth, fullHeight);
 
+        // Resize button
+        Button toggleSize = new Button("🗗");
+        toggleSize.setStyle("-fx-background-color:#008cff;-fx-text-fill:white;-fx-font-weight:bold;-fx-background-radius:50%;-fx-padding:5 8;");
+        addHoverAnimation(toggleSize);
+
+        // Exit button
         Button exitButton = new Button("✕");
         exitButton.setStyle("-fx-background-color:#008cff;-fx-text-fill:white;-fx-font-weight:bold;-fx-background-radius:50%;-fx-padding:5 8;");
         exitButton.setOnAction(e -> popup.close());
         addHoverAnimation(exitButton);
-        HBox topBar = new HBox(exitButton);
-        topBar.setAlignment(Pos.TOP_RIGHT);
 
-        
+        final boolean[] isFullScreen = {true};
+
+        toggleSize.setOnAction(e -> {
+            if (isFullScreen[0]) {
+                // SMALL MODE centered
+                popup.setWidth(smallWidth);
+                popup.setHeight(smallHeight);
+                popup.setX((screenBounds.getWidth() - smallWidth) / 2);
+                popup.setY((screenBounds.getHeight() - smallHeight) / 2);
+                layout.setPrefSize(smallWidth, smallHeight);
+                isFullScreen[0] = false;
+            } else {
+                // FULLSCREEN mode (cover full screen)
+                popup.setWidth(fullWidth);
+                popup.setHeight(fullHeight);
+                popup.setX(0);
+                popup.setY(0);
+                layout.setPrefSize(fullWidth, fullHeight);
+                isFullScreen[0] = true;
+            }
+        });
+
+        // Top bar with buttons
+        HBox topBar = new HBox(10, toggleSize, exitButton);
+        topBar.setAlignment(Pos.TOP_RIGHT);
+        topBar.setPadding(new Insets(10));
+        topBar.setPickOnBounds(false); // Important for click
+
+        // Add to list button
         Button addToList = new Button("➕ My List");
         addToList.setStyle("-fx-background-color:transparent;-fx-border-color:#00aaff;-fx-border-width:2;-fx-text-fill:#00aaff;-fx-font-size:16;-fx-padding:6 20;-fx-background-radius:4;");
 
-        // --- Add hover "pump" effect to popup buttons ---
         Button[] popupButtons = {addToList};
         for (Button btn : popupButtons) {
             btn.setOnMouseEntered(e -> {
@@ -497,15 +615,12 @@ public class FeaturedController {
                 st.play();
             });
         }
-     // Initialize popup "Add to List" button state
-        updateAddButton(addToList, currentItem);
 
-        // Handle click
+        updateAddButton(addToList, currentItem);
         addToList.setOnAction(e -> {
             int userId = Session.getUserId();
             int filmId = currentItem.getType().equalsIgnoreCase("film") ? currentItem.getId() : 0;
             int serieId = currentItem.getType().equalsIgnoreCase("serie") ? currentItem.getSerieId() : 0;
-
             boolean alreadyAdded = myListService.isInList(userId, filmId, serieId);
 
             if (alreadyAdded) {
@@ -514,9 +629,8 @@ public class FeaturedController {
                 myListService.addItem(userId, filmId, serieId);
             }
 
-            // Update both popup and main button
             updateAddButton(addToList, currentItem);
-            updateAddButton(addToListButton,this.currentItem);
+            updateAddButton(addToListButton, this.currentItem);
         });
 
         HBox buttons = new HBox(10, addToList);
@@ -527,11 +641,11 @@ public class FeaturedController {
 
         Scene scene = new Scene(root);
         scene.setFill(Color.TRANSPARENT);
-
         popup.setScene(scene);
+
         popup.setOnHidden(e -> {
             webView.getEngine().load(null); // stop video
-            if (autoSlide != null) autoSlide.play(); // resume carousel
+            if (autoSlide != null) autoSlide.play();
         });
 
         popup.showAndWait();
@@ -685,7 +799,53 @@ public class FeaturedController {
                         }
                     });
                 }
+             // Status label
+                Label statusLabel = new Label("NOT_STARTED"); // initial status
+                statusLabel.setStyle(
+                    "-fx-background-color: #008cff;" + // blue background
+                    "-fx-text-fill: white;" +          // white text
+                    "-fx-font-size: 14;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-padding: 4 10 4 10;" +        // top/right/bottom/left
+                    "-fx-background-radius: 20;" +     // rounded pill shape
+                    "-fx-border-radius: 20;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4,0,0,2);" // subtle shadow
+                );
+                // Load current status
+                WatchStatus currentStatus = filmProgressService.getFilmStatus(Session.getUserId(), film.getFilm_id());
+                statusLabel.setText(currentStatus.toString());
 
+                // Optionally, change color depending on status
+                switch (currentStatus) {
+                    case NOT_STARTED -> statusLabel.setStyle(statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color: #888888;"));
+                    case IN_PROGRESS -> statusLabel.setStyle(statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color:  #008cff;"));
+                    case COMPLETED -> statusLabel.setStyle(statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color:  #008cff;"));
+                }
+                // Add status label under the film info
+                right.getChildren().add(statusLabel);
+
+                // Play button action
+                play.setOnAction(e -> {
+                    int lastPosition = 0; // replace with actual current position if you track time
+
+                    if (lastPosition >= film.getDuration()) {
+                        // Film completed
+                        filmProgressService.markCompleted(Session.getUserId(), film.getFilm_id(), (int)film.getDuration());
+                        statusLabel.setText("COMPLETED");
+                        statusLabel.setStyle(
+                            statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color: #008cff;")
+                        );
+                    } else {
+                        // Film in progress
+                        filmProgressService.markInProgress(Session.getUserId(), film.getFilm_id(), lastPosition);
+                        statusLabel.setText("IN_PROGRESS");
+                        statusLabel.setStyle(
+                            statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color: #008cff;")
+                        );
+                    }
+
+                    goToLecturePageFilm(film.getFilm_id()); // start playback
+                });
                 root.getChildren().add(content);
                 FadeTransition fade = new FadeTransition(Duration.millis(400), root);
                 fade.setFromValue(0); fade.setToValue(1); fade.play();
@@ -700,7 +860,6 @@ public class FeaturedController {
         popup.setScene(scene);
         popup.showAndWait();
     }
-  
         public void showSeriePopup(FeaturedItem item) {
             if (item == null || !"serie".equalsIgnoreCase(item.getType())) return;
 
@@ -949,12 +1108,13 @@ public class FeaturedController {
         StackPane contentWrapper = new StackPane();
         contentWrapper.setPrefSize(700, 500);
         card.getChildren().add(contentWrapper);
-       
+
         // ================= MAIN SEASON VIEW =================
         HBox content = new HBox(20);
         content.setPadding(new Insets(15));
-        content.setAlignment(Pos.CENTER); 
-        StackPane.setAlignment(content, Pos.CENTER); 
+        content.setAlignment(Pos.CENTER);
+        StackPane.setAlignment(content, Pos.CENTER);
+
         ImageView poster = new ImageView();
         poster.setFitWidth(250);
         poster.setFitHeight(350);
@@ -962,12 +1122,15 @@ public class FeaturedController {
 
         VBox infoBox = new VBox(10);
         infoBox.setAlignment(Pos.CENTER);
+
         Label title = new Label("Season " + s.getSeasonNum() + ": " + s.getTitle());
         title.setStyle("-fx-text-fill:white;-fx-font-size:18;-fx-font-weight:bold;");
+
         Label synopsis = new Label(s.getSynopsis() != null ? s.getSynopsis() : "No synopsis available");
         synopsis.setWrapText(true);
         synopsis.setMaxWidth(350);
         synopsis.setStyle("-fx-text-fill:#ccc;-fx-font-size:16;");
+
         Label status = new Label("Status: " + (s.getStatus() != null ? s.getStatus() : "Unknown") +
                 " | Episodes: " + (s.getEpisodes() != null ? s.getEpisodes().size() : 0));
         status.setStyle("-fx-text-fill:#00aaff;");
@@ -981,9 +1144,8 @@ public class FeaturedController {
             starsBox.getChildren().add(star);
         }
 
-        // Buttons
+        // Buttons for trailer and episodes
         Button trailerBtn = new Button("▶ Watch Trailer");
-       
         Button episodesBtn = new Button("Episodes");
         trailerBtn.setFocusTraversable(false);
         episodesBtn.setFocusTraversable(false);
@@ -991,6 +1153,7 @@ public class FeaturedController {
         styleModernButton(episodesBtn);
         addHoverAnimation(trailerBtn);
         addHoverAnimation(episodesBtn);
+
         HBox buttonsBox = new HBox(10, trailerBtn, episodesBtn);
         infoBox.getChildren().addAll(title, synopsis, status, starsBox, buttonsBox);
         content.getChildren().addAll(poster, infoBox);
@@ -1005,7 +1168,7 @@ public class FeaturedController {
         addHoverAnimation(backBtn);
 
         HBox episodesRow = new HBox(8);
-        episodesRow.setPadding(new Insets(10,0,10,0));
+        episodesRow.setPadding(new Insets(10, 0, 10, 0));
 
         // ================= EPISODE DETAILS =================
         VBox episodeDetails = new VBox(20);
@@ -1049,7 +1212,7 @@ public class FeaturedController {
             "-fx-font-size: 28;" +
             "-fx-padding: 0;"
         );
-       
+
         StackPane coverStack = new StackPane(cover, play);
         coverStack.setAlignment(Pos.CENTER);
 
@@ -1066,48 +1229,261 @@ public class FeaturedController {
         coverStack.setOnMouseExited(e -> hoverDown.playFromStart());
         episodeDetails.getChildren().addAll(infoBoxs, coverStack);
 
-        // ================= EPISODE BUTTONS =================
-        for (Episode ep : s.getEpisodes()) {
-            Button epBtn = new Button("" + ep.getNumEpisode());
-            epBtn.setPrefSize(40, 40);
-            epBtn.setFocusTraversable(false);
-            styleModernButton(epBtn);
-            addHoverAnimation(epBtn);
+        int userId = Session.getUserId();
+        Map<Integer, WatchStatus> progressMap = episodeProgressService.loadUserProgress(userId);
 
-            epBtn.setOnAction(ev -> {
+        ScrollPane episodesScroll = new ScrollPane();
+        episodesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        episodesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER); // hide default scrollbar
+        episodesScroll.setFitToWidth(true);
+        episodesScroll.setPrefHeight(400);
+        episodesScroll.setStyle("-fx-background-color: #111; -fx-background-insets: 0; -fx-padding: 0;");
+
+        VBox episodesList = new VBox(5);
+        episodesList.setPadding(new Insets(5));
+        episodesScroll.setContent(episodesList);
+
+        for (Episode ep : s.getEpisodes()) {
+            HBox epRow = new HBox(10);
+            epRow.setAlignment(Pos.CENTER_LEFT);
+            epRow.setPadding(new Insets(10));
+            epRow.setStyle(
+                "-fx-background-color: #1b1b1b;" +
+                "-fx-background-radius: 8;"
+            );
+
+            // Pump effect on hover
+            ScaleTransition hoverUpRow = new ScaleTransition(Duration.millis(150), epRow);
+            hoverUpRow.setToX(1.03);
+            hoverUpRow.setToY(1.03);
+            ScaleTransition hoverDownRow = new ScaleTransition(Duration.millis(150), epRow);
+            hoverDownRow.setToX(1.0);
+            hoverDownRow.setToY(1.0);
+            epRow.setOnMouseEntered(e -> hoverUpRow.playFromStart());
+            epRow.setOnMouseExited(e -> hoverDownRow.playFromStart());
+
+            // Episode number
+            Label epNum = new Label(String.valueOf(ep.getNumEpisode()));
+            epNum.setPrefWidth(30);
+            epNum.setStyle("-fx-text-fill:white;-fx-font-weight:bold;");
+
+            // Episode title
+            Label epName = new Label(ep.getTitle());
+            epName.setStyle("-fx-text-fill:white;-fx-font-size:14;");
+
+            // Episode rating stars
+            int rating = (int) Math.round(ep.getRating());
+
+            HBox ratingBox = new HBox(2);
+            for (int i = 0; i < 5; i++) {
+                Label star = new Label("★");
+                star.setStyle("-fx-font-size:12;");
+                star.setTextFill(i < rating ? Color.DEEPSKYBLUE : Color.GRAY);
+                ratingBox.getChildren().add(star);
+            }
+
+            // Spacer for status
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            // Status label
+            WatchStatus statu = progressMap.getOrDefault(ep.getEpId(), WatchStatus.NOT_STARTED);
+            Label epStatus = new Label();
+            epStatus.setText(switch (statu) {
+                case NOT_STARTED -> "Not Started";
+                case IN_PROGRESS -> "In Progress";
+                case COMPLETED -> "Watched";
+            });
+            epStatus.setStyle(
+                "-fx-background-color: " + (statu == WatchStatus.NOT_STARTED ? "#555" : "#00aaff") + ";" +
+                "-fx-text-fill: white;" +
+                "-fx-font-weight: bold;" +
+                "-fx-font-size: 12px;" +
+                "-fx-background-radius: 8;" +
+                "-fx-padding: 2 8;"
+            );
+
+            // Click episode
+            epRow.setOnMouseClicked(ev -> {
                 try { cover.setImage(new Image(ep.getCovertUrl())); } catch (Exception ignored) {}
+
                 epTitle.setText("Episode " + ep.getNumEpisode() + ": " + ep.getTitle());
                 epSynopsis.setText(ep.getResume());
                 int h = ep.getDuration() / 60;
                 int m = ep.getDuration() % 60;
                 epDuration.setText("Duration: " + (h > 0 ? h + "h " : "") + m + "m");
-                epRelease.setText("Released: " + 
-                    (ep.getReleasedAt() != null ? ep.getReleasedAt().toLocalDateTime().toLocalDate() : "Unknown"));
+                epRelease.setText("Released: " +
+                        (ep.getReleasedAt() != null ? ep.getReleasedAt().toLocalDateTime().toLocalDate() : "Unknown"));
+
+                // Status tag in details
+                Label statusTag = new Label(epStatus.getText());
+                statusTag.setStyle(
+                    "-fx-background-color: " + (epStatus.getText().equals("Not Started") ? "#555" : "#00aaff") + ";" +
+                    "-fx-text-fill:white;-fx-font-weight:bold;" +
+                    "-fx-font-size:12;" +
+                    "-fx-background-radius:8;" +
+                    "-fx-padding:2 6;"
+                );
+
+                HBox titleBox = new HBox(10, epTitle, statusTag);
+                titleBox.setAlignment(Pos.CENTER_LEFT);
+                HBox.setHgrow(statusTag, Priority.ALWAYS);
+
+                infoBoxs.getChildren().setAll(backToEpisodes, titleBox, epSynopsis, epDuration, epRelease);
                 contentWrapper.getChildren().setAll(episodeDetails);
+
+                // Play button updates status dynamically
                 play.setOnAction(e -> {
-                    // optional
-                   goToLecturePageEpisode(s.getSerieId(),s.getSeasonNum(),ep.getNumEpisode()); // <-- method to open lecture page
-               });
+                    goToLecturePageEpisode(s.getSerieId(), s.getSeasonNum(), ep.getNumEpisode());
+                    episodeProgressService.markInProgress(userId, ep.getEpId(), 0);
+
+                    epStatus.setText("In Progress");
+                    epStatus.setStyle(
+                        "-fx-background-color:#00aaff;" +
+                        "-fx-text-fill:white;" +
+                        "-fx-font-weight:bold;" +
+                        "-fx-font-size:12;" +
+                        "-fx-background-radius:8;" +
+                        "-fx-padding:2 8;"
+                    );
+                });
             });
 
-            episodesRow.getChildren().add(epBtn);
+            epRow.getChildren().addAll(epNum, epName, ratingBox, spacer, epStatus);
+            episodesList.getChildren().add(epRow);
         }
 
-        episodesView.getChildren().addAll(backBtn, episodesRow);
+        
+        episodesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        episodesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        episodesScroll.setFitToWidth(true);
 
+        episodesScroll.setContent(episodesList);
+
+        // Custom scrollbar
+        ScrollBar customScrollBar = new ScrollBar();
+        customScrollBar.setOrientation(Orientation.VERTICAL);
+        customScrollBar.setMin(0);
+        customScrollBar.setMax(1);
+        customScrollBar.setPrefWidth(8); // thin modern bar
+        // Sync
+        customScrollBar.valueProperty().bindBidirectional(episodesScroll.vvalueProperty());
+        customScrollBar.setStyle("""
+        	    -fx-background-color: transparent;
+        	""");
+
+        	customScrollBar.lookupAll(".thumb").forEach(node -> {
+        	    node.setStyle("""
+        	        -fx-background-color: rgba(0,170,255,0.6);
+        	        -fx-background-radius: 10;
+        	    """);
+        	});
+
+        	customScrollBar.lookupAll(".track").forEach(node -> {
+        	    node.setStyle("""
+        	        -fx-background-color: rgba(255,255,255,0.05);
+        	        -fx-background-radius: 10;
+        	    """);
+        	});
+        	episodesScroll.viewportBoundsProperty().addListener((obs, oldVal, newVal) -> updateThumbSize(episodesScroll, customScrollBar));
+        	episodesScroll.contentProperty().addListener((obs, oldVal, newVal) -> updateThumbSize(episodesScroll, customScrollBar));
+        	episodesScroll.setOnScroll(e -> {
+        	    double delta = e.getDeltaY() * 0.002;
+        	    episodesScroll.setVvalue(episodesScroll.getVvalue() - delta);
+        	});
+        	Platform.runLater(() -> {
+        	    Node thumb = customScrollBar.lookup(".thumb");
+        	    Node track = customScrollBar.lookup(".track");
+
+        	    if (thumb != null) {
+        	        thumb.setStyle("""
+        	            -fx-background-color: linear-gradient(to bottom, #00aaff, #008cff);
+        	            -fx-background-radius: 10;
+        	        """);
+        	    }
+
+        	    if (track != null) {
+        	        track.setStyle("""
+        	            -fx-background-color: rgba(255,255,255,0.05);
+        	            -fx-background-radius: 10;
+        	        """);
+        	    }
+        	});
+        	customScrollBar.setStyle("""
+        		    -fx-background-color: transparent; /* track background */
+        		    -fx-padding: 0;
+        		""");
+
+        		// Thumb & track via CSS pseudoclass
+        		customScrollBar.getStylesheets().add(getClass().getResource("/view/css/scrollbar.css").toExternalForm());
+        	Platform.runLater(() -> {
+        		updateThumbSize(episodesScroll, customScrollBar);
+        	    autoHideScrollbar(episodesScroll, customScrollBar);
+        	});
+        	
+        	// Layout
+        HBox scrollContainer = new HBox(5, episodesScroll, customScrollBar);
+        HBox.setHgrow(episodesScroll, Priority.ALWAYS);
+        // Replace original content with scrollContainer
+        contentWrapper.getChildren().setAll(scrollContainer);
+        episodesView.getChildren().addAll(backBtn, scrollContainer);
         // ================= ACTIONS =================
-     // Set trailer button action
-        trailerBtn.setOnAction(e -> {
-            // Pass the serie and seasonIndex
-            showTrailerPopup(serie, seasonIndex);
-        });
+        trailerBtn.setOnAction(e -> showTrailerPopup(serie, seasonIndex));
         episodesBtn.setOnAction(e -> contentWrapper.getChildren().setAll(episodesView));
         backBtn.setOnAction(e -> contentWrapper.getChildren().setAll(content));
         backToEpisodes.setOnAction(e -> contentWrapper.getChildren().setAll(episodesView));
 
-       
         contentWrapper.getChildren().setAll(content);
         return card;
+    }
+    private void autoHideScrollbar(ScrollPane scrollPane, ScrollBar scrollBar) {
+        Node content = scrollPane.getContent();
+        if (content == null) return;
+
+        Runnable check = () -> {
+            double contentHeight = content.getLayoutBounds().getHeight();
+            double viewportHeight = scrollPane.getViewportBounds().getHeight();
+
+            boolean needScroll = contentHeight > viewportHeight + 1;
+
+            scrollBar.setVisible(needScroll);
+            scrollBar.setManaged(needScroll);
+        };
+
+        content.layoutBoundsProperty().addListener((obs, o, n) -> check.run());
+        scrollPane.viewportBoundsProperty().addListener((obs, o, n) -> check.run());
+
+        Platform.runLater(check);
+    }
+    private void updateThumbSize(ScrollPane scrollPane, ScrollBar scrollBar) {
+    	Node content = scrollPane.getContent();
+        if (content == null) return;
+
+        content.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
+            double contentHeight = newBounds.getHeight();
+            double viewportHeight = scrollPane.getViewportBounds().getHeight();
+
+            if (contentHeight <= 0) return;
+
+            double ratio = viewportHeight / contentHeight;
+
+            // clamp
+            ratio = Math.max(0.05, Math.min(ratio, 1.0));
+
+            scrollBar.setVisibleAmount(ratio);
+        });
+
+        scrollPane.viewportBoundsProperty().addListener((obs, oldVal, newVal) -> {
+            double contentHeight = content.getLayoutBounds().getHeight();
+            double viewportHeight = newVal.getHeight();
+
+            if (contentHeight <= 0) return;
+
+            double ratio = viewportHeight / contentHeight;
+            ratio = Math.max(0.05, Math.min(ratio, 1.0));
+
+            scrollBar.setVisibleAmount(ratio);
+        });
     }
     private void styleModernButton(Button btn) {
         btn.setStyle(

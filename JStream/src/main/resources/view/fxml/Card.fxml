@@ -9,10 +9,10 @@
 <?import javafx.scene.paint.Stop?>
 <?import javafx.scene.shape.Rectangle?>
 
-<StackPane fx:id="rootPane" prefHeight="260" prefWidth="180" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.CardController">
+<StackPane fx:id="rootPane" stylesheets="@/view/css/scrollbar.css" prefHeight="260" prefWidth="180" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.CardController">
 
     <!-- Poster -->
-    <ImageView fx:id="poster" fitHeight="260" fitWidth="180" mouseTransparent="true" preserveRatio="false" style="-fx-cursor: hand;" />
+    <ImageView fx:id="poster" fitHeight="280" fitWidth="180" mouseTransparent="true" preserveRatio="false" style="-fx-cursor: hand;" />
 
     <!-- Gradient overlay -->
     <Rectangle height="260" mouseTransparent="true" strokeType="OUTSIDE" width="180">

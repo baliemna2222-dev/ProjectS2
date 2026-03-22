@@ -26,17 +26,38 @@
                 <HBox fx:id="heroStars" spacing="3" style="-fx-effect:dropshadow(gaussian,#00aaff,10,0,0,0);" />
                 <Label fx:id="heroCategories" style="-fx-text-fill:white;-fx-font-size:14;-fx-font-weight:bold;-fx-padding:2 3;" />
                 <Label fx:id="heroAge" style="-fx-background-color:#ff0033;-fx-text-fill:white;-fx-font-weight:bold;-fx-padding:2 3;-fx-background-radius:2;-fx-effect:dropshadow(gaussian,#ff0033,5,0.3,0,0);" />
-            	 <Label fx:id="lastEpisodeLabel" text="S3:E7" 
-               style="-fx-background-color:#ff0033; -fx-text-fill:white; -fx-font-weight:bold;
-                      -fx-padding:2 6; -fx-background-radius:2; -fx-effect:dropshadow(gaussian,#ff0033,5,0.3,0,0);" />
-        <Label fx:id="seriesStatusLabel" text="Ongoing" 
-               style="-fx-background-color:#ff0033; -fx-text-fill:white; -fx-font-weight:bold;
-                      -fx-padding:2 6; -fx-background-radius:2; -fx-effect:dropshadow(gaussian,#ff0033,5,0.3,0,0);" />
+            	 <Label fx:id="lastEpisodeLabel" style="-fx-background-color:#ff0033; -fx-text-fill:white; -fx-font-weight:bold;                       -fx-padding:2 6; -fx-background-radius:2; -fx-effect:dropshadow(gaussian,#ff0033,5,0.3,0,0);" text="S3:E7" />
+        <Label fx:id="seriesStatusLabel" style="-fx-background-color:#ff0033; -fx-text-fill:white; -fx-font-weight:bold;                       -fx-padding:2 6; -fx-background-radius:2; -fx-effect:dropshadow(gaussian,#ff0033,5,0.3,0,0);" text="Ongoing" />
  
             </HBox>
 
             <Label fx:id="heroDescription" maxWidth="600" style="-fx-text-fill:white;-fx-font-size:16;-fx-padding:2 3;" wrapText="true" />
         </VBox>
+  <HBox fx:id="typeTag" alignment="BOTTOM_RIGHT" prefHeight="80.0" prefWidth="50.0">
+
+     <children>
+
+        <!-- ⚪ Thin vertical line (NOT glowing too much) -->
+        <Rectangle fx:id="typeLine" fill="white" height="40.0" opacity="0.8" width="3.0">
+            <HBox.margin>
+               <Insets />
+            </HBox.margin></Rectangle>
+
+        <!-- ⚪ Clean text -->
+        <Label fx:id="typeLabel" prefHeight="42.0" prefWidth="120.0" style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: normal; -fx-background-color: rgba(0,0,0,0.5);" text="    TV-MA" textAlignment="CENTER">
+            <opaqueInsets>
+               <Insets left="0.0" />
+            </opaqueInsets>
+            <HBox.margin>
+               <Insets />
+            </HBox.margin></Label>
+
+    </children>
+
+    <padding>
+        <Insets bottom="100.0" right="0.0" />
+    </padding>
+</HBox>
 
          
 

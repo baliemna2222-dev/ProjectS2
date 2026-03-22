@@ -32,7 +32,7 @@ public class LecturePageController {
         try {
             Film film = new FeaturedService().getFilmDetails(filmId);
             titleLabel.setText(film.getTitle());
-            posterImage.setImage(new Image(film.getPoster_url()));
+           
             descriptionLabel.setText(film.getSynopsis());
             durationLabel.setText(film.getDuration() + " min");
             categoriesLabel.setText(film.getCasting());
@@ -49,7 +49,7 @@ public class LecturePageController {
             Episode ep = findEpisodeInSerie(serie, seasonNum, episodeNum);
 
             titleLabel.setText(ep.getTitle() + " (" + serie.getTitle() + ")");
-            posterImage.setImage(new Image(ep.getCovertUrl()));
+            
             descriptionLabel.setText(ep.getResume());
             durationLabel.setText(ep.getDuration() + " min");
             episodeInfoLabel.setText("Season " + ep.getSeasonId() + " - Episode " + ep.getNumEpisode());

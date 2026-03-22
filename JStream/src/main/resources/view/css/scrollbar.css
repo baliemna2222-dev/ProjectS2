@@ -1,3 +1,24 @@
+.custom-scroll-pane {
+    -fx-background-color: transparent;
+}
+
+/* vertical scrollbar */
+.custom-scroll-pane .scroll-bar:vertical {
+    -fx-background-color: #121212;
+    -fx-pref-width: 10px;
+}
+
+/* thumb */
+.custom-scroll-pane .scroll-bar .thumb {
+    -fx-background-color: #00aaff;
+    -fx-background-radius: 10;
+}
+
+/* hover */
+.custom-scroll-pane .scroll-bar .thumb:hover {
+    -fx-background-color: #38bdf8;
+}
+
 /* Scrollbar track (background) */
 .scroll-bar:vertical,
 /* Hide increment/decrement buttons (top/bottom arrows) */
