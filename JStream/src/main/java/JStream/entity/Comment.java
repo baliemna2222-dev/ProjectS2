@@ -14,7 +14,6 @@ public class Comment {
 	public Comment() {}
 	public Comment(int comment_id, int userID, int filmID, int serieID, String content, boolean flagged,
 			Timestamp creates_at, Timestamp updated_at) {
-		super();
 		this.comment_id = comment_id;
 		this.userID = userID;
 		this.filmID = filmID;
