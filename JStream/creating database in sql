@@ -1,466 +1,254 @@
--- ================================================================
---   J-STREAM  –  database.sql
---   Projet : CPI-2 Java Avancé / JavaFX
---   Base   : jstreamdb
---   Tables : 12  (category, users, film, film_category,
---                 serie, serie_category, season, episode,
---                 rating, comment, watchlist, history)
---
---   HOW TO RUN :
---     mysql -u root -p < database.sql
---   OR open in phpMyAdmin / MySQL Workbench and execute.
--- ================================================================
+-- ============================================================
+-- JStream Database Script
+-- ============================================================
 
-DROP DATABASE IF EXISTS jstreamdb;
-CREATE DATABASE jstreamdb
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-USE jstreamdb;
+CREATE DATABASE IF NOT EXISTS jstream CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE jstream;
 
--- ----------------------------------------------------------------
--- Disable FK checks during creation to avoid ordering issues
--- ----------------------------------------------------------------
-SET FOREIGN_KEY_CHECKS = 0;
+-- ============================================================
+-- TABLE: users
+-- ============================================================
+CREATE TABLE IF NOT EXISTS users (
+    user_id     INT AUTO_INCREMENT PRIMARY KEY,
+    username    VARCHAR(100)        NOT NULL,
+    email       VARCHAR(150)        NOT NULL UNIQUE,
+    password    VARCHAR(255)        NOT NULL,   -- BCrypt hash
+    role        ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER',
+    created_at  TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
--- ================================================================
--- TABLE 1 : category
--- ================================================================
-CREATE TABLE category (
-    category_id  INT          AUTO_INCREMENT PRIMARY KEY,
+-- ============================================================
+-- TABLE: categories
+-- ============================================================
+CREATE TABLE IF NOT EXISTS categories (
+    category_id  INT AUTO_INCREMENT PRIMARY KEY,
     name         VARCHAR(100) NOT NULL UNIQUE,
     description  TEXT,
-    created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ================================================================
--- TABLE 2 : users
--- ================================================================
-CREATE TABLE users (
-    id        INT          AUTO_INCREMENT PRIMARY KEY,
-    username  VARCHAR(100) NOT NULL UNIQUE,
-    email     VARCHAR(150) NOT NULL UNIQUE,
-    password  VARCHAR(255) NOT NULL,          -- BCrypt hash, NEVER plain text
-    role      ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER'
+-- ============================================================
+-- TABLE: films
+-- ============================================================
+CREATE TABLE IF NOT EXISTS films (
+    film_id         INT AUTO_INCREMENT PRIMARY KEY,
+    title           VARCHAR(255)    NOT NULL,
+    synopsis        TEXT,
+    casting         TEXT,
+    video_url       VARCHAR(500),
+    image_url       VARCHAR(500),
+    title_image_url VARCHAR(500),
+    poster_url      VARCHAR(500),
+    release_date    DATETIME,
+    updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    duration        DOUBLE          NOT NULL DEFAULT 0,
+    age_rating      VARCHAR(10),
+    rating          INT             NOT NULL DEFAULT 0
 );
 
--- ================================================================
--- TABLE 3 : film
--- ================================================================
-CREATE TABLE film (
-    film_id          INT          AUTO_INCREMENT PRIMARY KEY,
-    title            VARCHAR(255) NOT NULL,
-    synopsis         TEXT,
-    casting          TEXT,
-    video_url        VARCHAR(500) NOT NULL,
-    image_url        VARCHAR(500),
-    title_image_url  VARCHAR(500),
-    poster_url       VARCHAR(500),
-    release_date     DATE,
-    updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    duration         DOUBLE,                  -- minutes
-    age_rating       VARCHAR(10),             -- "PG-13" | "16+" | "18+"
-    rating           INT          DEFAULT 0,
-    view_count       INT          NOT NULL DEFAULT 0
-);
-
--- ================================================================
--- TABLE 4 : film_category   (Film ←→ Category  many-to-many)
--- ================================================================
-CREATE TABLE film_category (
+-- ============================================================
+-- TABLE: film_categories  (junction)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS film_categories (
     film_id     INT NOT NULL,
     category_id INT NOT NULL,
     PRIMARY KEY (film_id, category_id),
-    CONSTRAINT fk_fc_film     FOREIGN KEY (film_id)     REFERENCES film(film_id)           ON DELETE CASCADE,
-    CONSTRAINT fk_fc_category FOREIGN KEY (category_id) REFERENCES category(category_id)   ON DELETE CASCADE
+    FOREIGN KEY (film_id)     REFERENCES films(film_id)      ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE
 );
 
--- ================================================================
--- TABLE 5 : serie
--- ================================================================
-CREATE TABLE serie (
-    serie_id    INT          AUTO_INCREMENT PRIMARY KEY,
-    title      VARCHAR(255) NOT NULL,
-    synopsis   TEXT,
-    casting    TEXT,
-    covert_url  VARCHAR(500),
-    created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    rating     INT          DEFAULT 0,
-    age_rating VARCHAR(10)
+-- ============================================================
+-- TABLE: series
+-- ============================================================
+CREATE TABLE IF NOT EXISTS series (
+    serie_id        INT AUTO_INCREMENT PRIMARY KEY,
+    title           VARCHAR(255) NOT NULL,
+    synopsis        TEXT,
+    casting         TEXT,
+    image_url       VARCHAR(500),
+    title_image_url VARCHAR(500),
+    poster_url      VARCHAR(500),
+    trailer_url     VARCHAR(500),
+    age_rating      VARCHAR(10),
+    created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ================================================================
--- TABLE 6 : serie_category  (Serie ←→ Category  many-to-many)
--- ================================================================
-CREATE TABLE serie_category (
-    serie_id     INT NOT NULL,
+-- ============================================================
+-- TABLE: serie_categories  (junction)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS serie_categories (
+    serie_id    INT NOT NULL,
     category_id INT NOT NULL,
-    PRIMARY KEY (serie_idd, category_id),
-    CONSTRAINT fk_sc_serie    FOREIGN KEY (serie_id)     REFERENCES serie(serie_id)          ON DELETE CASCADE,
-    CONSTRAINT fk_sc_category FOREIGN KEY (category_id) REFERENCES category(category_id)   ON DELETE CASCADE
+    PRIMARY KEY (serie_id, category_id),
+    FOREIGN KEY (serie_id)    REFERENCES series(serie_id)    ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE
 );
 
--- ================================================================
--- TABLE 7 : season
--- ================================================================
-CREATE TABLE season (
-    season_id         INT          AUTO_INCREMENT PRIMARY KEY,
+-- ============================================================
+-- TABLE: seasons
+-- ============================================================
+CREATE TABLE IF NOT EXISTS seasons (
+    season_id         INT AUTO_INCREMENT PRIMARY KEY,
     serie_id          INT          NOT NULL,
-    season_num        INT          NOT NULL,   -- 1, 2, 3 …
-    title            VARCHAR(255),
-    synopsis         TEXT,
+    season_num        INT          NOT NULL,
+    title             VARCHAR(255),
+    synopsis          TEXT,
     trailer_url       VARCHAR(500),
     poster_url        VARCHAR(500),
-    title_url         VARCHAR(500),            -- logo / title image
+    title_url         VARCHAR(500),
     image_url         VARCHAR(500),
-    created_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    planned_episodes  INT          DEFAULT 0,
-    status           VARCHAR(20)  DEFAULT 'Ongoing',  -- 'Ongoing' | 'Completed'
-    rating           INT          DEFAULT 0,
-    CONSTRAINT fk_season_serie FOREIGN KEY (serie_id) REFERENCES serie(serie_id) ON DELETE CASCADE
+    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    planned_episodes  INT          NOT NULL DEFAULT 0,
+    status            ENUM('Ongoing','Completed') NOT NULL DEFAULT 'Ongoing',
+    rating            INT          NOT NULL DEFAULT 0,
+    FOREIGN KEY (serie_id) REFERENCES series(serie_id) ON DELETE CASCADE,
+    UNIQUE KEY uq_serie_season (serie_id, season_num)
 );
 
--- ================================================================
--- TABLE 8 : episode
--- ================================================================
-CREATE TABLE episode (
-    ep_id        INT          AUTO_INCREMENT PRIMARY KEY,
+-- ============================================================
+-- TABLE: episodes
+-- ============================================================
+CREATE TABLE IF NOT EXISTS episodes (
+    ep_id        INT AUTO_INCREMENT PRIMARY KEY,
     season_id    INT          NOT NULL,
     num_episode  INT          NOT NULL,
-    title       VARCHAR(255) NOT NULL,
-    duration    VARCHAR(20),                  -- ISO-8601 e.g. "PT48M"  →  Java Duration.parse()
-    resume      TEXT,                         -- short synopsis
-    video_url    VARCHAR(500) NOT NULL,
+    title        VARCHAR(255),
+    duration     INT          NOT NULL DEFAULT 0,   -- in seconds
+    resume       TEXT,
+    video_url    VARCHAR(500),
     covert_url   VARCHAR(500),
-    rating      INT          DEFAULT 0,
+    rating       INT          NOT NULL DEFAULT 0,
     created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    released_at  TIMESTAMP    NULL DEFAULT NULL,
-    CONSTRAINT fk_ep_season FOREIGN KEY (season_id) REFERENCES season(season_id) ON DELETE CASCADE
+    released_at  TIMESTAMP    NULL,
+    FOREIGN KEY (season_id) REFERENCES seasons(season_id) ON DELETE CASCADE,
+    UNIQUE KEY uq_season_episode (season_id, num_episode)
 );
 
--- ================================================================
--- TABLE 9 : rating
--- ================================================================
-CREATE TABLE rating (
-    rating_id  INT       AUTO_INCREMENT PRIMARY KEY,
-    user_id     INT       NOT NULL,
-    film_id     INT,
-    serie_id    INT,
-    note       INT       NOT NULL CHECK (note BETWEEN 1 AND 5),
-    creates_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_r_user  FOREIGN KEY (user_id)  REFERENCES users(id)        ON DELETE CASCADE,
-    CONSTRAINT fk_r_film  FOREIGN KEY (film_id)  REFERENCES film(film_id)    ON DELETE CASCADE,
-    CONSTRAINT fk_r_serie FOREIGN KEY (serie_id) REFERENCES serie(serie_id)   ON DELETE CASCADE,
-    -- One rating per user per film (or per serie)
-    UNIQUE KEY uq_r_film  (user_id, film_id),
-    UNIQUE KEY uq_r_serie (user_id, serie_id)
+-- ============================================================
+-- TABLE: watchlist  (Ma Liste)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS watchlist (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT       NOT NULL,
+    film_id    INT       NOT NULL DEFAULT 0,
+    serie_id   INT       NOT NULL DEFAULT 0,
+    added_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- ================================================================
--- TABLE 10 : comment
--- ================================================================
-CREATE TABLE comment (
-    comment_id INT       AUTO_INCREMENT PRIMARY KEY,
-    user_id     INT       NOT NULL,
-    film_id     INT,
-    serie_id    INT,
-    content    TEXT      NOT NULL,
-    is_flagged TINYINT(1) NOT NULL DEFAULT 0,
-    creates_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_c_user  FOREIGN KEY (user_id)  REFERENCES users(id)        ON DELETE CASCADE,
-    CONSTRAINT fk_c_film  FOREIGN KEY (film_id)  REFERENCES film(film_id)    ON DELETE CASCADE,
-    CONSTRAINT fk_c_serie FOREIGN KEY (serie_id) REFERENCES serie(serie_id)   ON DELETE CASCADE
-);
-
--- ================================================================
--- TABLE 11 : watchlist  ("Ma Liste")
--- ================================================================
-CREATE TABLE watchlist (
-    watchlist_id       INT       AUTO_INCREMENT PRIMARY KEY,
-    user_id   INT       NOT NULL,
-    film_id   INT,
-    serie_id  INT,
-    added_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_w_user  FOREIGN KEY (user_id)  REFERENCES users(id)        ON DELETE CASCADE,
-    CONSTRAINT fk_w_film  FOREIGN KEY (film_id)  REFERENCES film(film_id)    ON DELETE CASCADE,
-    CONSTRAINT fk_w_serie FOREIGN KEY (serie_id) REFERENCES serie(serie_id)   ON DELETE CASCADE,
-    -- A film or serie can appear only once per user
-    UNIQUE KEY uq_w_film  (user_id, filmI_id),
-    UNIQUE KEY uq_w_serie (user_id, serie_id)
-);
-
--- ================================================================
--- TABLE 12 : history  (viewing progress + resume feature)
--- ================================================================
-CREATE TABLE history (
-    id                   INT       AUTO_INCREMENT PRIMARY KEY,
+-- ============================================================
+-- TABLE: history  (viewing history)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS history (
+    id                    INT AUTO_INCREMENT PRIMARY KEY,
     user_id               INT       NOT NULL,
-    film_id               INT,
-    episode_id            INT,
-    progression_secondes  INT       NOT NULL DEFAULT 0,   -- seconds watched so far
-    completed            TINYINT(1) NOT NULL DEFAULT 0,  -- 1 = fully watched
-    watched_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_h_user    FOREIGN KEY (user_id)    REFERENCES users(id)        ON DELETE CASCADE,
-    CONSTRAINT fk_h_film    FOREIGN KEY (film_id)    REFERENCES film(film_id)    ON DELETE CASCADE,
-    CONSTRAINT fk_h_episode FOREIGN KEY (episode_id) REFERENCES episode(ep_id)    ON DELETE CASCADE
+    film_id               INT       NOT NULL DEFAULT 0,
+    episode_id            INT       NOT NULL DEFAULT 0,
+    progression_secondes  INT       NOT NULL DEFAULT 0,
+    completed             BOOLEAN   NOT NULL DEFAULT FALSE,
+    watched_at            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- ----------------------------------------------------------------
-SET FOREIGN_KEY_CHECKS = 1;
--- ----------------------------------------------------------------
+-- ============================================================
+-- TABLE: ratings
+-- ============================================================
+CREATE TABLE IF NOT EXISTS ratings (
+    rating_id  INT AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT       NOT NULL,
+    film_id    INT       NOT NULL DEFAULT 0,
+    serie_id   INT       NOT NULL DEFAULT 0,
+    note       INT       NOT NULL CHECK (note BETWEEN 1 AND 5),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
+-- ============================================================
+-- TABLE: comments
+-- ============================================================
+CREATE TABLE IF NOT EXISTS comments (
+    comment_id  INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT       NOT NULL,
+    film_id     INT       NOT NULL DEFAULT 0,
+    serie_id    INT       NOT NULL DEFAULT 0,
+    content     TEXT      NOT NULL,
+    flagged     BOOLEAN   NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
--- ================================================================
---   SEED DATA  –  test dataset
---   Users     : 5  (1 ADMIN + 4 USER)
---   Films     : 10
---   Series    : 2
---   Seasons   : 4
---   Episodes  : 10
--- ================================================================
+-- ============================================================
+-- SAMPLE DATA
+-- ============================================================
 
--- ----------------------------------------------------------------
--- Categories  (7)
--- ----------------------------------------------------------------
-INSERT INTO category (name, description) VALUES
-('Action',          'Films d\'action et aventure'),
-('Comédie',         'Contenu drôle et léger'),
-('Science-Fiction', 'Fiction futuriste et spéculative'),
-('Drame',           'Histoires intenses et émotionnelles'),
-('Thriller',        'Films et séries à suspense'),
-('Documentaire',    'Contenu non-fictif et informatif'),
-('Horreur',         'Films d\'horreur et de terreur');
+-- Categories
+INSERT INTO categories (name, description) VALUES
+('Action',      'Films/séries d''action et d''aventure'),
+('Comédie',     'Films/séries comiques et humoristiques'),
+('Science-Fiction', 'Science-fiction et futurisme'),
+('Drame',       'Films/séries dramatiques'),
+('Thriller',    'Suspense et tension'),
+('Horreur',     'Films/séries d''horreur'),
+('Documentaire','Documentaires et reportages'),
+('Animation',   'Films et séries d''animation');
 
--- ----------------------------------------------------------------
--- Users  (5)
--- Password for ALL accounts : Password123!
--- Hash generated with BCrypt workFactor=12 (use this in your app too)
--- ----------------------------------------------------------------
+-- Users (passwords are BCrypt of "password123")
 INSERT INTO users (username, email, password, role) VALUES
-('admin',   'admin@jstream.tn', '$2a$12$KIX/dds3n0YvBiP9MNrLK.pPbOokiuNDYFZPVOB0riwYaTLUMSUQW', 'ADMIN'),
-('alice_m', 'alice@mail.tn',    '$2a$12$KIX/dds3n0YvBiP9MNrLK.pPbOokiuNDYFZPVOB0riwYaTLUMSUQW', 'USER'),
-('bob_d',   'bob@mail.tn',      '$2a$12$KIX/dds3n0YvBiP9MNrLK.pPbOokiuNDYFZPVOB0riwYaTLUMSUQW', 'USER'),
-('clara_s', 'clara@mail.tn',    '$2a$12$KIX/dds3n0YvBiP9MNrLK.pPbOokiuNDYFZPVOB0riwYaTLUMSUQW', 'USER'),
-('david_l', 'david@mail.tn',    '$2a$12$KIX/dds3n0YvBiP9MNrLK.pPbOokiuNDYFZPVOB0riwYaTLUMSUQW', 'USER');
+('admin',    'admin@jstream.com',   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ADMIN'),
+('alice',    'alice@email.com',     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER'),
+('bob',      'bob@email.com',       '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER'),
+('charlie',  'charlie@email.com',   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER'),
+('diana',    'diana@email.com',     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER');
 
--- ----------------------------------------------------------------
--- Films  (10)
--- ----------------------------------------------------------------
-INSERT INTO film (title, synopsis, casting, video_url, image_url, poster_url, release_date, duration, age_rating) VALUES
-('Inception',
- 'Un voleur spécialisé dans l\'art d\'infiltrer les rêves pour dérober des secrets se voit offrir une chance de rédemption.',
- 'Leonardo DiCaprio, Joseph Gordon-Levitt, Elliot Page, Tom Hardy',
- 'videos/inception.mp4', 'images/inception.jpg', 'posters/inception.jpg', '2010-07-16', 148.0, 'PG-13'),
+-- Films
+INSERT INTO films (title, synopsis, casting, video_url, image_url, title_image_url, poster_url, release_date, duration, age_rating, rating) VALUES
+('Inception',        'Un voleur entre dans les rêves.',         'Leonardo DiCaprio, Joseph Gordon-Levitt', 'videos/inception.mp4',        'images/inception_img.jpg',        'images/inception_title.png',        'images/inception_poster.jpg',        '2010-07-16 00:00:00', 148, 'PG-13', 5),
+('The Matrix',       'Un programmeur découvre la vérité.',      'Keanu Reeves, Laurence Fishburne',        'videos/matrix.mp4',           'images/matrix_img.jpg',           'images/matrix_title.png',           'images/matrix_poster.jpg',           '1999-03-31 00:00:00', 136, 'R',     5),
+('Interstellar',     'Des astronautes cherchent une nouvelle Terre.', 'Matthew McConaughey, Anne Hathaway', 'videos/interstellar.mp4',     'images/interstellar_img.jpg',     'images/interstellar_title.png',     'images/interstellar_poster.jpg',     '2014-11-07 00:00:00', 169, 'PG-13', 5),
+('The Dark Knight',  'Batman affronte le Joker.',               'Christian Bale, Heath Ledger',            'videos/darkknight.mp4',       'images/darkknight_img.jpg',       'images/darkknight_title.png',       'images/darkknight_poster.jpg',       '2008-07-18 00:00:00', 152, 'PG-13', 5),
+('Parasite',         'Une famille pauvre infiltre une riche.',  'Song Kang-ho, Lee Sun-kyun',              'videos/parasite.mp4',         'images/parasite_img.jpg',         'images/parasite_title.png',         'images/parasite_poster.jpg',         '2019-05-30 00:00:00', 132, 'R',     5),
+('The Avengers',     'Les super-héros s''unissent.',            'Robert Downey Jr., Chris Evans',          'videos/avengers.mp4',         'images/avengers_img.jpg',         'images/avengers_title.png',         'images/avengers_poster.jpg',         '2012-05-04 00:00:00', 143, 'PG-13', 4),
+('Spirited Away',    'Une fille dans un monde des esprits.',    'Daveigh Chase, Suzanne Pleshette',        'videos/spiritedaway.mp4',     'images/spiritedaway_img.jpg',     'images/spiritedaway_title.png',     'images/spiritedaway_poster.jpg',     '2001-07-20 00:00:00', 125, 'PG',   5),
+('Joker',            'L''origine du Joker.',                    'Joaquin Phoenix',                         'videos/joker.mp4',            'images/joker_img.jpg',            'images/joker_title.png',            'images/joker_poster.jpg',            '2019-10-04 00:00:00', 122, 'R',    4),
+('Dune',             'L''héritier d''une noble famille.',       'Timothée Chalamet, Zendaya',              'videos/dune.mp4',             'images/dune_img.jpg',             'images/dune_title.png',             'images/dune_poster.jpg',             '2021-10-22 00:00:00', 155, 'PG-13',4),
+('The Shawshank Redemption', 'Deux prisonniers trouvent la rédemption.', 'Tim Robbins, Morgan Freeman',   'videos/shawshank.mp4',        'images/shawshank_img.jpg',        'images/shawshank_title.png',        'images/shawshank_poster.jpg',        '1994-09-23 00:00:00', 142, 'R',    5);
 
-('The Dark Knight',
- 'Batman affronte le Joker, un criminel anarchiste qui sème le chaos dans Gotham City.',
- 'Christian Bale, Heath Ledger, Aaron Eckhart, Michael Caine',
- 'videos/dark_knight.mp4', 'images/dark_knight.jpg', 'posters/dark_knight.jpg', '2008-07-18', 152.0, 'PG-13'),
+-- Film categories
+INSERT INTO film_categories (film_id, category_id) VALUES
+(1,3),(1,1),  -- Inception: SF, Action
+(2,3),(2,1),  -- Matrix: SF, Action
+(3,3),(3,4),  -- Interstellar: SF, Drame
+(4,1),(4,5),  -- Dark Knight: Action, Thriller
+(5,4),(5,5),  -- Parasite: Drame, Thriller
+(6,1),(6,3),  -- Avengers: Action, SF
+(7,8),(7,4),  -- Spirited Away: Animation, Drame
+(8,4),(8,5),  -- Joker: Drame, Thriller
+(9,3),(9,1),  -- Dune: SF, Action
+(10,4);       -- Shawshank: Drame
 
-('Interstellar',
- 'Des astronautes voyagent à travers un trou de ver pour trouver une nouvelle planète habitable.',
- 'Matthew McConaughey, Anne Hathaway, Jessica Chastain, Michael Caine',
- 'videos/interstellar.mp4', 'images/interstellar.jpg', 'posters/interstellar.jpg', '2014-11-07', 169.0, 'PG-13'),
+-- Series
+INSERT INTO series (title, synopsis, casting, image_url, title_image_url, poster_url, trailer_url, age_rating) VALUES
+('Breaking Bad',  'Un prof de chimie devient dealer de drogue.', 'Bryan Cranston, Aaron Paul',     'images/bb_img.jpg',  'images/bb_title.png',  'images/bb_poster.jpg',  'trailers/bb.mp4',  'TV-MA'),
+('Stranger Things','Des enfants affrontent des forces surnaturelles.','Millie Bobby Brown, Finn Wolfhard','images/st_img.jpg','images/st_title.png','images/st_poster.jpg','trailers/st.mp4','TV-14');
 
-('The Matrix',
- 'Un hacker découvre que la réalité telle qu\'il la connaît n\'est qu\'une simulation informatique.',
- 'Keanu Reeves, Laurence Fishburne, Carrie-Anne Moss, Hugo Weaving',
- 'videos/matrix.mp4', 'images/matrix.jpg', 'posters/matrix.jpg', '1999-03-31', 136.0, '16+'),
+INSERT INTO serie_categories (serie_id, category_id) VALUES
+(1,4),(1,5),
+(2,3),(2,5);
 
-('Parasite',
- 'Une famille pauvre s\'infiltre habilement dans la vie d\'une famille aisée avec des conséquences inattendues.',
- 'Song Kang-ho, Lee Sun-kyun, Cho Yeo-jeong, Choi Woo-shik',
- 'videos/parasite.mp4', 'images/parasite.jpg', 'posters/parasite.jpg', '2019-05-30', 132.0, '16+'),
+-- Seasons
+INSERT INTO seasons (serie_id, season_num, title, synopsis, status, planned_episodes, rating) VALUES
+(1, 1, 'Breaking Bad S1', 'Le début de la transformation de Walter.', 'Completed', 7,  5),
+(1, 2, 'Breaking Bad S2', 'Walter approfondit son empire..',           'Completed', 13, 5),
+(2, 1, 'Stranger Things S1','Les enfants cherchent leur ami disparu.',  'Completed', 8,  5),
+(2, 2, 'Stranger Things S2','Le monde à l''envers s''étend.',           'Completed', 9,  4);
 
-('The Avengers',
- 'Les super-héros les plus puissants du monde s\'unissent pour repousser une invasion alien.',
- 'Robert Downey Jr., Chris Evans, Mark Ruffalo, Scarlett Johansson',
- 'videos/avengers.mp4', 'images/avengers.jpg', 'posters/avengers.jpg', '2012-05-04', 143.0, 'PG-13'),
-
-('Joker',
- 'L\'histoire de l\'ascension tragique d\'Arthur Fleck, un comédien raté qui devient le Joker.',
- 'Joaquin Phoenix, Robert De Niro, Zazie Beetz, Frances Conroy',
- 'videos/joker.mp4', 'images/joker.jpg', 'posters/joker.jpg', '2019-10-04', 122.0, '16+'),
-
-('Mad Max: Fury Road',
- 'Dans un monde post-apocalyptique, Max s\'allie à Furiosa pour fuir un seigneur de guerre.',
- 'Tom Hardy, Charlize Theron, Nicholas Hoult',
- 'videos/madmax.mp4', 'images/madmax.jpg', 'posters/madmax.jpg', '2015-05-15', 120.0, '16+'),
-
-('La La Land',
- 'À Los Angeles, un musicien de jazz et une aspirante actrice tombent amoureux en poursuivant leurs rêves.',
- 'Ryan Gosling, Emma Stone, John Legend, Rosemarie DeWitt',
- 'videos/lalaland.mp4', 'images/lalaland.jpg', 'posters/lalaland.jpg', '2016-12-09', 128.0, 'PG-13'),
-
-('Get Out',
- 'Un jeune homme afro-américain découvre un sinistre secret lors de sa visite chez les parents de sa petite amie.',
- 'Daniel Kaluuya, Allison Williams, Bradley Whitford, Catherine Keener',
- 'videos/getout.mp4', 'images/getout.jpg', 'posters/getout.jpg', '2017-02-24', 104.0, '16+');
-
--- ----------------------------------------------------------------
--- Film ↔ Category links
--- ----------------------------------------------------------------
-INSERT INTO film_category (film_id, category_id) VALUES
-(1, 3),(1, 5),   -- Inception        : Science-Fiction + Thriller
-(2, 1),(2, 5),   -- Dark Knight      : Action + Thriller
-(3, 3),(3, 4),   -- Interstellar     : Science-Fiction + Drame
-(4, 3),(4, 1),   -- Matrix           : Science-Fiction + Action
-(5, 4),(5, 5),   -- Parasite         : Drame + Thriller
-(6, 1),(6, 3),   -- Avengers         : Action + Science-Fiction
-(7, 4),(7, 5),   -- Joker            : Drame + Thriller
-(8, 1),          -- Mad Max          : Action
-(9, 2),(9, 4),   -- La La Land       : Comédie + Drame
-(10, 5),(10, 7); -- Get Out          : Thriller + Horreur
-
--- ----------------------------------------------------------------
--- Series  (2)
--- ----------------------------------------------------------------
-INSERT INTO serie (title, synopsis, casting, covert_url, rating, age_rating) VALUES
-('Breaking Bad',
- 'Un professeur de chimie atteint d\'un cancer devient fabricant de méthamphétamine pour assurer l\'avenir de sa famille.',
- 'Bryan Cranston, Aaron Paul, Anna Gunn, Dean Norris',
- 'covers/breaking_bad.jpg', 5, '18+'),
-
-('Stranger Things',
- 'Dans une petite ville, des enfants affrontent des forces surnaturelles et des expériences gouvernementales secrètes.',
- 'Millie Bobby Brown, Finn Wolfhard, Winona Ryder, David Harbour',
- 'covers/stranger_things.jpg', 5, '16+');
-
--- ----------------------------------------------------------------
--- Serie ↔ Category links
--- ----------------------------------------------------------------
-INSERT INTO serie_category (serie_id, category_id) VALUES
-(1, 4),(1, 5),   -- Breaking Bad     : Drame + Thriller
-(2, 3),(2, 5);   -- Stranger Things  : Science-Fiction + Thriller
-
--- ----------------------------------------------------------------
--- Seasons  (4)
--- ----------------------------------------------------------------
-INSERT INTO season (serie_id, season_num, title, synopsis, status, planned_episodes) VALUES
-(1, 1, 'Breaking Bad – Saison 1',
- 'Walter White commence sa transformation de professeur respecté en criminel impitoyable.',
- 'Completed', 7),
-
-(1, 2, 'Breaking Bad – Saison 2',
- 'Walter et Jesse approfondissent leur implication dans le trafic de drogue avec des conséquences dévastatrices.',
- 'Completed', 13),
-
-(2, 1, 'Stranger Things – Saison 1',
- 'La disparition de Will Byers entraîne ses amis dans un monde parallèle terrifiant.',
- 'Completed', 8),
-
-(2, 2, 'Stranger Things – Saison 2',
- 'Will est de retour mais le monde à l\'envers étend son emprise sur Hawkins.',
- 'Completed', 9);
-
--- ----------------------------------------------------------------
--- Episodes  (10)
--- ----------------------------------------------------------------
-INSERT INTO episode (season_id, num_episode, title, resume, video_url, duration) VALUES
--- Breaking Bad S1
-(1, 1, 'Pilot',
- 'Walter apprend qu\'il a un cancer et décide de cuisiner de la drogue avec son ancien élève Jesse.',
- 'videos/bb_s1e1.mp4', 'PT58M'),
-
-(1, 2, 'Cat''s in the Bag',
- 'Walter et Jesse doivent se débarrasser des deux corps laissés dans leur laboratoire de fortune.',
- 'videos/bb_s1e2.mp4', 'PT48M'),
-
-(1, 3, '...And the Bag''s in the River',
- 'Walter fait face à un choix moral impossible qui changera sa vie à jamais.',
- 'videos/bb_s1e3.mp4', 'PT48M'),
-
--- Breaking Bad S2
-(2, 1, 'Seven Thirty-Seven',
- 'La menace de Tuco s''intensifie alors que Walter et Jesse réalisent à quel point leur situation est dangereuse.',
- 'videos/bb_s2e1.mp4', 'PT47M'),
-
-(2, 2, 'Grilled',
- 'Walter et Jesse sont retenus prisonniers par Tuco dans sa planque au désert.',
- 'videos/bb_s2e2.mp4', 'PT44M'),
-
--- Stranger Things S1
-(3, 1, 'The Vanishing of Will Byers',
- 'Will Byers disparaît mystérieusement et une étrange fille aux pouvoirs télékinétiques apparaît.',
- 'videos/st_s1e1.mp4', 'PT47M'),
-
-(3, 2, 'The Weirdo on Maple Street',
- 'Mike, Dustin et Lucas cachent Eleven chez Mike et commencent à percer ses mystères.',
- 'videos/st_s1e2.mp4', 'PT55M'),
-
-(3, 3, 'Holly, Jolly',
- 'Joyce reçoit des messages de Will à travers les lumières pendant que le corps de Will est retrouvé.',
- 'videos/st_s1e3.mp4', 'PT51M'),
-
--- Stranger Things S2
-(4, 1, 'MADMAX',
- 'Un nouveau personnage mystérieux fait son apparition dans le groupe et Will a des visions troublantes.',
- 'videos/st_s2e1.mp4', 'PT48M'),
-
-(4, 2, 'Trick or Treat, Freak',
- 'Will partage ses visions avec Joyce pendant qu''Eleven brave le monde extérieur pour Halloween.',
- 'videos/st_s2e2.mp4', 'PT56M');
-
--- ----------------------------------------------------------------
--- Ratings  (sample)
--- ----------------------------------------------------------------
-INSERT INTO rating (user_id, film_id, serie_id, note) VALUES
-(2, 1,    NULL, 5),  -- alice  → Inception        ★★★★★
-(2, 2,    NULL, 4),  -- alice  → Dark Knight       ★★★★
-(2, NULL, 1,   5),  -- alice  → Breaking Bad      ★★★★★
-(3, 3,    NULL, 5),  -- bob    → Interstellar      ★★★★★
-(3, NULL, 2,   5),  -- bob    → Stranger Things   ★★★★★
-(4, 4,    NULL, 4),  -- clara  → Matrix            ★★★★
-(4, 7,    NULL, 5),  -- clara  → Joker             ★★★★★
-(5, 5,    NULL, 4),  -- david  → Parasite          ★★★★
-(5, 6,    NULL, 3);  -- david  → Avengers          ★★★
-
--- ----------------------------------------------------------------
--- Comments  (sample – including one flagged)
--- ----------------------------------------------------------------
-INSERT INTO comment (user_id, film_id, serie_id, content, is_flagged) VALUES
-(2, 1,    NULL, 'Film incroyable, l\'un des meilleurs de Christopher Nolan !', 0),
-(3, 2,    NULL, 'Heath Ledger est absolument légendaire dans ce rôle.', 0),
-(4, NULL, 1,   'Breaking Bad est sans aucun doute la meilleure série de tous les temps.', 0),
-(5, NULL, 2,   'Stranger Things donne vraiment la chair de poule, j\'adore !', 0),
-(2, 7,    NULL, 'Joaquin Phoenix méritait amplement son Oscar.', 0),
-(3, 4,    NULL, 'Commentaire inapproprié de test.', 1);
-
--- ----------------------------------------------------------------
--- Watchlist  (sample)
--- ----------------------------------------------------------------
-INSERT INTO watchlist (user_id, film_id, serie_id) VALUES
-(2, 3,    NULL),  -- alice  → Interstellar
-(2, NULL, 2),    -- alice  → Stranger Things
-(3, 1,    NULL),  -- bob    → Inception
-(4, 8,    NULL),  -- clara  → Mad Max
-(4, NULL, 1);    -- clara  → Breaking Bad
-
--- ----------------------------------------------------------------
--- History  (sample viewing progress)
--- ----------------------------------------------------------------
-INSERT INTO history (user_id, film_id, episode_id, progression_secondes, completed) VALUES
-(2, 1,    NULL, 8880, 1),   -- alice   watched Inception fully     (148min)
-(2, NULL, 1,   3480, 1),   -- alice   watched BB s1e1 fully       (58min)
-(2, NULL, 2,   2880, 1),   -- alice   watched BB s1e2 fully       (48min)
-(3, 3,    NULL, 5040, 0),   -- bob     stopped Interstellar at 84min
-(3, NULL, 6,   1800, 0),   -- bob     stopped ST s1e1 at 30min
-(4, 7,    NULL, 7320, 1),   -- clara   watched Joker fully         (122min)
-(5, 4,    NULL, 2400, 0);   -- david   stopped Matrix at 40min
-
-
--- ================================================================
---   QUICK VERIFICATION  –  uncomment to test after import
--- ================================================================
--- SELECT 'users'    AS tbl, COUNT(*) AS rows FROM users
--- UNION SELECT 'film',          COUNT(*) FROM film
--- UNION SELECT 'serie',         COUNT(*) FROM serie
--- UNION SELECT 'season',        COUNT(*) FROM season
--- UNION SELECT 'episode',       COUNT(*) FROM episode
--- UNION SELECT 'rating',        COUNT(*) FROM rating
--- UNION SELECT 'comment',       COUNT(*) FROM comment
--- UNION SELECT 'watchlist',     COUNT(*) FROM watchlist
--- UNION SELECT 'history',       COUNT(*) FROM history;
+-- Episodes
+INSERT INTO episodes (season_id, num_episode, title, duration, resume, video_url, covert_url) VALUES
+(1,1,'Pilot',           3840,'Walter découvre sa maladie.',          'videos/bb_s1e1.mp4','images/bb_s1e1.jpg'),
+(1,2,'Cat''s in the Bag',2940,'Les conséquences du premier crime.',  'videos/bb_s1e2.mp4','images/bb_s1e2.jpg'),
+(1,3,'...And the Bag''s in the River',2820,'Walter fait un choix crucial.','videos/bb_s1e3.mp4','images/bb_s1e3.jpg'),
+(3,1,'The Vanishing of Will Byers',2880,'Will disparaît.',          'videos/st_s1e1.mp4','images/st_s1e1.jpg'),
+(3,2,'The Weirdo on Maple Street',2760,'Les enfants trouvent Onze.','videos/st_s1e2.mp4','images/st_s1e2.jpg');
