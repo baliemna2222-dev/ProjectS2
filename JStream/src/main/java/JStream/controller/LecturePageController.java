@@ -299,7 +299,7 @@ public class LecturePageController {
         try {
             // 1. Chargi el Home Page FXML
            
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/src/main/resources/view/HomePage.fxml"));
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/HomePage.fxml"));
             javafx.scene.Parent root = loader.load();
 
             // 2. jib el Stage el 7aliya mel button
