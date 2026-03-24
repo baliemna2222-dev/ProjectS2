@@ -2,38 +2,397 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Rectangle?>
 
-<AnchorPane xmlns="http://javafx.com/javafx/21"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="JStream.controller.LecturePageController"
-            prefWidth="600" prefHeight="400">
+<StackPane xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="JStream.controller.LecturePageController"
+           prefWidth="1710" prefHeight="1000"
+           style="-fx-background-color: #12153d;">
 
-    <VBox spacing="15" layoutX="20" layoutY="20">
-        
-        <!-- Title -->
-        <Label fx:id="titleLabel" text="Title" style="-fx-font-size: 24px; -fx-font-weight: bold;" />
-        
-        <HBox spacing="20">
-            
-            <!-- Poster Image -->
-            <ImageView fx:id="posterImage" fitWidth="150" fitHeight="225" preserveRatio="true" />
+    <!-- BACKGROUND IMAGE -->
+    <ImageView fx:id="backgroundImage"
+               fitWidth="1280" fitHeight="520"
+               preserveRatio="false"
+               opacity="0.18"
+               StackPane.alignment="TOP_LEFT"/>
 
-            <!-- Details -->
-            <VBox spacing="10">
-                <Label fx:id="descriptionLabel" text="Description goes here" wrapText="true" prefWidth="400"/>
-                <Label fx:id="durationLabel" text="Duration" />
-                <HBox fx:id="starsBox" spacing="5"/>
-                <Label fx:id="categoriesLabel" text="Categories" wrapText="true" prefWidth="400"/>
-                <Label fx:id="episodeInfoLabel" text="Episode Info" wrapText="true" prefWidth="400"/>
-                <Button fx:id="playTrailerButton" text="▶ Play Trailer" />
+    <!-- GRADIENT OVERLAY -->
+    <Region prefWidth="1280" prefHeight="520"
+            StackPane.alignment="TOP_LEFT"
+            style="-fx-background-color: linear-gradient(to bottom, rgba(18,21,61,0.3) 0%, rgba(18,21,61,1.0) 100%);"/>
+
+    <!-- MAIN SCROLL -->
+    <ScrollPane fitToWidth="true"
+                vbarPolicy="AS_NEEDED"
+                hbarPolicy="NEVER"
+                style="-fx-background: transparent;
+                       -fx-background-color: transparent;
+                       -fx-control-inner-background: transparent;
+                       -fx-background-insets: 0;">
+
+        <VBox spacing="0">
+
+            <!-- =============== NAVBAR =============== -->
+            <HBox fx:id="navbar"
+                  alignment="CENTER_LEFT"
+                  prefHeight="65"
+                  spacing="25"
+                  style="-fx-background-color: rgba(18,21,61,0.92);
+                         -fx-padding: 0 40 0 30;">
+
+                <Button fx:id="btnBack"
+                        text="&lt;- Back"
+                        prefWidth="80" prefHeight="36"
+                        style="-fx-background-color: rgba(255,255,255,0.08);
+                               -fx-text-fill: white;
+                               -fx-font-size: 13px;
+                               -fx-background-radius: 5;
+                               -fx-cursor: hand;"/>
+
+                <ImageView fx:id="logoNav" fitHeight="38" fitWidth="130" preserveRatio="true"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <HBox spacing="30" alignment="CENTER">
+                    <Button text="Most Watched"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #aab0d0;
+                                   -fx-font-size: 14px;
+                                   -fx-cursor: hand;"/>
+                    <Button text="My List"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #aab0d0;
+                                   -fx-font-size: 14px;
+                                   -fx-cursor: hand;"/>
+                </HBox>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <HBox spacing="12" alignment="CENTER_RIGHT">
+                    <Button fx:id="btnSearch"
+                            text="Search"
+                            prefHeight="32"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #aab0d0;
+                                   -fx-font-size: 13px;
+                                   -fx-cursor: hand;"/>
+                    <fx:include source="Bell.fxml"/>
+                    <Button fx:id="profileBtn"
+                            prefWidth="36" prefHeight="36"
+                            style="-fx-background-color: transparent;
+                                   -fx-background-image: url('/assets/images/profile.png');
+                                   -fx-background-repeat: no-repeat;
+                                   -fx-background-position: center;
+                                   -fx-background-size: 34 34;"/>
+                </HBox>
+            </HBox>
+
+            <!-- =============== HERO SECTION =============== -->
+            <HBox prefHeight="480" spacing="50"
+                  style="-fx-padding: 45 60 30 50;
+                         -fx-background-color: transparent;">
+
+                <!-- LEFT: POSTER -->
+                <VBox alignment="TOP_CENTER" minWidth="280">
+                    <StackPane>
+                        <ImageView fx:id="posterImage"
+                                   fitWidth="270" fitHeight="400"
+                                   preserveRatio="true"
+                                   style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.9), 40, 0, 0, 15);"/>
+                    </StackPane>
+                </VBox>
+
+                <!-- RIGHT: DETAILS -->
+                <VBox spacing="13" HBox.hgrow="ALWAYS" maxWidth="800">
+
+                    <!-- TITLE + SCORE -->
+                    <HBox alignment="CENTER_LEFT" spacing="20">
+                        <Label fx:id="titleLabel"
+                               text="Movie Title"
+                               wrapText="true"
+                               style="-fx-font-size: 36px;
+                                      -fx-font-weight: bold;
+                                      -fx-text-fill: white;
+                                      -fx-font-family: 'Georgia';"/>
+                        <HBox alignment="CENTER" spacing="5">
+                            <Label fx:id="scoreLabel"
+                                   text="9.0"
+                                   style="-fx-font-size: 26px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: white;"/>
+                            <Label text="*"
+                                   style="-fx-font-size: 22px;
+                                          -fx-text-fill: #f5c518;"/>
+                        </HBox>
+                    </HBox>
+
+                    <!-- META -->
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label fx:id="yearLabel"
+                               text="2024"
+                               style="-fx-text-fill: #9aa0c0; -fx-font-size: 13px;"/>
+                        <Label text="|" style="-fx-text-fill: #9aa0c0;"/>
+                        <Label fx:id="durationLabel"
+                               text="2h 23min"
+                               style="-fx-text-fill: #9aa0c0; -fx-font-size: 13px;"/>
+                        <Label text="|" style="-fx-text-fill: #9aa0c0;"/>
+                        <Label fx:id="ageRatingLabel"
+                               text="16+"
+                               style="-fx-background-color: rgba(255,255,255,0.12);
+                                      -fx-text-fill: #cccccc;
+                                      -fx-font-size: 11px;
+                                      -fx-font-weight: bold;
+                                      -fx-padding: 2 7 2 7;
+                                      -fx-background-radius: 3;
+                                      -fx-border-color: rgba(255,255,255,0.2);
+                                      -fx-border-radius: 3;"/>
+                    </HBox>
+
+                    <!-- TAB BAR -->
+                    <HBox fx:id="tabBar" spacing="0" alignment="CENTER_LEFT"
+                          style="-fx-padding: 8 0 0 0;">
+
+                        <VBox alignment="CENTER" spacing="4">
+                            <Button fx:id="tabOverview" text="OVERVIEW"
+                                    style="-fx-background-color: transparent;
+                                           -fx-text-fill: white;
+                                           -fx-font-size: 12px;
+                                           -fx-font-weight: bold;
+                                           -fx-padding: 6 16 6 0;
+                                           -fx-cursor: hand;"/>
+                            <Rectangle fx:id="lineOverview" height="2" width="80" fill="#0000CD"/>
+                        </VBox>
+
+                        <VBox alignment="CENTER" spacing="4">
+                            <Button fx:id="tabTrailers" text="TRAILERS"
+                                    style="-fx-background-color: transparent;
+                                           -fx-text-fill: #7a80a0;
+                                           -fx-font-size: 12px;
+                                           -fx-font-weight: bold;
+                                           -fx-padding: 6 16 6 16;
+                                           -fx-cursor: hand;"/>
+                            <Rectangle fx:id="lineTrailers" height="2" width="90" fill="#0000CD"/>
+                        </VBox>
+
+                        <VBox alignment="CENTER" spacing="4">
+                            <Button fx:id="tabMoreLike" text="MORE LIKE THIS"
+                                    style="-fx-background-color: transparent;
+                                           -fx-text-fill: #7a80a0;
+                                           -fx-font-size: 12px;
+                                           -fx-font-weight: bold;
+                                           -fx-padding: 6 16 6 16;
+                                           -fx-cursor: hand;"/>
+                            <Rectangle fx:id="lineMoreLike" height="2" width="120" fill="#0000CD"/>
+                        </VBox>
+
+                        <VBox alignment="CENTER" spacing="4">
+                            <Button fx:id="tabDetails" text="DETAILS"
+                                    style="-fx-background-color: transparent;
+                                           -fx-text-fill: #7a80a0;
+                                           -fx-font-size: 12px;
+                                           -fx-font-weight: bold;
+                                           -fx-padding: 6 16 6 16;
+                                           -fx-cursor: hand;"/>
+                            <Rectangle fx:id="lineDetails" height="2" width="65" fill="#0000CD"/>
+                        </VBox>
+                    </HBox>
+
+                    <Separator style="-fx-background-color: rgba(255,255,255,0.1);"/>
+
+                    <!-- DESCRIPTION -->
+                    <Label fx:id="descriptionLabel"
+                           text="Description goes here..."
+                           wrapText="true"
+                           prefWidth="680"
+                           style="-fx-text-fill: #c0c8e0;
+                                  -fx-font-size: 14px;
+                                  -fx-line-spacing: 4;"/>
+
+                    <!-- INFO GRID -->
+                    <VBox spacing="7" style="-fx-padding: 4 0 0 0;">
+
+                        <HBox spacing="15">
+                            <Label text="Starring"
+                                   prefWidth="100"
+                                   style="-fx-text-fill: #7a80a0; -fx-font-size: 13px;"/>
+                            <Label fx:id="starringLabel"
+                                   text="Actor 1, Actor 2, Actor 3"
+                                   wrapText="true" prefWidth="550"
+                                   style="-fx-text-fill: #dde0f0; -fx-font-size: 13px;"/>
+                        </HBox>
+
+                        <HBox spacing="15">
+                            <Label text="Created by"
+                                   prefWidth="100"
+                                   style="-fx-text-fill: #7a80a0; -fx-font-size: 13px;"/>
+                            <Label fx:id="directorLabel"
+                                   text="Director Name"
+                                   style="-fx-text-fill: #dde0f0; -fx-font-size: 13px;"/>
+                        </HBox>
+
+                        <HBox spacing="15">
+                            <Label text="Genre"
+                                   prefWidth="100"
+                                   style="-fx-text-fill: #7a80a0; -fx-font-size: 13px;"/>
+                            <Label fx:id="categoriesLabel"
+                                   text="Action, Adventure, Fantasy"
+                                   style="-fx-text-fill: #dde0f0; -fx-font-size: 13px;"/>
+                        </HBox>
+
+                        <HBox spacing="15">
+                            <Label text="Episode"
+                                   prefWidth="100"
+                                   style="-fx-text-fill: #7a80a0; -fx-font-size: 13px;"/>
+                            <Label fx:id="episodeInfoLabel"
+                                   text=""
+                                   style="-fx-text-fill: #dde0f0; -fx-font-size: 13px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- ACTION BUTTONS -->
+                    <HBox spacing="12" alignment="CENTER_LEFT"
+                          style="-fx-padding: 8 0 0 0;">
+
+                        <Button fx:id="playButton"
+                                text="Play"
+                                prefHeight="42" prefWidth="140"
+                                style="-fx-background-color: #0000CD;
+                                       -fx-text-fill: white;
+                                       -fx-font-size: 15px;
+                                       -fx-font-weight: bold;
+                                       -fx-background-radius: 5;
+                                       -fx-cursor: hand;"/>
+
+               
+
+                        <Button fx:id="bookmarkBtn"
+                                text="+ List"
+                                prefWidth="80" prefHeight="42"
+                                style="-fx-background-color: rgba(255,255,255,0.1);
+                                       -fx-text-fill: white;
+                                       -fx-font-size: 13px;
+                                       -fx-background-radius: 5;
+                                       -fx-border-color: rgba(255,255,255,0.2);
+                                       -fx-border-radius: 5;
+                                       -fx-cursor: hand;"/>
+
+                        <Button fx:id="watchedBtn"
+                                text="Watched"
+                                prefWidth="90" prefHeight="42"
+                                style="-fx-background-color: rgba(255,255,255,0.1);
+                                       -fx-text-fill: white;
+                                       -fx-font-size: 13px;
+                                       -fx-background-radius: 5;
+                                       -fx-border-color: rgba(255,255,255,0.2);
+                                       -fx-border-radius: 5;
+                                       -fx-cursor: hand;"/>
+
+                        <Button fx:id="shareBtn"
+                                text="Share"
+                                prefWidth="80" prefHeight="42"
+                                style="-fx-background-color: rgba(255,255,255,0.1);
+                                       -fx-text-fill: white;
+                                       -fx-font-size: 13px;
+                                       -fx-background-radius: 5;
+                                       -fx-border-color: rgba(255,255,255,0.2);
+                                       -fx-border-radius: 5;
+                                       -fx-cursor: hand;"/>
+                    </HBox>
+
+                </VBox>
+            </HBox>
+
+            <!-- =============== CAST SECTION =============== -->
+            <VBox spacing="14"
+                  style="-fx-padding: 10 60 35 60;
+                         -fx-background-color: rgba(8,10,35,0.6);">
+
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label fx:id="castSectionTitle"
+                           text="Cast of the Movie"
+                           style="-fx-font-size: 20px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: white;"/>
+                    <Label text=">"
+                           style="-fx-font-size: 20px;
+                                  -fx-text-fill: #7a80a0;"/>
+                </HBox>
+
+                <ScrollPane hbarPolicy="AS_NEEDED"
+                            vbarPolicy="NEVER"
+                            fitToHeight="true"
+                            prefHeight="195"
+                            style="-fx-background: transparent;
+                                   -fx-background-color: transparent;
+                                   -fx-control-inner-background: transparent;
+                                   -fx-background-insets: 0;">
+                    <HBox fx:id="castBox" spacing="22" alignment="CENTER_LEFT"
+                          style="-fx-padding: 5 10 10 5;"/>
+                </ScrollPane>
+
             </VBox>
-            
-        </HBox>
-        
-    </VBox>
 
-</AnchorPane>
+            <!-- =============== REVIEWS SECTION =============== -->
+            <VBox spacing="14"
+                  style="-fx-padding: 30 60 35 60;
+                         -fx-background-color: rgba(8,10,35,0.4);">
+
+                <Label fx:id="reviewsSectionTitle"
+                       text="Ratings and Reviews"
+                       style="-fx-font-size: 20px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: white;"/>
+
+                <HBox fx:id="starsBox" spacing="6" alignment="CENTER_LEFT"/>
+
+                <ScrollPane hbarPolicy="AS_NEEDED"
+                            vbarPolicy="NEVER"
+                            fitToHeight="true"
+                            prefHeight="175"
+                            style="-fx-background: transparent;
+                                   -fx-background-color: transparent;
+                                   -fx-control-inner-background: transparent;
+                                   -fx-background-insets: 0;">
+                    <HBox fx:id="reviewsBox" spacing="16" alignment="CENTER_LEFT"
+                          style="-fx-padding: 5 10 10 5;"/>
+                </ScrollPane>
+
+            </VBox>
+
+            <!-- =============== RELATED SECTION =============== -->
+            <VBox spacing="14"
+                  style="-fx-padding: 30 60 60 60;
+                         -fx-background-color: rgba(8,10,35,0.6);">
+
+                <Label fx:id="relatedSectionTitle"
+                       text="Titles You Might Like"
+                       style="-fx-font-size: 20px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: white;"/>
+
+                <ScrollPane hbarPolicy="AS_NEEDED"
+                            vbarPolicy="NEVER"
+                            fitToHeight="true"
+                            prefHeight="230"
+                            style="-fx-background: transparent;
+                                   -fx-background-color: transparent;
+                                   -fx-control-inner-background: transparent;
+                                   -fx-background-insets: 0;">
+                    <HBox fx:id="relatedBox" spacing="16" alignment="CENTER_LEFT"
+                          style="-fx-padding: 5 10 10 5;"/>
+                </ScrollPane>
+
+            </VBox>
+
+        </VBox>
+    </ScrollPane>
+
+</StackPane>
