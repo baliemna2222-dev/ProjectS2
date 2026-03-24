@@ -70,20 +70,21 @@ public class EpisodeProgressDAO {
     }
 
     // ----------------- Get status for a single episode -----------------
+ 
     public WatchStatus getEpisodeStatus(int userId, int epId) {
         String sql = "SELECT status FROM episode_progress WHERE user_id=? AND ep_id=?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) { // Auto-close
             ps.setInt(1, userId);
             ps.setInt(2, epId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                String dbStatus = rs.getString("status");
-                if (dbStatus != null) return WatchStatus.valueOf(dbStatus);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String dbStatus = rs.getString("status");
+                    return (dbStatus != null) ? WatchStatus.valueOf(dbStatus) : WatchStatus.NOT_STARTED;
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return WatchStatus.NOT_STARTED;
     }
-
 }
