@@ -107,7 +107,7 @@ public class HistoryDAO {
 
     // ===== FIRST UNWATCHED EPISODE IN A SEASON (smart resume) =====
     public int getFirstUnwatchedEpisodeId(int userId, int seasonId) {
-        String sql = "SELECT e.ep_id FROM episodes e " +
+        String sql = "SELECT e.ep_id FROM episode e " +
                      "LEFT JOIN history h ON h.episode_id = e.ep_id AND h.user_id = ? AND h.completed = TRUE " +
                      "WHERE e.season_id = ? AND h.id IS NULL " +
                      "ORDER BY e.num_episode LIMIT 1";

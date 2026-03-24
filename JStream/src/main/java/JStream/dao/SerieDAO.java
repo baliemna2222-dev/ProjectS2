@@ -16,7 +16,7 @@ public class SerieDAO {
 
     // ===== INSERT =====
     public boolean insertSerie(Serie serie) {
-        String sql = "INSERT INTO series (title, synopsis, casting, covert_url, title_url, " +
+        String sql = "INSERT INTO serie (title, synopsis, casting, covert_url, title_url, " +
                      "age_rating) VALUES (?,?,?,?,?,?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -45,7 +45,7 @@ public class SerieDAO {
 
     // ===== UPDATE =====
     public boolean updateSerie(Serie serie) {
-        String sql = "UPDATE series SET title=?, synopsis=?, casting=?, covert_url=?, " +
+        String sql = "UPDATE serie SET title=?, synopsis=?, casting=?, covert_url=?, " +
                      "title_url=?, age_rating=? WHERE serie_id=?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -73,7 +73,7 @@ public class SerieDAO {
 
     // ===== DELETE =====
     public boolean deleteSerie(int serieId) {
-        String sql = "DELETE FROM series WHERE serie_id = ?";
+        String sql = "DELETE FROM serie WHERE serie_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -89,8 +89,8 @@ public class SerieDAO {
     // ===== GET ALL =====
     public List<Serie> getAllSeries() {
         List<Serie> list = new ArrayList<>();
-        String sql = "SELECT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM series s " +
+        String sql = "SELECT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS category " +
+                     "FROM serie s " +
                      "LEFT JOIN serie_category sc ON s.serie_id = sc.serie_id " +
                      "LEFT JOIN category c ON sc.category_id = c.category_id " +
                      "GROUP BY s.serie_id ORDER BY s.created_at DESC";
@@ -108,8 +108,8 @@ public class SerieDAO {
 
     // ===== GET BY ID =====
     public Serie getSerieById(int serieId) {
-        String sql = "SELECT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM series s " +
+        String sql = "SELECT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS category " +
+                     "FROM serie s " +
                      "LEFT JOIN serie_category sc ON s.serie_id = sc.serie_id " +
                      "LEFT JOIN category c ON sc.category_id = c.category_id " +
                      "WHERE s.serie_id = ? GROUP BY s.serie_id";
@@ -129,8 +129,8 @@ public class SerieDAO {
     // ===== SEARCH =====
     public List<Serie> searchSeries(String keyword) {
         List<Serie> list = new ArrayList<>();
-        String sql = "SELECT DISTINCT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM series s " +
+        String sql = "SELECT DISTINCT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS category " +
+                     "FROM serie s " +
                      "LEFT JOIN serie_category sc ON s.serie_id = sc.serie_id " +
                      "LEFT JOIN category c ON sc.category_id = c.category_id " +
                      "WHERE s.title LIKE ? OR c.name LIKE ? " +
@@ -154,7 +154,7 @@ public class SerieDAO {
     private void insertSerieCategories(Connection conn, int serieId, List<Category> categories)
             throws SQLException {
         if (categories == null || categories.isEmpty()) return;
-        String sql = "INSERT IGNORE INTO serie_categories (serie_id, category_id) VALUES (?,?)";
+        String sql = "INSERT IGNORE INTO serie_category (serie_id, category_id) VALUES (?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             for (Category c : categories) {
                 ps.setInt(1, serieId);

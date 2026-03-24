@@ -50,7 +50,7 @@ public class FilmDAO {
 
     // ===== UPDATE =====
     public boolean updateFilm(Film film) {
-        String sql = "UPDATE films SET title=?, synopsis=?, casting=?, video_url=?, image_url=?, " +
+        String sql = "UPDATE film SET title=?, synopsis=?, casting=?, video_url=?, image_url=?, " +
                      "title_image_url=?, poster_url=?, release_date=?, duration=?, age_rating=? " +
                      "WHERE film_id=?";
         try (Connection conn = Database.getConnection();
@@ -83,7 +83,7 @@ public class FilmDAO {
 
     // ===== DELETE =====
     public boolean deleteFilm(int filmId) {
-        String sql = "DELETE FROM films WHERE film_id = ?";
+        String sql = "DELETE FROM film WHERE film_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -99,8 +99,8 @@ public class FilmDAO {
     // ===== GET ALL =====
     public List<Film> getAllFilms() {
         List<Film> list = new ArrayList<>();
-        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM films f " +
+        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS category " +
+                     "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
                      "GROUP BY f.film_id ORDER BY f.release_date DESC";
@@ -118,8 +118,8 @@ public class FilmDAO {
 
     // ===== GET BY ID =====
     public Film getFilmById(int filmId) {
-        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM films f " +
+        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS category " +
+                     "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
                      "WHERE f.film_id = ? GROUP BY f.film_id";
@@ -139,8 +139,8 @@ public class FilmDAO {
     // ===== SEARCH (title, category name, or year) =====
     public List<Film> searchFilms(String keyword) {
         List<Film> list = new ArrayList<>();
-        String sql = "SELECT DISTINCT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM films f " +
+        String sql = "SELECT DISTINCT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS category " +
+                     "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
                      "WHERE f.title LIKE ? OR c.name LIKE ? OR YEAR(f.release_date) LIKE ? " +
@@ -165,7 +165,7 @@ public class FilmDAO {
     public List<String[]> getTop5MostWatched() {
         List<String[]> result = new ArrayList<>();
         String sql = "SELECT f.title, COUNT(h.id) AS views " +
-                     "FROM films f JOIN history h ON f.film_id = h.film_id " +
+                     "FROM film f JOIN history h ON f.film_id = h.film_id " +
                      "GROUP BY f.film_id ORDER BY views DESC LIMIT 5";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -204,7 +204,7 @@ public class FilmDAO {
     private void insertFilmCategories(Connection conn, int filmId, List<Category> categories)
             throws SQLException {
         if (categories == null || categories.isEmpty()) return;
-        String sql = "INSERT IGNORE INTO film_categories (film_id, category_id) VALUES (?,?)";
+        String sql = "INSERT IGNORE INTO film_category (film_id, category_id) VALUES (?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             for (Category c : categories) {
                 ps.setInt(1, filmId);
@@ -216,7 +216,7 @@ public class FilmDAO {
     }
 
     private void deleteFilmCategories(Connection conn, int filmId) throws SQLException {
-        String sql = "DELETE FROM film_categories WHERE film_id = ?";
+        String sql = "DELETE FROM film_category WHERE film_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, filmId);
             ps.executeUpdate();
