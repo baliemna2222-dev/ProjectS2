@@ -8,6 +8,8 @@ import JStream.service.FeaturedService;
 import javafx.animation.*;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -18,6 +20,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Popup;
 import javafx.util.Duration;
 
@@ -25,86 +28,132 @@ import java.sql.SQLException;
 
 public class LecturePageController {
 
-    // --- NAVBAR (Identique à Homepage) ---
-    @FXML private ImageView logoNav;
+    // --- NAVBAR ---
+    @FXML private ImageView logoNav, bellIcon;
     @FXML private StackPane bellContainer;
-    @FXML private ImageView bellIcon;
     @FXML private Circle notificationCircle;
-    @FXML private Button btnBack;
+    @FXML private Button btnBack, playButton, btnNotification, profileBtn;
 
-    // --- HERO SECTION ---
-    @FXML private ImageView backgroundImage;
-    @FXML private ImageView posterImage;
-    @FXML private Label titleLabel;
-    @FXML private Label scoreLabel;
-    @FXML private Label yearLabel;
-    @FXML private Label durationLabel;
-    @FXML private Label ageRatingLabel;
-    @FXML private Label descriptionLabel;
-    @FXML private Label starringLabel;
-    @FXML private Label directorLabel;
-    @FXML private Label categoriesLabel;
-    @FXML private Label episodeInfoLabel;
+    // --- HERO & CONTAINERS ---
+    @FXML private VBox mainContainer;
+    @FXML private ImageView backgroundImage, posterImage;
+    @FXML private Label titleLabel, scoreLabel, yearLabel, durationLabel, ageRatingLabel, descriptionLabel;
+    @FXML private Label starringLabel, directorLabel, categoriesLabel, episodeInfoLabel;
+    @FXML private HBox starsBox, castBox;
 
-    // --- CONTENEURS DYNAMIQUES ---
-    @FXML private HBox starsBox;
-    @FXML private HBox castBox;
-    @FXML private HBox reviewsBox;
-    @FXML private HBox relatedBox;
+    // --- TABS ---
+    @FXML private Rectangle lineOverview, lineTrailers;
+    @FXML private Button tabOverview, tabTrailers;
 
-    // --- LOGIQUE NOTIFICATION & POPUP ---
+    private AudioClip bellSound;
     private Popup notificationPopup = new Popup();
     private VBox notificationContent = new VBox();
-    private AudioClip bellSound;
     private boolean isNotificationVisible = false;
 
+    // ============== INITIALIZE ==============
     @FXML
     public void initialize() {
         setupNavbar();
         setupNotificationSystem();
+        setupTabLogic(); // Logic mta3 el tabs Overview/Trailers
         
-        // Action bouton retour
         if (btnBack != null) {
-            btnBack.setOnAction(e -> System.out.println("Retour à la page précédente..."));
+            btnBack.setOnAction(e -> System.out.println("Retour..."));
         }
+
+        // Entrance Animation
+        if (mainContainer != null) {
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), mainContainer);
+            fadeIn.setFromValue(0.0);
+            fadeIn.setToValue(1.0);
+            fadeIn.play();
+        }
+        populateStars(9.0);
+        if (posterImage != null) addHoverEffect(posterImage);
+        if (playButton != null) addHoverEffect(playButton);
+        
+        loadCast();
+    }
+
+    private void setupTabLogic() {
+        if (tabOverview != null && tabTrailers != null) {
+            tabOverview.setOnAction(e -> {
+                lineOverview.setVisible(true);
+                lineTrailers.setVisible(false);
+                tabOverview.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+                tabTrailers.setStyle("-fx-background-color: transparent; -fx-text-fill: #7a80a0;");
+            });
+
+            tabTrailers.setOnAction(e -> {
+                lineOverview.setVisible(false);
+                lineTrailers.setVisible(true);
+                tabTrailers.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+                tabOverview.setStyle("-fx-background-color: transparent; -fx-text-fill: #7a80a0;");
+            });
+        }
+    }
+
+    private void addHoverEffect(Node node) {
+        ScaleTransition stIn = new ScaleTransition(Duration.millis(200), node);
+        stIn.setToX(1.05); stIn.setToY(1.05);
+
+        ScaleTransition stOut = new ScaleTransition(Duration.millis(200), node);
+        stOut.setToX(1.0); stOut.setToY(1.0);
+
+        node.setOnMouseEntered(e -> {
+            stIn.play();
+            node.setEffect(new javafx.scene.effect.DropShadow(25, Color.web("#2d54ff", 0.6)));
+        });
+        node.setOnMouseExited(e -> {
+            stOut.play();
+            node.setEffect(null); 
+        });
+    }
+
+    private void loadCast() {
+        if (castBox == null) return;
+        castBox.getChildren().clear();
+        for (int i = 0; i < 5; i++) {
+            VBox actorCard = createActorCard("Actor Name", "/assets/images/profile.png");
+            castBox.getChildren().add(actorCard);
+        }
+    }
+
+    private VBox createActorCard(String name, String imgPath) {
+        VBox card = new VBox(8);
+        card.setAlignment(Pos.CENTER);
+        try {
+            ImageView img = new ImageView(new Image(getClass().getResourceAsStream(imgPath)));
+            img.setFitWidth(80); img.setFitHeight(80);
+            Circle clip = new Circle(40, 40, 40);
+            img.setClip(clip);
+            Label n = new Label(name); n.setStyle("-fx-text-fill: white; -fx-font-size: 12px;");
+            card.getChildren().addAll(img, n);
+            addHoverEffect(card);
+        } catch (Exception e) {}
+        return card;
     }
 
     private void setupNavbar() {
-        if (logoNav != null) {
-            logoNav.setImage(new Image(getClass().getResourceAsStream("/assets/images/logo/Raksha.png")));
-        }
-        if (bellIcon != null) {
-            bellIcon.setImage(new Image(getClass().getResourceAsStream("/assets/images/bellwhiter.png")));
-        }
+        try {
+            if (logoNav != null) logoNav.setImage(new Image(getClass().getResourceAsStream("/assets/images/logo/Raksha.png")));
+            if (bellIcon != null) bellIcon.setImage(new Image(getClass().getResourceAsStream("/assets/images/bellwhiter.png")));
+        } catch (Exception e) {}
     }
 
     private void setupNotificationSystem() {
-        // Chargement du son
         try {
             bellSound = new AudioClip(getClass().getResource("/assets/sounds/notification.mp3").toString());
-        } catch (Exception e) {
-            System.err.println("Son non trouvé");
-        }
+        } catch (Exception e) {}
 
-        // Init point rouge (caché au départ)
-        if (notificationCircle != null) {
-            notificationCircle.setVisible(false);
-            notificationCircle.setScaleX(0);
-            notificationCircle.setScaleY(0);
-        }
-
-        // Style du Popup (Noir cinématique)
-        notificationContent.setStyle("-fx-background-color: #111111; -fx-background-radius: 8; -fx-padding: 15; -fx-spacing: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 15, 0, 0, 5);");
+        notificationContent.setStyle("-fx-background-color: #111111; -fx-background-radius: 8; -fx-padding: 15; -fx-spacing: 10;");
         notificationContent.setPrefWidth(250);
         Label popTitle = new Label("Notifications");
         popTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
-        Label popMsg = new Label("No new notifications.");
-        popMsg.setStyle("-fx-text-fill: #888;");
-        notificationContent.getChildren().addAll(popTitle, popMsg);
+        notificationContent.getChildren().add(popTitle);
         notificationPopup.getContent().add(notificationContent);
         notificationPopup.setAutoHide(true);
 
-        // Events sur la cloche
         bellContainer.setOnMouseEntered(e -> {
             shakeBell();
             if (bellSound != null) bellSound.play();
@@ -112,8 +161,7 @@ public class LecturePageController {
             showPopup();
         });
     }
-
-    // ---------------- LOGIQUE D'AFFICHAGE DES DONNÉES ----------------
+    
 
     public void initFilm(int filmId) {
         if (episodeInfoLabel != null) episodeInfoLabel.setVisible(false);
@@ -143,7 +191,6 @@ public class LecturePageController {
         descriptionLabel.setText(desc);
         durationLabel.setText(duration);
         starringLabel.setText(cast);
-        categoriesLabel.setText("Action, Adventure"); // Exemple statique ou à lier
         
         if (epInfo != null && episodeInfoLabel != null) {
             episodeInfoLabel.setText(epInfo);
@@ -151,21 +198,36 @@ public class LecturePageController {
         }
 
         if (imgPath != null) {
-            Image img = new Image(getClass().getResourceAsStream(imgPath));
-            posterImage.setImage(img);
-            backgroundImage.setImage(img);
+            try {
+                Image img = new Image(getClass().getResourceAsStream(imgPath));
+                posterImage.setImage(img);
+                backgroundImage.setImage(img);
+            } catch (Exception e) {}
         }
         populateStars(rating);
     }
 
-    // ---------------- ANIMATIONS ET UI HELPERS ----------------
-
-    private void populateStars(int rating) {
+    private void populateStars(double rating) {
+        if (starsBox == null) return;
+        
         starsBox.getChildren().clear();
-        for (int i = 0; i < 5; i++) {
+        // Rating 3la 10, na9smouh 3la 2 be-ch iwalli 3la 5 stars
+        double starsToHighlight = rating / 2.0; 
+
+        for (int i = 1; i <= 5; i++) {
             Label star = new Label("★");
-            star.setStyle("-fx-font-size: 18px;");
-            star.setTextFill(i < rating ? Color.web("#0000CD") : Color.GRAY);
+            
+            if (i <= starsToHighlight) {
+                // Stars elli yech3lou (Blue Glow)
+                star.setStyle("-fx-text-fill: #00d4ff; " + 
+                              "-fx-font-size: 22px; " + 
+                              "-fx-effect: dropshadow(three-pass-box, rgba(0, 212, 255, 0.8), 15, 0, 0, 0);");
+            } else {
+                // Stars el matfya (Dark Blue/Gray)
+                star.setStyle("-fx-text-fill: #2a3140; " + 
+                              "-fx-font-size: 22px;");
+            }
+            
             starsBox.getChildren().add(star);
         }
     }
@@ -180,9 +242,6 @@ public class LecturePageController {
     private void showNotificationDot() {
         if (!isNotificationVisible) {
             notificationCircle.setVisible(true);
-            ScaleTransition st = new ScaleTransition(Duration.millis(300), notificationCircle);
-            st.setToX(1); st.setToY(1);
-            st.play();
             isNotificationVisible = true;
         }
     }
