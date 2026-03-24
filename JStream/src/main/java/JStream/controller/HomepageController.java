@@ -592,18 +592,22 @@ public class HomepageController {
         featuredTitle.setText(title);
         featuredDescription.setText(description);
     }
-    private void setRating(int stars){
-
+    private void setRating(int stars) {
         heroStars.getChildren().clear();
 
-        for(int i=0;i<5;i++){
-
+        for (int i = 0; i < 5; i++) {
             Label star = new Label("★");
-
-            if(i < stars)
-                star.setStyle("-fx-text-fill:#00aaff; -fx-font-size:18;");
-            else
-                star.setStyle("-fx-text-fill:#555; -fx-font-size:18;");
+            
+            if (i < stars) {
+                // El bleu el glowy elli nasta3mlou fih (#00d4ff)
+                star.setStyle("-fx-text-fill: #00d4ff; " + 
+                              "-fx-font-size: 20px; " + 
+                              "-fx-effect: dropshadow(three-pass-box, rgba(0, 212, 255, 0.8), 15, 0, 0, 0);");
+            } else {
+                // El matfya (Bleu 8ame9)
+                star.setStyle("-fx-text-fill: #2a3140; " + 
+                              "-fx-font-size: 20px;");
+            }
 
             heroStars.getChildren().add(star);
         }
