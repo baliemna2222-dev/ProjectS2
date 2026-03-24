@@ -16,7 +16,7 @@ public class FilmDAO {
 
     // ===== INSERT =====
     public boolean insertFilm(Film film) {
-        String sql = "INSERT INTO films (title, synopsis, casting, video_url, image_url, " +
+        String sql = "INSERT INTO film (title, synopsis, casting, video_url, image_url, " +
                      "title_image_url, poster_url, release_date, duration, age_rating) " +
                      "VALUES (?,?,?,?,?,?,?,?,?,?)";
         try (Connection conn = Database.getConnection();
@@ -99,7 +99,7 @@ public class FilmDAO {
     // ===== GET ALL =====
     public List<Film> getAllFilms() {
         List<Film> list = new ArrayList<>();
-        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS category " +
+        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
                      "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
@@ -118,7 +118,7 @@ public class FilmDAO {
 
     // ===== GET BY ID =====
     public Film getFilmById(int filmId) {
-        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS category " +
+        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
                      "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
@@ -139,7 +139,7 @@ public class FilmDAO {
     // ===== SEARCH (title, category name, or year) =====
     public List<Film> searchFilms(String keyword) {
         List<Film> list = new ArrayList<>();
-        String sql = "SELECT DISTINCT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS category " +
+        String sql = "SELECT DISTINCT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
                      "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
@@ -242,7 +242,7 @@ public class FilmDAO {
 
         List<Category> cats = new ArrayList<>();
         String catStr = rs.getString("categories");
-        if (catStr != null) {
+        if (catStr != null&& !catStr.isEmpty()) {
             for (String name : catStr.split(",")) {
                 Category c = new Category();
                 c.setName(name.trim());
