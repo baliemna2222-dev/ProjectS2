@@ -57,10 +57,15 @@ public class LecturePageController {
         setupNotificationSystem();
         setupTabLogic(); // Logic mta3 el tabs Overview/Trailers
         
+       
         if (btnBack != null) {
-            btnBack.setOnAction(e -> System.out.println("Retour..."));
+            btnBack.setOnAction(e -> handleBackAction());
         }
-
+        btnNotification.setOnAction(e -> {
+            if (isNotificationVisible) {
+                hideNotification(); // El dot tetna7a b-animation mezyena
+            }
+            showPopup();});
         // Entrance Animation
         if (mainContainer != null) {
             FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), mainContainer);
@@ -245,6 +250,34 @@ public class LecturePageController {
             isNotificationVisible = true;
         }
     }
+    private void hideNotification() {
+        if (notificationCircle == null || !isNotificationVisible) return;
+        
+        isNotificationVisible = false;
+
+        // Animation Parallel: Fade + Scale
+        ParallelTransition hide = new ParallelTransition();
+
+        FadeTransition fade = new FadeTransition(Duration.millis(300), notificationCircle);
+        fade.setFromValue(1.0);
+        fade.setToValue(0.0);
+
+        ScaleTransition scale = new ScaleTransition(Duration.millis(300), notificationCircle);
+        scale.setToX(0);
+        scale.setToY(0);
+
+        hide.getChildren().addAll(fade, scale);
+        
+        // Ki toufa el animation, n-raj3ou el scale 1 (bech el marra el jaya tban s7i7a) w n-sakrou el visibility
+        hide.setOnFinished(e -> {
+            notificationCircle.setVisible(false);
+            notificationCircle.setScaleX(1);
+            notificationCircle.setScaleY(1);
+            notificationCircle.setOpacity(1);
+        });
+        
+        hide.play();
+    }
 
     private void showPopup() {
         Bounds bounds = bellContainer.localToScreen(bellContainer.getBoundsInLocal());
@@ -260,5 +293,23 @@ public class LecturePageController {
             }
         }
         return null;
+    }
+    @FXML
+    private void handleBackAction() {
+        try {
+            // 1. Chargi el Home Page FXML
+           
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/src/main/resources/view/HomePage.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            // 2. jib el Stage el 7aliya mel button
+            javafx.stage.Stage stage = (javafx.stage.Stage) btnBack.getScene().getWindow();
+
+            // 3. Beddel el Scene
+            stage.getScene().setRoot(root);
+            
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
     }
 }
