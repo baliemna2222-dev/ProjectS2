@@ -15,7 +15,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -32,7 +31,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Modality;
 import javafx.stage.Popup;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
@@ -619,40 +617,59 @@ public class LecturePageController {
             );
         }
     }
-    private void openVideoPlayer(String videoUrl, String title) {
-        try {
-            // 1. Chargi el FXML mta3 el Player
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/VideoPlayer.fxml"));
-            Parent root = loader.load();
+ // ═══════════════════════════════════════════════════════════════
+//  REPLACE openVideoPlayer() in LecturePageController with this.
+//  The 4-step order is critical — do NOT change it.
+// ═══════════════════════════════════════════════════════════════
 
-            // 2. Jib el Controller mta3 el Player be-sh n-3addiwlo el URL
-            VideoPlayerController controller = loader.getController();
-            
-            // 3. Create el Stage (Popup Fullscreen)
-            Stage videoStage = new Stage();
-            videoStage.initOwner(mainContainer.getScene().getWindow());
-            videoStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-            videoStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+private void openVideoPlayer(String videoUrl, String title) {
+    try {
+        // ── Step 1: Load FXML → triggers controller.initialize() ──────────
+        FXMLLoader loader = new FXMLLoader(
+            getClass().getResource("/view/fxml/VideoPlayer.fxml"));
+        Parent root = loader.load();
 
-            // 4. Pass el Data & Stage lel Player
-            controller.setStage(videoStage);
-            controller.loadVideo(videoUrl, title);
+        VideoPlayerController controller = loader.getController();
 
-            // 5. Fullscreen settings
-            Rectangle2D screenBounds = Screen.getPrimary().getBounds();
-            videoStage.setX(screenBounds.getMinX());
-            videoStage.setY(screenBounds.getMinY());
-            videoStage.setWidth(screenBounds.getWidth());
-            videoStage.setHeight(screenBounds.getHeight());
+        // ── Step 2: Wire stage & store video data (NO loading yet) ────────
+        Stage videoStage = new Stage();
+        videoStage.initOwner(mainContainer.getScene().getWindow());
+        videoStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        videoStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
 
-            Scene scene = new Scene(root);
-            scene.setFill(javafx.scene.paint.Color.BLACK);
-            videoStage.setScene(scene);
-            videoStage.show();
+        controller.setStage(videoStage);       // wire buttons
+        controller.loadVideo(videoUrl, title); // store URL — doesn't load yet
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("❌ Erreur ki 7allina el VideoPlayer: " + e.getMessage());
+        // ── Step 3: Build scene, attach CSS, size and SHOW the stage ──────
+        Scene scene = new Scene(root);
+        scene.setFill(javafx.scene.paint.Color.BLACK);
+
+        // Attach player.css (adjust path if needed)
+        java.net.URL cssUrl = getClass().getResource("/view/css/player.css");
+        if (cssUrl != null) {
+            scene.getStylesheets().add(cssUrl.toExternalForm());
+        } else {
+            System.err.println("⚠️  player.css not found at /view/css/player.css");
         }
+
+        videoStage.setScene(scene);
+
+        javafx.geometry.Rectangle2D screen =
+            javafx.stage.Screen.getPrimary().getBounds();
+        videoStage.setX(screen.getMinX());
+        videoStage.setY(screen.getMinY());
+        videoStage.setWidth(screen.getWidth());
+        videoStage.setHeight(screen.getHeight());
+
+        videoStage.show(); // WebView now has real pixel size
+
+        // ── Step 4: Start playback AFTER show() ───────────────────────────
+        // WebView needs to be on-screen and sized before we inject HTML.
+        controller.startPlayback();
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        System.err.println("❌ Erreur ki 7allina el VideoPlayer: " + e.getMessage());
     }
+}
 }
