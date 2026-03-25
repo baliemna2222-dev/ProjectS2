@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.web.*?>
+<?import javafx.geometry.Insets?>
+
+<StackPane fx:id="rootPane" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.VideoPlayerController">
+
+    <WebView fx:id="webView" />
+
+    <VBox fx:id="controlsOverlay" alignment="BOTTOM_CENTER">
+        
+        <HBox fx:id="topBar" alignment="CENTER_LEFT" prefHeight="80.0" style="-fx-background-color: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);" StackPane.alignment="TOP_CENTER">
+            <padding><Insets left="30" right="30" /></padding>
+            <Button fx:id="btnClose" styleClass="netflix-back-btn" text="←" />
+            <Region prefWidth="20" />
+            <Label fx:id="titleLabel" styleClass="netflix-title" text="Movie Title" />
+        </HBox>
+
+        <Region VBox.vgrow="ALWAYS" />
+
+        <VBox fx:id="bottomControls" spacing="10" style="-fx-background-color: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
+            <padding><Insets bottom="30" left="40" right="40" top="20" /></padding>
+
+            <Slider fx:id="seekBar" styleClass="netflix-slider" />
+
+            <HBox alignment="CENTER_LEFT" spacing="30">
+                <HBox alignment="CENTER_LEFT" spacing="25">
+                    <Button fx:id="btnPlay" styleClass="netflix-control-btn" text="▶" />
+                    <Button styleClass="netflix-control-btn" text="⟲₁₀" />
+                    <Button styleClass="netflix-control-btn" text="⟳₁₀" />
+                    <Button styleClass="netflix-control-btn" text="🔊" />
+                </HBox>
+                
+                <Region HBox.hgrow="ALWAYS" />
+
+                <HBox alignment="CENTER_RIGHT" spacing="25">
+                    <Button styleClass="netflix-control-btn" text="Episodes" />
+                    <Button styleClass="netflix-control-btn" text="Audio" />
+                    <Button fx:id="btnFullscreen" styleClass="netflix-control-btn" text="⛶" />
+                </HBox>
+            </HBox>
+        </VBox>
+    </VBox>
+</StackPane>
