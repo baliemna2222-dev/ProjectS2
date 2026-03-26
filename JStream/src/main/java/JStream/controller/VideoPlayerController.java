@@ -11,6 +11,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
@@ -26,11 +27,15 @@ import JStream.dao.FilmProgressDAO;
 import JStream.dao.EpisodeProgressDAO;
 import JStream.entity.Session;
 import JStream.utils.Database;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
 
 public class VideoPlayerController {
 
     // ── FXML nodes ───────────────────────────────────────────────────────────
-    @FXML private WebView webView;
+	@FXML private MediaView mediaView; // Baddelna el WebView
+    private MediaPlayer mediaPlayer;   // Hédha houa el "Moteur" el jdid
     @FXML private StackPane rootPane;
     @FXML private HBox topBar;
     @FXML private VBox bottomControls;
@@ -62,9 +67,11 @@ public class VideoPlayerController {
  // Dimensions mta3 el "Medium" mode (mouch sghir barcha)
     private static final double MED_W = 960; 
     private static final double MED_H = 540;
+    private boolean isViewSmall = false; // Toggle state
+    // ── Initialize ───────────────────────────────────────────────────────────
+
     @FXML
     public void initialize() {
-        webView.setContextMenuEnabled(false);
 
         // Init DAOs
         try {
@@ -123,25 +130,24 @@ public class VideoPlayerController {
             }
         });
 
-        // ── Volume slider ────────────────────────────────────────────────────
+     // ── Volume slider (Native) ───
         volumeSlider.valueProperty().addListener((obs, o, n) -> {
-            double vol = n.doubleValue() / 100.0;
-            if (videoReady) js("document.getElementById('vid').volume = " + vol);
-            updateVolumeIcon(vol);
+            if (mediaPlayer != null) {
+                mediaPlayer.setVolume(n.doubleValue() / 100.0);
+            }
+            updateVolumeIcon(n.doubleValue() / 100.0);
         });
 
-        // ── Seek bar ─────────────────────────────────────────────────────────
+        // ── Seek bar (Native) ───
         seekBar.setOnMousePressed(e -> {
-            if (!videoReady) return;
+            if (mediaPlayer == null) return;
             wasPausedBeforeSeek = !isPlaying;
-            progressTimer.pause();
-            if (isPlaying) js("document.getElementById('vid').pause()");
+            mediaPlayer.pause();
         });
         seekBar.setOnMouseReleased(e -> {
-            if (!videoReady) return;
-            js("document.getElementById('vid').currentTime = " + seekBar.getValue());
-            if (!wasPausedBeforeSeek) js("document.getElementById('vid').play()");
-            progressTimer.play();
+            if (mediaPlayer == null) return;
+            mediaPlayer.seek(Duration.seconds(seekBar.getValue()));
+            if (!wasPausedBeforeSeek) mediaPlayer.play();
         });
 
         // ── Buttons ──────────────────────────────────────────────────────────
@@ -158,6 +164,7 @@ public class VideoPlayerController {
         if (btnMiniPlayer != null) {
         	btnMiniPlayer.setOnAction(e -> {
                 stage.setFullScreen(!stage.isFullScreen());
+                isViewSmall = false; // Reset toggle state ken nzel 3la fullscreen direct
             });
         }
 
@@ -192,6 +199,7 @@ public class VideoPlayerController {
         s.fullScreenProperty().addListener((obs, wasFs, isFs) -> {
             if (isFs) {
                 btnMiniPlayer.setText("🗗"); // Icon mta3 mini/center
+                isViewSmall = false;      // Reset state 
             } else {
                 btnMiniPlayer.setText("🗖"); // Icon mta3 Fullscreen
                 // Hna dima i-ji f-el Center ki n-khalliouh mouch fullscreen
@@ -221,108 +229,52 @@ public class VideoPlayerController {
      *   controller.startPlayback();            ← always last
      */
     public void startPlayback() {
-        if (pendingUrl == null) {
-            System.err.println("⚠️ startPlayback() called with no pending URL");
-            return;
-        }
+        if (pendingUrl == null) return;
 
         titleLabel.setText(pendingTitle);
         loadingSpinner.setVisible(true);
-        videoReady = false;
-        isPlaying  = true;
-        btnPlay.setText("⏸");
-        progressTimer.stop();
-        saveTimer.stop();
 
-        webView.getEngine().getLoadWorker().stateProperty().addListener(
-            new javafx.beans.value.ChangeListener<javafx.concurrent.Worker.State>() {
-                @Override
-                public void changed(
-                        javafx.beans.value.ObservableValue<
-                            ? extends javafx.concurrent.Worker.State> obs,
-                        javafx.concurrent.Worker.State old,
-                        javafx.concurrent.Worker.State newState) {
+        // N7adhrou el Media mel URL
+        Media media = new Media(resolveUrl(pendingUrl));
+        mediaPlayer = new MediaPlayer(media);
+        mediaView.setMediaPlayer(mediaPlayer);
 
-                    if (newState == javafx.concurrent.Worker.State.SUCCEEDED) {
-                        obs.removeListener(this);
-                        videoReady = true;
-                        Platform.runLater(() -> {
-                            loadingSpinner.setVisible(false);
-                            progressTimer.play();
-                            saveTimer.play();
+        // Auto-fit video size
+        mediaView.setPreserveRatio(true);
 
-                            double vol = volumeSlider.getValue() / 100.0;
-                            js("document.getElementById('vid').volume = " + vol);
-                            if (isMuted) js("document.getElementById('vid').muted = true");
+        mediaPlayer.setOnReady(() -> {
+            loadingSpinner.setVisible(false);
+            videoReady = true;
+            mediaPlayer.setVolume(volumeSlider.getValue() / 100.0);
+            mediaPlayer.play();
+            
+            progressTimer.play();
+            saveTimer.play();
+        });
 
-                            js("document.getElementById('vid')" +
-                               ".addEventListener('ended', function() {" +
-                               "  window._jstreamEnded = true;" +
-                               "});");
-
-                            rootPane.requestFocus();
-                        });
-
-                    } else if (newState == javafx.concurrent.Worker.State.FAILED) {
-                        obs.removeListener(this);
-                        Platform.runLater(() -> loadingSpinner.setVisible(false));
-                        System.err.println("❌ WebView FAILED: " + pendingUrl);
-                    }
-                }
-            });
-
-        String path = resolveUrl(pendingUrl);
-        String html = """
-                <html>
-                <body style="margin:0;padding:0;background:#000;overflow:hidden;
-                             width:100vw;height:100vh;display:flex;
-                             justify-content:center;align-items:center;">
-                  <video id="vid" autoplay playsinline
-                         style="width:100%%;height:100%%;object-fit:contain;display:block;">
-                    <source src="%s" type="video/mp4">
-                  </video>
-                </body>
-                </html>
-                """.formatted(path);
-
-        webView.getEngine().loadContent(html);
+        mediaPlayer.setOnEndOfMedia(() -> {
+            saveProgressToDB(true);
+            isPlaying = false;
+            btnPlay.setText("▶");
+        });
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
 
     private void updateProgress() {
-        if (!videoReady) return;
-        try {
-            Object ended = js("window._jstreamEnded || false");
-            if (Boolean.TRUE.equals(ended)) {
-                js("window._jstreamEnded = false;");
-                // Mark completed in DB
-                saveProgressToDB(true);
-                Platform.runLater(() -> {
-                    isPlaying = false;
-                    btnPlay.setText("▶");
-                    fadeUI(1);
-                    idleTimer.stop();
-                    saveTimer.stop();
-                });
-            }
+        if (mediaPlayer == null || !videoReady) return;
 
-            Object curr = js("document.getElementById('vid').currentTime");
-            Object dur  = js("document.getElementById('vid').duration");
-            if (curr instanceof Number c && dur instanceof Number d) {
-                double total   = d.doubleValue();
-                double current = c.doubleValue();
-                if (total > 0 && !Double.isNaN(total)) {
-                    Platform.runLater(() -> {
-                        seekBar.setMax(total);
-                        seekBar.setValue(current);
-                        timeLabel.setText(formatTime(current) + " / " + formatTime(total));
-                    });
-                }
-            }
-        } catch (Exception ignored) {}
+        Duration current = mediaPlayer.getCurrentTime();
+        Duration total = mediaPlayer.getTotalDuration();
+
+        if (total != null && total.toSeconds() > 0) {
+            Platform.runLater(() -> {
+                seekBar.setMax(total.toSeconds());
+                seekBar.setValue(current.toSeconds());
+                timeLabel.setText(formatTime(current.toSeconds()) + " / " + formatTime(total.toSeconds()));
+            });
+        }
     }
-
     /** Called by saveTimer every 10 s — saves IN_PROGRESS. */
     private void saveProgressToDB() {
         saveProgressToDB(false);
@@ -333,55 +285,48 @@ public class VideoPlayerController {
      * @param completed true → writes COMPLETED, false → IN_PROGRESS
      */
     private void saveProgressToDB(boolean completed) {
-        if (filmProgressDAO == null && episodeProgressDAO == null) return;
+        if (mediaPlayer == null || (filmProgressDAO == null && episodeProgressDAO == null)) return;
 
-        Object curr = js("document.getElementById('vid').currentTime");
-        if (!(curr instanceof Number)) return;
-        int positionSec = ((Number) curr).intValue();
-
+        int positionSec = (int) mediaPlayer.getCurrentTime().toSeconds();
         int userId = Session.getUserId();
 
         try {
-            if (filmId != null && filmProgressDAO != null) {
+            if (filmId != null) {
                 if (completed) filmProgressDAO.setCompleted(userId, filmId, positionSec);
-                else           filmProgressDAO.setInProgress(userId, filmId, positionSec);
-            } else if (episodeId != null && episodeProgressDAO != null) {
+                else filmProgressDAO.setInProgress(userId, filmId, positionSec);
+            } else if (episodeId != null) {
                 if (completed) episodeProgressDAO.setCompleted(userId, episodeId, positionSec);
-                else           episodeProgressDAO.setInProgress(userId, episodeId, positionSec);
+                else episodeProgressDAO.setInProgress(userId, episodeId, positionSec);
             }
-        } catch (Exception e) {
-            System.err.println("⚠️ saveProgressToDB failed: " + e.getMessage());
-        }
+        } catch (Exception e) { System.err.println("⚠️ Save failed: " + e.getMessage()); }
     }
 
     private void togglePlay() {
-        if (!videoReady) return;
+        if (mediaPlayer == null) return;
         if (isPlaying) {
-            js("document.getElementById('vid').pause()");
+            mediaPlayer.pause();
             btnPlay.setText("▶");
-            fadeUI(1);
-            idleTimer.stop();
-            saveProgressToDB(); // Save on pause
+            saveProgressToDB();
         } else {
-            js("document.getElementById('vid').play()");
+            mediaPlayer.play();
             btnPlay.setText("⏸");
-            idleTimer.playFromStart();
         }
         isPlaying = !isPlaying;
     }
 
+    private void seek(int seconds) {
+        if (mediaPlayer == null) return;
+        mediaPlayer.seek(mediaPlayer.getCurrentTime().add(Duration.seconds(seconds)));
+    }
+
     private void toggleMute() {
-        if (!videoReady) return;
+        if (mediaPlayer == null) return;
         isMuted = !isMuted;
-        js("document.getElementById('vid').muted = " + isMuted);
+        mediaPlayer.setMute(isMuted);
         updateVolumeIcon(isMuted ? 0 : volumeSlider.getValue() / 100.0);
     }
 
-    private void seek(int seconds) {
-        if (!videoReady) return;
-        js("document.getElementById('vid').currentTime += " + seconds);
-    }
-
+  
     private void toggleToggleView() {
         if (stage == null) return;
 
@@ -396,18 +341,18 @@ public class VideoPlayerController {
             stage.setHeight(MED_H);
             stage.setX((screen.getWidth() - MED_W) / 2);
             stage.setY((screen.getHeight() - MED_H) / 2);
+
+            isViewSmall = true;
         } else {
             // Yarja3 Fullscreen
             stage.setAlwaysOnTop(false);
             stage.setFullScreen(true);
+            
+            isViewSmall = false;
         }
     }
 
-    private Object js(String script) {
-        try { return webView.getEngine().executeScript(script); }
-        catch (Exception e) { return null; }
-    }
-
+  
     private void fadeUI(double opacity) {
         if (!isPlaying && opacity == 0) return;
         FadeTransition ft1 = new FadeTransition(Duration.millis(300), topBar);
@@ -423,12 +368,15 @@ public class VideoPlayerController {
     }
 
     private void closePlayer() {
-        saveProgressToDB(); // Save on close
+        saveProgressToDB();
         videoReady = false;
         progressTimer.stop();
         idleTimer.stop();
         saveTimer.stop();
-        webView.getEngine().load(null);
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.dispose(); // Free memory
+        }
         if (stage != null) stage.close();
     }
 
