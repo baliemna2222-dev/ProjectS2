@@ -11,19 +11,20 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.web.WebView;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import JStream.dao.FilmProgressDAO;
+
+import java.io.File;
+
 import JStream.dao.EpisodeProgressDAO;
 import JStream.entity.Session;
 import JStream.utils.Database;
@@ -67,9 +68,6 @@ public class VideoPlayerController {
  // Dimensions mta3 el "Medium" mode (mouch sghir barcha)
     private static final double MED_W = 960; 
     private static final double MED_H = 540;
-    private boolean isViewSmall = false; // Toggle state
-    // ── Initialize ───────────────────────────────────────────────────────────
-
     @FXML
     public void initialize() {
 
@@ -164,7 +162,6 @@ public class VideoPlayerController {
         if (btnMiniPlayer != null) {
         	btnMiniPlayer.setOnAction(e -> {
                 stage.setFullScreen(!stage.isFullScreen());
-                isViewSmall = false; // Reset toggle state ken nzel 3la fullscreen direct
             });
         }
 
@@ -199,52 +196,54 @@ public class VideoPlayerController {
         s.fullScreenProperty().addListener((obs, wasFs, isFs) -> {
             if (isFs) {
                 btnMiniPlayer.setText("🗗"); // Icon mta3 mini/center
-                isViewSmall = false;      // Reset state 
             } else {
                 btnMiniPlayer.setText("🗖"); // Icon mta3 Fullscreen
                 // Hna dima i-ji f-el Center ki n-khalliouh mouch fullscreen
             }
         });
     }
-
-    /**
-     * Set DB context so watch progress is saved.
-     * Call BEFORE startPlayback().
-     *   - For a film:   setContext(filmId, null)
-     *   - For episode:  setContext(null, episodeId)
-     */
     public void setContext(Integer filmId, Integer episodeId) {
         this.filmId    = filmId;
         this.episodeId = episodeId;
     }
 
-    /**
-     * Load HTML into WebView. Call AFTER stage.show().
-     *
-     * Correct order in LecturePageController:
-     *   controller.setStage(videoStage);
-     *   controller.loadVideo(url, title);
-     *   controller.setContext(filmId, null);   // or (null, epId) for episode
-     *   videoStage.show();
-     *   controller.startPlayback();            ← always last
-     */
     public void startPlayback() {
-        if (pendingUrl == null) return;
+        if (pendingUrl == null || pendingUrl.isEmpty()) return;
 
         titleLabel.setText(pendingTitle);
         loadingSpinner.setVisible(true);
 
-        // N7adhrou el Media mel URL
-        Media media = new Media(resolveUrl(pendingUrl));
+        // --- 1. Jib el last position mel base ---
+        int startPos = 0;
+        int userId = Session.getUserId();
+        try {
+            if (filmId != null) {
+                startPos = filmProgressDAO.getLastPosition(userId, filmId);
+            } else if (episodeId != null) {
+                startPos = episodeProgressDAO.getLastPosition(userId, episodeId);
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ DB Error fetching last position: " + e.getMessage());
+        }
+
+        final int finalStartPos = startPos;
+
+        // --- 2. Fix Path & Init Media ---
+        String finalUrl = resolveUrl(pendingUrl);
+        Media media = new Media(finalUrl);
         mediaPlayer = new MediaPlayer(media);
         mediaView.setMediaPlayer(mediaPlayer);
-
-        // Auto-fit video size
         mediaView.setPreserveRatio(true);
 
         mediaPlayer.setOnReady(() -> {
             loadingSpinner.setVisible(false);
             videoReady = true;
+
+            // --- 3. SEEK l-el blasa el 9dima ---
+            if (finalStartPos > 0) {
+                mediaPlayer.seek(Duration.seconds(finalStartPos));
+            }
+
             mediaPlayer.setVolume(volumeSlider.getValue() / 100.0);
             mediaPlayer.play();
             
@@ -252,10 +251,19 @@ public class VideoPlayerController {
             saveTimer.play();
         });
 
+        mediaPlayer.setOnError(() -> {
+            System.err.println("❌ Media Error: " + mediaPlayer.getError().getMessage());
+            loadingSpinner.setVisible(false);
+        });
+
         mediaPlayer.setOnEndOfMedia(() -> {
-            saveProgressToDB(true);
-            isPlaying = false;
-            btnPlay.setText("▶");
+            System.out.println("🎬 Video Finished! Saving as COMPLETED..."); // Zid hedhi be-sh tchoufha f-el Console
+            saveProgressToDB(false); // 👈 HEDHI EL LEZMA: true be-sh t-mchi lel setCompleted
+            
+            Platform.runLater(() -> {
+                isPlaying = false;
+                btnPlay.setText("▶");
+            });
         });
     }
 
@@ -280,25 +288,35 @@ public class VideoPlayerController {
         saveProgressToDB(false);
     }
 
-    /**
-     * Persists watch position.
-     * @param completed true → writes COMPLETED, false → IN_PROGRESS
-     */
+   
     private void saveProgressToDB(boolean completed) {
-        if (mediaPlayer == null || (filmProgressDAO == null && episodeProgressDAO == null)) return;
-
-        int positionSec = (int) mediaPlayer.getCurrentTime().toSeconds();
+        if (mediaPlayer == null) return;
         int userId = Session.getUserId();
 
-        try {
-            if (filmId != null) {
-                if (completed) filmProgressDAO.setCompleted(userId, filmId, positionSec);
-                else filmProgressDAO.setInProgress(userId, filmId, positionSec);
-            } else if (episodeId != null) {
-                if (completed) episodeProgressDAO.setCompleted(userId, episodeId, positionSec);
-                else episodeProgressDAO.setInProgress(userId, episodeId, positionSec);
+        // ─── LOGIQUE FILM ───
+        if (filmId != null) {
+            if (completed) {
+                int totalDur = (int) mediaPlayer.getTotalDuration().toSeconds();
+                filmProgressDAO.setCompleted(userId, filmId, totalDur);
+                System.out.println("🎬 Film: COMPLETED saved.");
+            } else {
+                int currentPos = (int) mediaPlayer.getCurrentTime().toSeconds();
+                filmProgressDAO.setInProgress(userId, filmId, currentPos);
+                System.out.println("⏳ Film Progress: " + currentPos + "s");
             }
-        } catch (Exception e) { System.err.println("⚠️ Save failed: " + e.getMessage()); }
+        } 
+        // ─── LOGIQUE EPISODE (SERIE) ───
+        else if (episodeId != null) {
+            if (completed) {
+                int totalDur = (int) mediaPlayer.getTotalDuration().toSeconds();
+                episodeProgressDAO.setCompleted(userId, episodeId, totalDur);
+                System.out.println("📺 Episode: COMPLETED saved.");
+            } else {
+                int currentPos = (int) mediaPlayer.getCurrentTime().toSeconds();
+                episodeProgressDAO.setInProgress(userId, episodeId, currentPos);
+                System.out.println("⏳ Episode Progress: " + currentPos + "s");
+            }
+        }
     }
 
     private void togglePlay() {
@@ -341,14 +359,10 @@ public class VideoPlayerController {
             stage.setHeight(MED_H);
             stage.setX((screen.getWidth() - MED_W) / 2);
             stage.setY((screen.getHeight() - MED_H) / 2);
-
-            isViewSmall = true;
         } else {
             // Yarja3 Fullscreen
             stage.setAlwaysOnTop(false);
             stage.setFullScreen(true);
-            
-            isViewSmall = false;
         }
     }
 
@@ -382,9 +396,21 @@ public class VideoPlayerController {
 
     private String resolveUrl(String url) {
         try {
+            if (url.startsWith("http")) return url;
+            
+            // Jarreb lawwej f-el resources (src/main/resources)
             java.net.URL res = getClass().getResource(url);
-            return (res != null) ? res.toExternalForm() : url;
-        } catch (Exception e) { return url; }
+            if (res != null) return res.toExternalForm();
+            
+            // Ken ma l9ahsh, i-3tabrou Path absolute f-el disk (C:/...)
+            File file = new File(url);
+            if (file.exists()) {
+                return file.toURI().toString();
+            }
+            return url;
+        } catch (Exception e) { 
+            return url; 
+        }
     }
 
     private String formatTime(double totalSeconds) {
