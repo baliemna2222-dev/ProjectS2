@@ -1,15 +1,21 @@
 package JStream.controller;
 
+import java.net.URL;
+import java.sql.SQLException;
+
 import JStream.entity.Episode;
 import JStream.entity.FeaturedItem;
 import JStream.entity.Film;
 import JStream.entity.MyListManager;
+import JStream.entity.Season;
 import JStream.entity.Serie;
 import JStream.entity.Session;
-import JStream.entity.Season;
 import JStream.service.FeaturedService;
 import JStream.service.MylistService;
-import javafx.animation.*;
+import javafx.animation.FadeTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.RotateTransition;
+import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -34,9 +40,6 @@ import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
-
-import java.net.URL;
-import java.sql.SQLException;
 
 
 
@@ -601,7 +604,7 @@ public class LecturePageController {
         int filmId = "film".equalsIgnoreCase(currentItem.getType()) ? currentItem.getId() : 0;
         int serieId = "serie".equalsIgnoreCase(currentItem.getType()) ? currentItem.getSerieId() : 0;
 
-        boolean alreadyAdded = mylistService.isInList(userId, filmId, serieId);
+        boolean alreadyAdded = MylistService.isInList(userId, filmId, serieId);
 
         if (alreadyAdded) {
             addToListButton.setText("✔ Added");
@@ -617,59 +620,66 @@ public class LecturePageController {
             );
         }
     }
- // ═══════════════════════════════════════════════════════════════
-//  REPLACE openVideoPlayer() in LecturePageController with this.
-//  The 4-step order is critical — do NOT change it.
-// ═══════════════════════════════════════════════════════════════
-
-private void openVideoPlayer(String videoUrl, String title) {
-    try {
-        // ── Step 1: Load FXML → triggers controller.initialize() ──────────
-        FXMLLoader loader = new FXMLLoader(
-            getClass().getResource("/view/fxml/VideoPlayer.fxml"));
-        Parent root = loader.load();
-
-        VideoPlayerController controller = loader.getController();
-
-        // ── Step 2: Wire stage & store video data (NO loading yet) ────────
-        Stage videoStage = new Stage();
-        videoStage.initOwner(mainContainer.getScene().getWindow());
-        videoStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-        videoStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
-
-        controller.setStage(videoStage);       // wire buttons
-        controller.loadVideo(videoUrl, title); // store URL — doesn't load yet
-
-        // ── Step 3: Build scene, attach CSS, size and SHOW the stage ──────
-        Scene scene = new Scene(root);
-        scene.setFill(javafx.scene.paint.Color.BLACK);
-
-        // Attach player.css (adjust path if needed)
-        java.net.URL cssUrl = getClass().getResource("/view/css/player.css");
-        if (cssUrl != null) {
-            scene.getStylesheets().add(cssUrl.toExternalForm());
-        } else {
-            System.err.println("⚠️  player.css not found at /view/css/player.css");
+    private void openVideoPlayer(String videoUrl, String title) {
+        // ── Step 0: Check URL valid ──────────────────────────────────────────
+        if (videoUrl == null || videoUrl.trim().isEmpty()) {
+            System.err.println("❌ Video URL is NULL or empty!");
+            return;
         }
 
-        videoStage.setScene(scene);
+        try {
+            // ── Step 1: Load FXML ─────────────────────────────────────────────
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/VideoPlayer.fxml"));
+            Parent root = loader.load();
+            VideoPlayerController controller = loader.getController();
 
-        javafx.geometry.Rectangle2D screen =
-            javafx.stage.Screen.getPrimary().getBounds();
-        videoStage.setX(screen.getMinX());
-        videoStage.setY(screen.getMinY());
-        videoStage.setWidth(screen.getWidth());
-        videoStage.setHeight(screen.getHeight());
+            // ── Step 2: Init Stage ────────────────────────────────────────────
+            Stage videoStage = new Stage();
+            videoStage.initOwner(mainContainer.getScene().getWindow());
+            videoStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            videoStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
 
-        videoStage.show(); // WebView now has real pixel size
+            controller.setStage(videoStage);       
+            controller.loadVideo(videoUrl, title); 
 
-        // ── Step 4: Start playback AFTER show() ───────────────────────────
-        // WebView needs to be on-screen and sized before we inject HTML.
-        controller.startPlayback();
+            // ── Step 3: SMART CONTEXT (Film vs Episode) ──────────────────────
+            // Hna n-thabtou daxel el currentItem mte3ek
+            if (currentItem.getType().equalsIgnoreCase("MOVIE")) {
+                // Kenou film, n-ab3ath el ID lel filmId
+                controller.setContext(currentItem.getId(), null);
+                System.out.println("🎬 Mode: Film (ID: " + currentItem.getId() + ")");
+            } else {
+                // Kenou episode, n-ab3ath el ID lel episodeId
+                controller.setContext(null, currentItem.getId());
+                System.out.println("📺 Mode: Episode (ID: " + currentItem.getId() + ")");
+            }
 
-    } catch (Exception e) {
-        e.printStackTrace();
-        System.err.println("❌ Erreur ki 7allina el VideoPlayer: " + e.getMessage());
+            // ── Step 4: Scene & UI ────────────────────────────────────────────
+            Scene scene = new Scene(root);
+            scene.setFill(javafx.scene.paint.Color.BLACK);
+
+            java.net.URL cssUrl = getClass().getResource("/view/css/player.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+
+            videoStage.setScene(scene);
+
+            // Maximize to screen
+            javafx.geometry.Rectangle2D screen = javafx.stage.Screen.getPrimary().getBounds();
+            videoStage.setX(screen.getMinX());
+            videoStage.setY(screen.getMinY());
+            videoStage.setWidth(screen.getWidth());
+            videoStage.setHeight(screen.getHeight());
+
+            videoStage.show(); 
+
+            // ── Step 5: Start Playback ───────────────────────────────────────
+            controller.startPlayback();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("❌ Erreur f-el VideoPlayer: " + e.getMessage());
+        }
     }
-}
 }

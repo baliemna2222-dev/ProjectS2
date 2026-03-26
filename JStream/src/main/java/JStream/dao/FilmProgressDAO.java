@@ -50,16 +50,32 @@ public class FilmProgressDAO {
 
     // ----------------- Mark film completed -----------------
     public void setCompleted(int userId, int filmId, int lastPosition) {
-        String sql = "UPDATE film_progress SET last_position=?, watch_status='COMPLETED' " +
-                     "WHERE user_id=? AND film_id=?";
+        // Thabbet elli watch_status maktouba s7i7a kima f-el Database mte3ek
+        String sql = "UPDATE film_progress SET watch_status = 'COMPLETED', last_position = ? " +
+                     "WHERE user_id = ? AND film_id = ?";
+        
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, lastPosition);
             ps.setInt(2, userId);
             ps.setInt(3, filmId);
-            ps.executeUpdate();
+            
+            int rowsAffected = ps.executeUpdate();
+            System.out.println("Rows updated: " + rowsAffected); // Ken tal9a 0, m3netha el WHERE ghalta
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
+    //----------------------------------------------------
+    public int getLastPosition(int userId, int filmId) throws SQLException {
+        String sql = "SELECT last_position FROM film_progress WHERE user_id = ? AND film_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, filmId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("last_position");
+            }
+        }
+        return 0; // Ken ma l9ach chay, yabda mel sfer
+    }
 }

@@ -87,4 +87,20 @@ public class EpisodeProgressDAO {
         }
         return WatchStatus.NOT_STARTED;
     }
+    
+    //-------------------------------
+    public int getLastPosition(int userId, int epId) throws SQLException {
+        // ⚠️ Kenet film_id, baddelneha ep_id
+        String sql = "SELECT last_position FROM episode_progress WHERE user_id = ? AND ep_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, epId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("last_position");
+            }
+        }
+        return 0;
+    }
+    
 }

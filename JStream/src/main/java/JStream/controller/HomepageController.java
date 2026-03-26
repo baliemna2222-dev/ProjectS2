@@ -680,5 +680,11 @@ public class HomepageController {
 
         fadeOut.play();
     }
-    
+    public void refreshData() {
+        Platform.runLater(() -> {
+            categoryContainer.getChildren().clear(); // Fassa5 el kdim
+            loadCarouselsByCategory();               // 3awed jib el jdid
+            System.out.println("🔄 Dashboard Refreshed with latest Watch Status!");
+        });
+    }
 }
