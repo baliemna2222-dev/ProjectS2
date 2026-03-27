@@ -1,141 +1,605 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Hôte : 127.0.0.1
+-- Généré le : dim. 22 mars 2026 à 23:31
+-- Version du serveur : 10.4.32-MariaDB
+-- Version de PHP : 8.2.12
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de données : `jstreamdb`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `category`
+--
+
+CREATE TABLE `category` (
+  `category_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `category`
+--
+
+INSERT INTO `category` (`category_id`, `name`, `description`, `created_at`) VALUES
+(1, 'Action', 'Fast-paced movies with stunts and combat.', '2026-03-21 20:33:30'),
+(2, 'Adventure', 'Journeys and exploration of unknown worlds.', '2026-03-21 20:33:30'),
+(3, 'Animation', 'Stylized visual storytelling for all ages.', '2026-03-21 20:33:30'),
+(4, 'Comedy', 'Lighthearted content designed to make you laugh.', '2026-03-21 20:33:30'),
+(5, 'Crime', 'Heists, detectives, and the criminal underworld.', '2026-03-21 20:33:30'),
+(6, 'Documentary', 'Real-life stories and history.', '2026-03-21 20:33:30'),
+(7, 'Drama', 'Emotional, character-driven narratives.', '2026-03-21 20:33:30'),
+(8, 'Fantasy', 'Magic and mythical creatures.', '2026-03-21 20:33:30'),
+(9, 'Horror', 'Spooky and terrifying stories.', '2026-03-21 20:33:30'),
+(10, 'Mystery', 'Suspense and puzzles.', '2026-03-21 20:33:30'),
+(11, 'Romance', 'Love and relationships.', '2026-03-21 20:33:30'),
+(12, 'Sci-Fi', 'Future tech and space travel.', '2026-03-21 20:33:30'),
+(13, 'Thriller', 'High-tension plots.', '2026-03-21 20:33:30'),
+(14, 'Critically Acclaimed', 'Award-winning and top-rated hits.', '2026-03-21 20:33:30'),
+(15, 'Kids & Family', 'Safe for children-oriented content.', '2026-03-21 20:33:30'),
+(16, 'Anime', 'Japanese animation style.', '2026-03-21 20:33:30'),
+(17, 'Trending Now', 'The most-watched titles this week.', '2026-03-21 20:33:30'),
+(18, 'Musical', 'Films where music and song are central.', '2026-03-21 20:33:30');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `episode`
+--
+
+CREATE TABLE `episode` (
+  `ep_id` int(11) NOT NULL,
+  `season_id` int(11) DEFAULT NULL,
+  `num_episode` int(11) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `duration` int(11) DEFAULT NULL,
+  `resume` text DEFAULT NULL,
+  `video_url` varchar(255) DEFAULT NULL,
+  `covert_url` varchar(255) DEFAULT NULL,
+  `rating` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `released_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `episode`
+--
+
+INSERT INTO `episode` (`ep_id`, `season_id`, `num_episode`, `title`, `duration`, `resume`, `video_url`, `covert_url`, `rating`, `created_at`, `released_at`) VALUES
+(1, 1, 1, 'Chapter One: The Vanishing of Will Byers', 47, NULL, NULL, NULL, 2, '2026-03-22 00:54:40', NULL),
+(2, 1, 2, 'Chapter Two: The Weirdo on Maple Street', 55, NULL, NULL, NULL, 2, '2026-03-22 00:54:40', NULL),
+(3, 1, 3, 'Chapter Three: Holly, Jolly', 51, NULL, NULL, NULL, 5, '2026-03-22 00:54:40', NULL),
+(4, 1, 4, 'Chapter Four: The Body', 50, NULL, NULL, NULL, 3, '2026-03-22 00:54:40', NULL),
+(5, 2, 1, 'Chapter One: MADMAX', 48, NULL, NULL, NULL, 4, '2026-03-22 00:54:40', NULL),
+(6, 2, 2, 'Chapter Two: Trick or Treat, Freak', 56, NULL, NULL, NULL, 1, '2026-03-22 00:54:40', NULL),
+(7, 1, 5, 'Chapter Five: The Flea and the Acrobat', 53, NULL, NULL, NULL, 2, '2026-03-22 02:29:45', NULL),
+(8, 1, 6, 'Chapter Six: The Monster', 47, NULL, NULL, NULL, 1, '2026-03-22 02:29:45', NULL),
+(9, 1, 7, 'Chapter Seven: The Bathtub', 42, NULL, NULL, NULL, 5, '2026-03-22 02:29:45', NULL),
+(10, 1, 8, 'Chapter Eight: The Upside Down', 55, NULL, NULL, NULL, 2, '2026-03-22 02:29:45', NULL),
+(11, 1, 9, 'Turing\'s Legacy', 52, NULL, NULL, NULL, 2, '2026-03-22 02:50:33', NULL),
+(12, 1, 10, 'The Silent Server', 49, NULL, NULL, NULL, 5, '2026-03-22 02:50:33', NULL),
+(13, 1, 11, 'Digital Consciousness', 58, NULL, NULL, NULL, 3, '2026-03-22 02:50:33', NULL),
+(14, 1, 12, 'Arrival (Season Finale)', 65, NULL, NULL, NULL, 1, '2026-03-22 02:50:33', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `episode_progress`
+--
+
+CREATE TABLE `episode_progress` (
+  `user_id` int(11) NOT NULL,
+  `ep_id` int(11) NOT NULL,
+  `status` enum('NOT_STARTED','IN_PROGRESS','COMPLETED') NOT NULL DEFAULT 'NOT_STARTED',
+  `last_position` int(11) DEFAULT 0,
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `episode_progress`
+--
+
+INSERT INTO `episode_progress` (`user_id`, `ep_id`, `status`, `last_position`, `updated_at`) VALUES
+(1, 1, 'IN_PROGRESS', 0, '2026-03-22 02:53:19'),
+(1, 2, 'IN_PROGRESS', 0, '2026-03-22 03:27:41'),
+(1, 3, 'IN_PROGRESS', 0, '2026-03-22 03:42:54'),
+(1, 4, 'IN_PROGRESS', 0, '2026-03-22 14:20:56'),
+(1, 7, 'IN_PROGRESS', 0, '2026-03-22 14:56:09'),
+(1, 8, 'IN_PROGRESS', 0, '2026-03-22 15:59:50');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `film`
+--
+
+CREATE TABLE `film` (
+  `film_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `synopsis` text DEFAULT NULL,
+  `casting` text DEFAULT NULL,
+  `video_url` varchar(255) DEFAULT NULL,
+  `image_url` varchar(255) DEFAULT NULL,
+  `title_image_url` varchar(255) DEFAULT NULL,
+  `poster_url` varchar(255) DEFAULT NULL,
+  `release_date` datetime DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `duration` double DEFAULT NULL,
+  `age_rating` varchar(10) DEFAULT NULL,
+  `rating` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `film`
+--
+
+INSERT INTO `film` (`film_id`, `title`, `synopsis`, `casting`, `video_url`, `image_url`, `title_image_url`, `poster_url`, `release_date`, `updated_at`, `duration`, `age_rating`, `rating`) VALUES
+(1, 'Moana 2', 'After receiving an unexpected call from her wayfinding ancestors, Moana journeys to the far seas of Oceania into dangerous, long-lost waters.', 'Auliʻi Cravalho, Dwayne Johnson', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'moana2_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2024-11-27 00:00:00', '2026-03-22 19:25:36', 100, 'PG', 0),
+(2, 'K-Pop: Demon Hunters', 'A world-renowned K-Pop girl group balances their lives in the spotlight with their secret identity as demon hunters.', 'Arden Cho, Ahn Hyo-seop, Yunjin Kim', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'kpop_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2025-08-20 00:00:00', '2026-03-22 19:25:36', 105, 'PG-13', 2),
+(3, 'Dune: Part Two', 'Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.', 'Timothée Chalamet, Zendaya', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'dune_title.png', '/assets/images/films/posters2/kdh.jpeg', '2024-03-01 00:00:00', '2026-03-22 19:25:36', 166, 'PG-13', 5),
+(4, 'Inside Out 2', 'Teenager Riley\'s mind headquarters is undergoing a sudden demolition to make room for something entirely unexpected: new Emotions!', 'Amy Poehler, Maya Hawke', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'io2_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2024-06-14 00:00:00', '2026-03-22 19:25:36', 96, 'PG', 5),
+(5, 'Deadpool & Wolverine', 'A listless Wade Wilson toils in civilian life until a threat to his home universe forces him to team up with a reluctant Wolverine.', 'Ryan Reynolds, Hugh Jackman', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'dpw_title.png', '/assets/images/films/posters2/kdh.jpeg', '2024-07-26 00:00:00', '2026-03-22 19:25:36', 128, 'R', 5),
+(6, 'Joker: Folie à Deux', 'Failed comedian Arthur Fleck meets the love of his life, Harley Quinn, while incarcerated at Arkham State Hospital.', 'Joaquin Phoenix, Lady Gaga', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'joker2_title.png', '/assets/images/films/posters2/kdh.jpeg', '2024-10-04 00:00:00', '2026-03-22 19:25:36', 138, 'R', 5),
+(7, 'Gladiator II', 'Years after witnessing the death of Maximus, Lucius is forced to enter the Colosseum to fight for the future of Rome.', 'Paul Mescal, Pedro Pascal', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'glad2_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2024-11-22 00:00:00', '2026-03-22 19:25:36', 148, 'R', 3),
+(8, 'The Thursday Murder Club', 'Four septuagenarian friends in a retirement village solve cold cases for fun, until they find themselves in the middle of a real murder.', 'Helen Mirren, Pierce Brosnan', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'tmc_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2025-05-15 00:00:00', '2026-03-22 19:25:36', 115, 'PG-13', 3),
+(9, 'F1', 'A retired Formula One driver returns to the track to mentor a younger teammate while competing against the world’s titans.', 'Brad Pitt, Damson Idris', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'f1_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2025-06-27 00:00:00', '2026-03-22 19:25:36', 130, 'PG-13', 3),
+(10, 'Spider-Man: Beyond the Spider-Verse', 'Miles Morales must navigate the Multiverse to save his father and stop the Spot from destroying every reality.', 'Shameik Moore, Hailee Steinfeld', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'spider_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2025-12-19 00:00:00', '2026-03-22 19:25:36', 140, 'PG-13', 3),
+(11, 'Moana', 'An adventurous teenager sails out on a daring mission to save her people. During her journey, Moana meets the once-mighty demigod Maui, who guides her in her quest to become a master way-finder.', 'Auliʻi Cravalho, Dwayne Johnson, Rachel House, Temuera Morrison', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'moana_logo_gold.png', '/assets/images/films/posters2/kdh.jpeg', '2016-11-23 00:00:00', '2026-03-22 19:25:36', 107, 'PG', 2),
+(12, 'The Super Mario Bros. Movie', 'A plumber named Mario travels through an underground labyrinth with his brother, Luigi.', 'Chris Pratt, Anya Taylor-Joy', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'mario_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2023-04-05 00:00:00', '2026-03-22 19:25:36', 92, 'PG', 2),
+(13, 'Oppenheimer', 'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.', 'Cillian Murphy, Emily Blunt', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'opp_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2023-07-21 00:00:00', '2026-03-22 19:25:36', 180, 'R', 1),
+(14, 'Barbie', 'Barbie suffers a crisis that leads her to question her world and her existence.', 'Margot Robbie, Ryan Gosling', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'barb_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2023-07-21 00:00:00', '2026-03-22 19:25:36', 114, 'PG-13', 2),
+(15, 'John Wick: Chapter 4', 'John Wick uncovers a path to defeating The High Table.', 'Keanu Reeves, Donnie Yen', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'wick4_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2023-03-24 00:00:00', '2026-03-22 19:25:36', 169, 'R', 3),
+(16, 'Everything Everywhere All at Once', 'A middle-aged Chinese immigrant is swept up into an insane adventure across the multiverse.', 'Michelle Yeoh, Ke Huy Quan', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'eeaao_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2022-03-25 00:00:00', '2026-03-22 19:25:36', 139, 'R', 5),
+(17, 'Avatar: The Way of Water', 'Jake Sully lives with his newfound family formed on the extrasolar moon Pandora.', 'Sam Worthington, Zoe Saldana', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'av2_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2022-12-16 00:00:00', '2026-03-22 19:25:36', 192, 'PG-13', 0),
+(18, 'Top Gun: Maverick', 'After thirty years, Maverick is still pushing the envelope as a top naval aviator.', 'Tom Cruise, Miles Teller', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'tg_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2022-05-27 00:00:00', '2026-03-22 19:25:36', 130, 'PG-13', 5),
+(19, 'Spider-Man: Across the Spider-Verse', 'Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People.', 'Shameik Moore, Hailee Steinfeld', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'asv_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2023-06-02 00:00:00', '2026-03-22 19:25:36', 140, 'PG', 5),
+(20, 'The Batman', 'When a sadistic serial killer begins murdering key political figures in Gotham, Batman is forced to investigate.', 'Robert Pattinson, Zoë Kravitz', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'batman_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2022-03-04 00:00:00', '2026-03-22 19:25:36', 176, 'PG-13', 2),
+(21, 'Parasite', 'Greed and class discrimination threaten the newly formed symbiotic relationship between two families.', 'Song Kang-ho, Lee Sun-kyun', '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters/kpopdemonhunters.jpg', 'para_logo.png', '/assets/images/films/posters2/kdh.jpeg', '2019-05-30 00:00:00', '2026-03-22 19:25:36', 132, 'R', 2);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `film_category`
+--
+
+CREATE TABLE `film_category` (
+  `film_id` int(11) NOT NULL,
+  `category_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `film_category`
+--
+
+INSERT INTO `film_category` (`film_id`, `category_id`) VALUES
+(1, 3),
+(1, 15),
+(1, 18),
+(2, 1),
+(2, 3),
+(2, 8),
+(3, 1),
+(3, 12),
+(3, 14),
+(4, 3),
+(4, 7),
+(4, 15),
+(5, 1),
+(5, 4),
+(5, 12),
+(6, 5),
+(6, 7),
+(6, 18),
+(7, 1),
+(7, 7),
+(8, 4),
+(8, 10),
+(9, 1),
+(9, 7),
+(9, 17),
+(10, 1),
+(10, 3),
+(10, 12),
+(11, 3),
+(11, 15),
+(11, 18),
+(12, 3),
+(12, 4),
+(12, 15),
+(13, 7),
+(13, 14),
+(14, 4),
+(14, 14),
+(14, 17),
+(15, 1),
+(15, 13),
+(16, 4),
+(16, 12),
+(16, 14),
+(17, 1),
+(17, 2),
+(17, 12),
+(18, 1),
+(18, 7),
+(18, 17),
+(19, 3),
+(19, 12),
+(19, 14),
+(20, 1),
+(20, 5),
+(20, 10),
+(21, 7),
+(21, 13),
+(21, 14);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `film_progress`
+--
+
+CREATE TABLE `film_progress` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `film_id` int(11) NOT NULL,
+  `last_position` int(11) DEFAULT 0,
+  `watch_status` enum('NOT_STARTED','IN_PROGRESS','COMPLETED') DEFAULT 'NOT_STARTED',
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `film_progress`
+--
+
+INSERT INTO `film_progress` (`id`, `user_id`, `film_id`, `last_position`, `watch_status`, `updated_at`) VALUES
+(1, 1, 2, 0, 'IN_PROGRESS', '2026-03-22 14:54:31'),
+(2, 1, 10, 0, 'IN_PROGRESS', '2026-03-22 15:03:03'),
+(3, 1, 9, 0, 'IN_PROGRESS', '2026-03-22 15:05:15'),
+(4, 1, 8, 0, 'IN_PROGRESS', '2026-03-22 15:06:48'),
+(5, 1, 15, 0, 'IN_PROGRESS', '2026-03-22 15:12:55'),
+(9, 1, 18, 0, 'IN_PROGRESS', '2026-03-22 20:52:36'),
+(10, 1, 16, 0, 'IN_PROGRESS', '2026-03-22 20:53:59'),
+(11, 1, 5, 0, 'IN_PROGRESS', '2026-03-22 21:07:09'),
+(13, 1, 17, 0, 'IN_PROGRESS', '2026-03-22 21:09:12');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `my_list`
+--
+
+CREATE TABLE `my_list` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `film_id` int(11) DEFAULT 0,
+  `serie_id` int(11) DEFAULT 0,
+  `added_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `season`
+--
+
+CREATE TABLE `season` (
+  `season_id` int(11) NOT NULL,
+  `serie_id` int(11) DEFAULT NULL,
+  `season_num` int(11) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `synopsis` text DEFAULT NULL,
+  `trailer_url` varchar(255) DEFAULT NULL,
+  `poster_url` varchar(255) DEFAULT NULL,
+  `title_url` varchar(255) DEFAULT NULL,
+  `image_url` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `planned_episodes` int(11) DEFAULT NULL,
+  `status` varchar(20) DEFAULT NULL,
+  `rating` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `season`
+--
+
+INSERT INTO `season` (`season_id`, `serie_id`, `season_num`, `title`, `synopsis`, `trailer_url`, `poster_url`, `title_url`, `image_url`, `created_at`, `planned_episodes`, `status`, `rating`) VALUES
+(1, 2, 1, 'Season 1: The Vanishing of Will Byers', NULL, '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters2/kdh.jpeg', NULL, NULL, '2026-03-22 00:54:03', NULL, NULL, 5),
+(2, 2, 2, 'Season 2: The Upside Down', NULL, '/assets/videos/films/trailors/kpopdemonhunters.mp4', '/assets/images/films/posters2/kdh.jpeg', NULL, NULL, '2026-03-22 00:54:03', NULL, NULL, 4);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `serie`
+--
+
+CREATE TABLE `serie` (
+  `serie_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `title_url` varchar(255) DEFAULT NULL,
+  `synopsis` text DEFAULT NULL,
+  `casting` text DEFAULT NULL,
+  `covert_url` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `rating` int(11) NOT NULL DEFAULT 0,
+  `age_rating` varchar(10) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `serie`
+--
+
+INSERT INTO `serie` (`serie_id`, `title`, `title_url`, `synopsis`, `casting`, `covert_url`, `created_at`, `updated_at`, `rating`, `age_rating`) VALUES
+(2, 'Stranger Things', NULL, 'When a young boy vanishes, a small town uncovers a mystery involving secret experiments and terrifying supernatural forces.', 'Winona Ryder, David Harbour, Millie Bobby Brown', NULL, '2026-03-22 00:53:21', '2026-03-22 00:53:21', 5, '16+');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `serie_category`
+--
+
+CREATE TABLE `serie_category` (
+  `serie_id` int(11) NOT NULL,
+  `category_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `serie_category`
+--
+
+INSERT INTO `serie_category` (`serie_id`, `category_id`) VALUES
+(2, 9),
+(2, 12),
+(2, 17);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `users`
+--
+
+CREATE TABLE `users` (
+  `user_id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `users`
+--
+
+INSERT INTO `users` (`user_id`, `username`, `email`, `password`, `created_at`) VALUES
+(1, 'test', '', 'pass', '2026-03-22 01:52:41');
+
+--
+-- Index pour les tables déchargées
+--
+
+--
+-- Index pour la table `category`
+--
+ALTER TABLE `category`
+  ADD PRIMARY KEY (`category_id`);
+
+--
+-- Index pour la table `episode`
+--
+ALTER TABLE `episode`
+  ADD PRIMARY KEY (`ep_id`),
+  ADD KEY `season_id` (`season_id`);
+
+--
+-- Index pour la table `episode_progress`
+--
+ALTER TABLE `episode_progress`
+  ADD PRIMARY KEY (`user_id`,`ep_id`),
+  ADD KEY `ep_id` (`ep_id`);
+
+--
+-- Index pour la table `film`
+--
+ALTER TABLE `film`
+  ADD PRIMARY KEY (`film_id`);
+
+--
+-- Index pour la table `film_category`
+--
+ALTER TABLE `film_category`
+  ADD PRIMARY KEY (`film_id`,`category_id`),
+  ADD KEY `fk_category` (`category_id`);
+
+--
+-- Index pour la table `film_progress`
+--
+ALTER TABLE `film_progress`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user_film_unique` (`user_id`,`film_id`),
+  ADD KEY `fk_film_progress_film` (`film_id`);
+
+--
+-- Index pour la table `my_list`
+--
+ALTER TABLE `my_list`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `film_id` (`film_id`),
+  ADD KEY `serie_id` (`serie_id`);
+
+--
+-- Index pour la table `season`
+--
+ALTER TABLE `season`
+  ADD PRIMARY KEY (`season_id`),
+  ADD KEY `serie_id` (`serie_id`);
+
+--
+-- Index pour la table `serie`
+--
+ALTER TABLE `serie`
+  ADD PRIMARY KEY (`serie_id`);
+
+--
+-- Index pour la table `serie_category`
+--
+ALTER TABLE `serie_category`
+  ADD PRIMARY KEY (`serie_id`,`category_id`),
+  ADD KEY `fk_serie_category_category` (`category_id`);
+
+--
+-- Index pour la table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`user_id`);
+
+--
+-- AUTO_INCREMENT pour les tables déchargées
+--
+
+--
+-- AUTO_INCREMENT pour la table `category`
+--
+ALTER TABLE `category`
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+
+--
+-- AUTO_INCREMENT pour la table `episode`
+--
+ALTER TABLE `episode`
+  MODIFY `ep_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT pour la table `film`
+--
+ALTER TABLE `film`
+  MODIFY `film_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+
+--
+-- AUTO_INCREMENT pour la table `film_progress`
+--
+ALTER TABLE `film_progress`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT pour la table `my_list`
+--
+ALTER TABLE `my_list`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+
+--
+-- AUTO_INCREMENT pour la table `season`
+--
+ALTER TABLE `season`
+  MODIFY `season_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT pour la table `serie`
+--
+ALTER TABLE `serie`
+  MODIFY `serie_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT pour la table `users`
+--
+ALTER TABLE `users`
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- Contraintes pour les tables déchargées
+--
+
+--
+-- Contraintes pour la table `episode_progress`
+--
+ALTER TABLE `episode_progress`
+  ADD CONSTRAINT `episode_progress_ibfk_1` FOREIGN KEY (`ep_id`) REFERENCES `episode` (`ep_id`),
+  ADD CONSTRAINT `episode_progress_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+
+--
+-- Contraintes pour la table `film_category`
+--
+ALTER TABLE `film_category`
+  ADD CONSTRAINT `fk_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`category_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_film` FOREIGN KEY (`film_id`) REFERENCES `film` (`film_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `film_progress`
+--
+ALTER TABLE `film_progress`
+  ADD CONSTRAINT `fk_film_progress_film` FOREIGN KEY (`film_id`) REFERENCES `film` (`film_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_film_progress_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `serie_category`
+--
+ALTER TABLE `serie_category`
+  ADD CONSTRAINT `fk_serie_category_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`category_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 -- ============================================================
--- JStream Database Script
+-- Tables manquantes dans jstreamdb
+-- A executer dans phpMyAdmin sur la base jstreamdb
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS jstream CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE jstream;
+USE jstreamdb;
 
 -- ============================================================
--- TABLE: users
+-- TABLE: ratings  (manquante)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS users (
-    user_id     INT AUTO_INCREMENT PRIMARY KEY,
-    username    VARCHAR(100)        NOT NULL,
-    email       VARCHAR(150)        NOT NULL UNIQUE,
-    password    VARCHAR(255)        NOT NULL,   -- BCrypt hash
-    role        ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER',
-    created_at  TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
+CREATE TABLE IF NOT EXISTS ratings (
+    rating_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    film_id INT DEFAULT NULL,
+    ep_id INT DEFAULT NULL,
+    note INT NOT NULL CHECK (note BETWEEN 1 AND 5),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_rate_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_rate_film FOREIGN KEY (film_id) REFERENCES film(film_id) ON DELETE CASCADE,
+    CONSTRAINT fk_rate_episode FOREIGN KEY (ep_id) REFERENCES episode(ep_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 -- ============================================================
--- TABLE: categories
+-- TABLE: comments  (manquante)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS categories (
-    category_id  INT AUTO_INCREMENT PRIMARY KEY,
-    name         VARCHAR(100) NOT NULL UNIQUE,
-    description  TEXT,
-    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
+CREATE TABLE IF NOT EXISTS comments (
+    comment_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    film_id INT DEFAULT NULL,    
+    ep_id INT DEFAULT NULL, 
+    content TEXT NOT NULL,
+    flagged BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_comm_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comm_film FOREIGN KEY (film_id) REFERENCES film(film_id) ON DELETE CASCADE,
+    CONSTRAINT fk_comm_episode FOREIGN KEY (ep_id) REFERENCES episode(ep_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 -- ============================================================
--- TABLE: films
+-- Corrections sur la table users  (ajouter colonne role)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS films (
-    film_id         INT AUTO_INCREMENT PRIMARY KEY,
-    title           VARCHAR(255)    NOT NULL,
-    synopsis        TEXT,
-    casting         TEXT,
-    video_url       VARCHAR(500),
-    image_url       VARCHAR(500),
-    title_image_url VARCHAR(500),
-    poster_url      VARCHAR(500),
-    release_date    DATETIME,
-    updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    duration        DOUBLE          NOT NULL DEFAULT 0,
-    age_rating      VARCHAR(10),
-    rating          INT             NOT NULL DEFAULT 0
-);
-
--- ============================================================
--- TABLE: film_categories  (junction)
--- ============================================================
-CREATE TABLE IF NOT EXISTS film_categories (
-    film_id     INT NOT NULL,
-    category_id INT NOT NULL,
-    PRIMARY KEY (film_id, category_id),
-    FOREIGN KEY (film_id)     REFERENCES films(film_id)      ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE
-);
-
--- ============================================================
--- TABLE: series
--- ============================================================
-CREATE TABLE IF NOT EXISTS series (
-    serie_id        INT AUTO_INCREMENT PRIMARY KEY,
-    title           VARCHAR(255) NOT NULL,
-    synopsis        TEXT,
-    casting         TEXT,
-    image_url       VARCHAR(500),
-    title_image_url VARCHAR(500),
-    poster_url      VARCHAR(500),
-    trailer_url     VARCHAR(500),
-    age_rating      VARCHAR(10),
-    created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================================
--- TABLE: serie_categories  (junction)
--- ============================================================
-CREATE TABLE IF NOT EXISTS serie_categories (
-    serie_id    INT NOT NULL,
-    category_id INT NOT NULL,
-    PRIMARY KEY (serie_id, category_id),
-    FOREIGN KEY (serie_id)    REFERENCES series(serie_id)    ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE
-);
-
--- ============================================================
--- TABLE: seasons
--- ============================================================
-CREATE TABLE IF NOT EXISTS seasons (
-    season_id         INT AUTO_INCREMENT PRIMARY KEY,
-    serie_id          INT          NOT NULL,
-    season_num        INT          NOT NULL,
-    title             VARCHAR(255),
-    synopsis          TEXT,
-    trailer_url       VARCHAR(500),
-    poster_url        VARCHAR(500),
-    title_url         VARCHAR(500),
-    image_url         VARCHAR(500),
-    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    planned_episodes  INT          NOT NULL DEFAULT 0,
-    status            ENUM('Ongoing','Completed') NOT NULL DEFAULT 'Ongoing',
-    rating            INT          NOT NULL DEFAULT 0,
-    FOREIGN KEY (serie_id) REFERENCES series(serie_id) ON DELETE CASCADE,
-    UNIQUE KEY uq_serie_season (serie_id, season_num)
-);
-
--- ============================================================
--- TABLE: episodes
--- ============================================================
-CREATE TABLE IF NOT EXISTS episodes (
-    ep_id        INT AUTO_INCREMENT PRIMARY KEY,
-    season_id    INT          NOT NULL,
-    num_episode  INT          NOT NULL,
-    title        VARCHAR(255),
-    duration     INT          NOT NULL DEFAULT 0,   -- in seconds
-    resume       TEXT,
-    video_url    VARCHAR(500),
-    covert_url   VARCHAR(500),
-    rating       INT          NOT NULL DEFAULT 0,
-    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    released_at  TIMESTAMP    NULL,
-    FOREIGN KEY (season_id) REFERENCES seasons(season_id) ON DELETE CASCADE,
-    UNIQUE KEY uq_season_episode (season_id, num_episode)
-);
-
--- ============================================================
--- TABLE: watchlist  (Ma Liste)
--- ============================================================
-CREATE TABLE IF NOT EXISTS watchlist (
-    id         INT AUTO_INCREMENT PRIMARY KEY,
-    user_id    INT       NOT NULL,
-    film_id    INT       NOT NULL DEFAULT 0,
-    serie_id   INT       NOT NULL DEFAULT 0,
-    added_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
+ALTER TABLE `users`
+  ADD COLUMN IF NOT EXISTS `role` ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER' AFTER `password`;
 -- ============================================================
 -- TABLE: history  (viewing history)
 -- ============================================================
@@ -150,105 +614,3 @@ CREATE TABLE IF NOT EXISTS history (
     updated_at            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
-
--- ============================================================
--- TABLE: ratings
--- ============================================================
-CREATE TABLE IF NOT EXISTS ratings (
-    rating_id  INT AUTO_INCREMENT PRIMARY KEY,
-    user_id    INT       NOT NULL,
-    film_id    INT       NOT NULL DEFAULT 0,
-    serie_id   INT       NOT NULL DEFAULT 0,
-    note       INT       NOT NULL CHECK (note BETWEEN 1 AND 5),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- ============================================================
--- TABLE: comments
--- ============================================================
-CREATE TABLE IF NOT EXISTS comments (
-    comment_id  INT AUTO_INCREMENT PRIMARY KEY,
-    user_id     INT       NOT NULL,
-    film_id     INT       NOT NULL DEFAULT 0,
-    serie_id    INT       NOT NULL DEFAULT 0,
-    content     TEXT      NOT NULL,
-    flagged     BOOLEAN   NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- ============================================================
--- SAMPLE DATA
--- ============================================================
-
--- Categories
-INSERT INTO categories (name, description) VALUES
-('Action',      'Films/séries d''action et d''aventure'),
-('Comédie',     'Films/séries comiques et humoristiques'),
-('Science-Fiction', 'Science-fiction et futurisme'),
-('Drame',       'Films/séries dramatiques'),
-('Thriller',    'Suspense et tension'),
-('Horreur',     'Films/séries d''horreur'),
-('Documentaire','Documentaires et reportages'),
-('Animation',   'Films et séries d''animation');
-
--- Users (passwords are BCrypt of "password123")
-INSERT INTO users (username, email, password, role) VALUES
-('admin',    'admin@jstream.com',   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ADMIN'),
-('alice',    'alice@email.com',     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER'),
-('bob',      'bob@email.com',       '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER'),
-('charlie',  'charlie@email.com',   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER'),
-('diana',    'diana@email.com',     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER');
-
--- Films
-INSERT INTO films (title, synopsis, casting, video_url, image_url, title_image_url, poster_url, release_date, duration, age_rating, rating) VALUES
-('Inception',        'Un voleur entre dans les rêves.',         'Leonardo DiCaprio, Joseph Gordon-Levitt', 'videos/inception.mp4',        'images/inception_img.jpg',        'images/inception_title.png',        'images/inception_poster.jpg',        '2010-07-16 00:00:00', 148, 'PG-13', 5),
-('The Matrix',       'Un programmeur découvre la vérité.',      'Keanu Reeves, Laurence Fishburne',        'videos/matrix.mp4',           'images/matrix_img.jpg',           'images/matrix_title.png',           'images/matrix_poster.jpg',           '1999-03-31 00:00:00', 136, 'R',     5),
-('Interstellar',     'Des astronautes cherchent une nouvelle Terre.', 'Matthew McConaughey, Anne Hathaway', 'videos/interstellar.mp4',     'images/interstellar_img.jpg',     'images/interstellar_title.png',     'images/interstellar_poster.jpg',     '2014-11-07 00:00:00', 169, 'PG-13', 5),
-('The Dark Knight',  'Batman affronte le Joker.',               'Christian Bale, Heath Ledger',            'videos/darkknight.mp4',       'images/darkknight_img.jpg',       'images/darkknight_title.png',       'images/darkknight_poster.jpg',       '2008-07-18 00:00:00', 152, 'PG-13', 5),
-('Parasite',         'Une famille pauvre infiltre une riche.',  'Song Kang-ho, Lee Sun-kyun',              'videos/parasite.mp4',         'images/parasite_img.jpg',         'images/parasite_title.png',         'images/parasite_poster.jpg',         '2019-05-30 00:00:00', 132, 'R',     5),
-('The Avengers',     'Les super-héros s''unissent.',            'Robert Downey Jr., Chris Evans',          'videos/avengers.mp4',         'images/avengers_img.jpg',         'images/avengers_title.png',         'images/avengers_poster.jpg',         '2012-05-04 00:00:00', 143, 'PG-13', 4),
-('Spirited Away',    'Une fille dans un monde des esprits.',    'Daveigh Chase, Suzanne Pleshette',        'videos/spiritedaway.mp4',     'images/spiritedaway_img.jpg',     'images/spiritedaway_title.png',     'images/spiritedaway_poster.jpg',     '2001-07-20 00:00:00', 125, 'PG',   5),
-('Joker',            'L''origine du Joker.',                    'Joaquin Phoenix',                         'videos/joker.mp4',            'images/joker_img.jpg',            'images/joker_title.png',            'images/joker_poster.jpg',            '2019-10-04 00:00:00', 122, 'R',    4),
-('Dune',             'L''héritier d''une noble famille.',       'Timothée Chalamet, Zendaya',              'videos/dune.mp4',             'images/dune_img.jpg',             'images/dune_title.png',             'images/dune_poster.jpg',             '2021-10-22 00:00:00', 155, 'PG-13',4),
-('The Shawshank Redemption', 'Deux prisonniers trouvent la rédemption.', 'Tim Robbins, Morgan Freeman',   'videos/shawshank.mp4',        'images/shawshank_img.jpg',        'images/shawshank_title.png',        'images/shawshank_poster.jpg',        '1994-09-23 00:00:00', 142, 'R',    5);
-
--- Film categories
-INSERT INTO film_categories (film_id, category_id) VALUES
-(1,3),(1,1),  -- Inception: SF, Action
-(2,3),(2,1),  -- Matrix: SF, Action
-(3,3),(3,4),  -- Interstellar: SF, Drame
-(4,1),(4,5),  -- Dark Knight: Action, Thriller
-(5,4),(5,5),  -- Parasite: Drame, Thriller
-(6,1),(6,3),  -- Avengers: Action, SF
-(7,8),(7,4),  -- Spirited Away: Animation, Drame
-(8,4),(8,5),  -- Joker: Drame, Thriller
-(9,3),(9,1),  -- Dune: SF, Action
-(10,4);       -- Shawshank: Drame
-
--- Series
-INSERT INTO series (title, synopsis, casting, image_url, title_image_url, poster_url, trailer_url, age_rating) VALUES
-('Breaking Bad',  'Un prof de chimie devient dealer de drogue.', 'Bryan Cranston, Aaron Paul',     'images/bb_img.jpg',  'images/bb_title.png',  'images/bb_poster.jpg',  'trailers/bb.mp4',  'TV-MA'),
-('Stranger Things','Des enfants affrontent des forces surnaturelles.','Millie Bobby Brown, Finn Wolfhard','images/st_img.jpg','images/st_title.png','images/st_poster.jpg','trailers/st.mp4','TV-14');
-
-INSERT INTO serie_categories (serie_id, category_id) VALUES
-(1,4),(1,5),
-(2,3),(2,5);
-
--- Seasons
-INSERT INTO seasons (serie_id, season_num, title, synopsis, status, planned_episodes, rating) VALUES
-(1, 1, 'Breaking Bad S1', 'Le début de la transformation de Walter.', 'Completed', 7,  5),
-(1, 2, 'Breaking Bad S2', 'Walter approfondit son empire..',           'Completed', 13, 5),
-(2, 1, 'Stranger Things S1','Les enfants cherchent leur ami disparu.',  'Completed', 8,  5),
-(2, 2, 'Stranger Things S2','Le monde à l''envers s''étend.',           'Completed', 9,  4);
-
--- Episodes
-INSERT INTO episodes (season_id, num_episode, title, duration, resume, video_url, covert_url) VALUES
-(1,1,'Pilot',           3840,'Walter découvre sa maladie.',          'videos/bb_s1e1.mp4','images/bb_s1e1.jpg'),
-(1,2,'Cat''s in the Bag',2940,'Les conséquences du premier crime.',  'videos/bb_s1e2.mp4','images/bb_s1e2.jpg'),
-(1,3,'...And the Bag''s in the River',2820,'Walter fait un choix crucial.','videos/bb_s1e3.mp4','images/bb_s1e3.jpg'),
-(3,1,'The Vanishing of Will Byers',2880,'Will disparaît.',          'videos/st_s1e1.mp4','images/st_s1e1.jpg'),
-(3,2,'The Weirdo on Maple Street',2760,'Les enfants trouvent Onze.','videos/st_s1e2.mp4','images/st_s1e2.jpg');
