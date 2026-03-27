@@ -9,10 +9,12 @@ public class Film {
     private String title;
     private String synopsis;
     private String casting;
+    private String trailer_url;
     private String video_url;
     private String image_url;
     private String title_image_url;
     private String poster_url;
+    private String posterV_url;
     
     private List<Category> categories; 
     
@@ -24,8 +26,8 @@ public class Film {
 
     public Film() {}
 
-    public Film(int film_id, String title, String synopsis, String casting,
-                String video_url, String image_url, String title_image_url, String poster_url,
+    public Film(int film_id, String title, String synopsis, String casting,String trailer_url,
+                String video_url, String image_url, String title_image_url, String poster_url,String posterV_url ,
                 List<Category> categories,
                 LocalDateTime release_date, Timestamp updated_at,
                 double duration, String age_rating, int rating) {
@@ -34,10 +36,12 @@ public class Film {
         this.title = title;
         this.synopsis = synopsis;
         this.casting = casting;
+        this.trailer_url=trailer_url;
         this.video_url = video_url;
         this.image_url = image_url;
         this.title_image_url = title_image_url;
         this.poster_url = poster_url;
+        this.posterV_url=posterV_url;
         this.categories = categories;
         this.release_date = release_date;
         this.updated_at = updated_at;
@@ -161,5 +165,21 @@ public class Film {
 	        if (categories == null || categories.isEmpty()) return "";
 	        return String.join(", ", categories.stream().map(Category::getName).toList());
 	    }
+
+	 public String getPosterV_url() {
+		return posterV_url;
+	 }
+
+	 public void setPosterV_url(String posterV_url) {
+		this.posterV_url = posterV_url;
+	 }
+
+	 public String getTrailer_url() {
+		return trailer_url;
+	 }
+
+	 public void setTrailer_url(String trailer_url) {
+		this.trailer_url = trailer_url;
+	 }
 }
    
