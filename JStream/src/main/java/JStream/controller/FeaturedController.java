@@ -13,6 +13,7 @@ import JStream.service.EpisodeProgressService;
 import JStream.service.FeaturedService;
 import JStream.service.FilmProgressService;
 import JStream.service.MylistService;
+import JStream.utils.ImageUtil;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -230,23 +231,17 @@ public class FeaturedController {
 
     private void displayFeatured(FeaturedItem item) {
         // Background
-        try {
-            if (item.getMainImageUrl() != null && !item.getMainImageUrl().isEmpty())
-                heroBackground.setImage(new javafx.scene.image.Image(item.getMainImageUrl()));
-            else
-                heroBackground.setImage(null); // placeholder
-        } catch (Exception e) { heroBackground.setImage(null); }
+    	// Hero background
+    	heroBackground.setImage(ImageUtil.load(item.getMainImageUrl()));
 
-        // Title image
-        try {
-            if (item.getTitleImageUrl() != null && !item.getTitleImageUrl().isEmpty()) {
-                heroTitleImage.setImage(new javafx.scene.image.Image(item.getTitleImageUrl()));
-                heroTitleImage.setVisible(true);
-            } else {
-                heroTitleImage.setImage(null);
-                heroTitleImage.setVisible(false);
-            }
-        } catch (Exception e) { heroTitleImage.setVisible(false); }
+    	// Title image
+    	if (item.getTitleImageUrl() != null && !item.getTitleImageUrl().isEmpty()) {
+    	    heroTitleImage.setImage(ImageUtil.load(item.getTitleImageUrl()));
+    	    heroTitleImage.setVisible(true);
+    	} else {
+    	    heroTitleImage.setImage(ImageUtil.load(null)); // safe fallback
+    	    heroTitleImage.setVisible(false);
+    	}
 
         // Description always
         heroDescription.setText(item.getSynopsis() != null ? item.getSynopsis() : "");

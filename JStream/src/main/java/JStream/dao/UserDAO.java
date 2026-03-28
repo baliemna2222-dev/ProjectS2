@@ -10,77 +10,76 @@ import JStream.utils.Database;
 
 public class UserDAO {
 
-    // ===== Sign Up =====
-    public boolean insertUser(User user) {
-        String sql = "INSERT INTO users(username, email, password) VALUES (?, ?, ?)";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    private final Connection conn; // final connection inside DAO
 
+    // ===== Constructor opens connection =====
+    public UserDAO() throws SQLException {
+        this.conn = Database.getConnection();
+        System.out.println("Database connection opened for UserDAO");
+    }
+
+    // ===== Sign Up =====
+    public boolean insertUser(User user) throws SQLException {
+        String sql = "INSERT INTO users(username, email, password) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getEmail());
-            stmt.setString(3, user.getPassword()); // password déjà hashé
+            stmt.setString(3, user.getPassword()); // password already hashed
             stmt.executeUpdate();
             return true;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
         }
     }
 
-    // ===== Login par username seulement =====
-    public User getUserByUsername(String username) {
+    // ===== Login by username =====
+    public User getUserByUsername(String username) throws SQLException {
         String sql = "SELECT * FROM users WHERE username=?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                User user = new User();
-                user.setId(rs.getInt("id"));
-                user.setUsername(rs.getString("username"));
-                user.setEmail(rs.getString("email"));
-                user.setPassword(rs.getString("password")); // hash pour vérification
-                return user;
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    User user = new User();
+                    user.setId(rs.getInt("user_id"));
+                    user.setUsername(rs.getString("username"));
+                    user.setEmail(rs.getString("email"));
+                    user.setPassword(rs.getString("password")); // hash for verification
+                    return user;
+                }
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         return null;
     }
 
     // ===== Email exists =====
-    public boolean emailExists(String email) {
-        String sql = "SELECT id FROM users WHERE email=?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+    public boolean emailExists(String email) throws SQLException {
+        String sql = "SELECT user_id FROM users WHERE email=?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
-            ResultSet rs = ps.executeQuery();
-            return rs.next();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 
     // ===== Username exists =====
-    public boolean usernameExists(String username) {
-        String sql = "SELECT id FROM users WHERE username=?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+    public boolean usernameExists(String username) throws SQLException {
+        String sql = "SELECT user_id FROM users WHERE username=?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
-            return rs.next();
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
 
+    // ===== Close connection =====
+    public void close() {
+        try {
+            if (conn != null && !conn.isClosed()) {
+                conn.close();
+                System.out.println("Database connection closed for UserDAO");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
         }
     }
 }

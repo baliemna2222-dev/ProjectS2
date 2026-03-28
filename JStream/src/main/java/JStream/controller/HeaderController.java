@@ -1,8 +1,6 @@
 package JStream.controller;
 
-import java.awt.Scrollbar;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -22,17 +20,12 @@ import JStream.service.FeaturedService;
 import JStream.service.FilmProgressService;
 import JStream.service.MylistService;
 import JStream.utils.ImageUtil;
-import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
-import javafx.animation.Interpolator;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.ScaleTransition;
-import javafx.animation.Timeline;
-import javafx.animation.TranslateTransition;
+import javafx.animation.*;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -44,205 +37,596 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.web.WebView;
 import javafx.stage.Modality;
+import javafx.stage.Popup;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
-public class CardController {
-	
-    @FXML private ImageView poster;
-    @FXML private Label typeBadge;
-    @FXML private Button playBtn;
-    @FXML private Button addBtn;
-    @FXML private StackPane rootPane;
-    @FXML private Label starsLabel;
+public class HeaderController {
+	@FXML private Button profile;
+	@FXML private StackPane profileMenu;
+	@FXML private ImageView profileImage;
+	@FXML private Label uploadLabel;
+	// Add this field to your controller
+	private boolean ignoreTextChange = false;
+	@FXML private Button btnMenuLogout, btnMenuSettings, btnMenuMyList, btnMenuLastWatched;
+
+	private Image defaultImage = new Image("/assets/images/profile.png");
+
+    /** -------------------- HEADER BUTTONS -------------------- **/
+    @FXML private Button btnHome, btnMovies, btnSeries, btnMyList;
+    @FXML private Rectangle lineHome, lineMovies, lineSeries, lineMyList;
+    private Button activeButton;
+    private Rectangle activeLine;
+    @FXML HBox rootPane;
+    @FXML private ImageView logoImage;
     private Timeline autoSlide;
-    private FeaturedItem currentItem;
-    private FeaturedController featuredController;
+    /** -------------------- SEARCH -------------------- **/
+    @FXML private TextField searchInput;
+    private boolean searchOpened = false;
+    private Popup suggestionsPopup = new Popup();
+    private VBox suggestionsContent = new VBox();
+    @FXML Button clearBtn ;
     private FeaturedService featuredService = new FeaturedService();
     private EpisodeProgressService episodeProgressService = new EpisodeProgressService();
-
+    @FXML
+    private StackPane searchStack;
+    @FXML
+    private Button btnResearch;
     FilmProgressService filmProgressService = new FilmProgressService();
-    public void setFeaturedController(FeaturedController controller) {
-        this.featuredController = controller;
-    }
+
     @FXML
-    public void initialize() {
-       setupButtonHover(addBtn);
-       setupButtonHover(playBtn);
-       
-       MyListManager.getInstance().addListener((filmId, serieId) -> {
-    	    Platform.runLater(() -> {
-    	        if (currentItem != null) {
-    	            int currentFilmId = "film".equalsIgnoreCase(currentItem.getType()) ? currentItem.getId() : 0;
-    	            int currentSerieId = "serie".equalsIgnoreCase(currentItem.getType()) ? currentItem.getSerieId() : 0;
+    private void clearSearchInput() {
+        searchInput.clear();
+    }
+    /** -------------------- BELL NOTIFICATION -------------------- **/
+    @FXML private StackPane bellContainer;
+    @FXML private ImageView bellIcon;
+    private Circle notificationDot;
+    private boolean isNotificationVisible = false;
 
-    	            // If the updated item matches this controller's current item, refresh the button
-    	            if (currentFilmId == filmId && currentSerieId == serieId) {
-    	                updateAddButton(addBtn, currentItem);
-    	            }
-    	        }
-    	    });
-    	});
-       
-       
-          }
+    private static String lastActive = "HOME";
 
-    /** Fade buttons in or out */
+    @FXML
+    private void initialize() {
+
+        // Logo
+        logoImage.setImage(new Image(getClass().getResourceAsStream("/assets/images/logo/Raksha.png")));
+
+        // Bell notification
+        setupBellNotification();
+
+        // Search suggestions
+        setupSearchSuggestions();
+
+        // Page navigation
+        setupButton(btnHome, lineHome, this::goToHomepage);
+        setupButton(btnMovies, lineMovies, this::goToFilmView);
+        setupButton(btnSeries, lineSeries, this::goToSeriesView);
+        setupButton(btnMyList, lineMyList, this::goToMyListView);
+
+        // Activate last active
+        Platform.runLater(() -> {
+            switch (lastActive) {
+                case "Movies" -> activate(btnMovies, lineMovies);
+                case "Series" -> activate(btnSeries, lineSeries);
+                case "My List" -> activate(btnMyList, lineMyList);
+                default -> activate(btnHome, lineHome);
+            }
+        });
+        StackPane.setAlignment(clearBtn, Pos.CENTER_RIGHT);
+        StackPane.setMargin(clearBtn, new Insets(0, 5, 0, 0));
+        clearBtn.setPickOnBounds(true); // ensures clicks register even if background transparent
+        // Hide X initially
+        clearBtn.setVisible(false);
+
+        // Show X only when text exists
+        searchInput.textProperty().addListener((obs, oldText, newText) -> {
+            clearBtn.setVisible(!newText.isEmpty() && searchInput.getPrefWidth() > 0);
+        });
+
+        // Clear text & collapse field
+        clearBtn.setOnAction(e -> {
+            searchInput.clear();
+        });
+
+        // Optional: hover effect
+        clearBtn.setOnMouseEntered(e -> clearBtn.setStyle("-fx-text-fill: Blue;-fx-background-color: transparent;"));
+        clearBtn.setOnMouseExited(e -> clearBtn.setStyle("-fx-text-fill: #888;-fx-background-color: transparent;"));
+
+    }
+
+    /** -------------------- HEADER BUTTON METHODS -------------------- **/
+    private void activate(Button btn, Rectangle line) {
+        activeButton = btn;
+        activeLine = line;
+        setButtonActive(btn);
+        line.setWidth(btn.getWidth());
+    }
+
+    private void setupButton(Button btn, Rectangle line, Runnable action) {
+        line.setFill(Color.DODGERBLUE);
+        line.setHeight(3);
+
+        btn.setOnMouseEntered(e -> {
+            if (btn != activeButton) {
+                setButtonHover(btn);
+                animateLine(line, btn.getWidth());
+            }
+        });
+
+        btn.setOnMouseExited(e -> {
+            if (btn != activeButton) {
+                setButtonInactive(btn);
+                animateLine(line, 0);
+            }
+        });
+
+        btn.setOnAction(e -> {
+            if (activeButton != null && activeButton != btn) {
+                setButtonInactive(activeButton);
+                animateLine(activeLine, 0);
+            }
+
+            activeButton = btn;
+            activeLine = line;
+            setButtonActive(btn);
+            line.setWidth(btn.getWidth());
+
+            lastActive = btn.getText();
+            if (action != null) action.run();
+        });
+    }
+
+    private void setButtonActive(Button btn) {
+        btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 16;");
+    }
+
+    private void setButtonHover(Button btn) {
+        btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 16;");
+    }
+
+    private void setButtonInactive(Button btn) {
+        btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 16;");
+    }
+
+    private void animateLine(Rectangle line, double targetWidth) {
+        Platform.runLater(() -> {
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.millis(200), new KeyValue(line.widthProperty(), targetWidth))
+            );
+            timeline.play();
+        });
+    }
+
+    /** -------------------- SEARCH METHODS -------------------- **/
+    private void setupSearchSuggestions() {
+        // Scrollable VBox
+        ScrollPane scroll = new ScrollPane(suggestionsContent);
+        scroll.setPrefWidth(300);
+        scroll.setFitToWidth(true);
+
+        // Dynamic height
+        scroll.setPrefHeight(Region.USE_COMPUTED_SIZE);
+        scroll.setMaxHeight(250); // 👈 limit max height (scroll appears after)
+       
+
+        // Make scroll and popup background black
+        scroll.setStyle("-fx-background-color: #111; -fx-background-radius: 6; -fx-border-color: #222; -fx-border-radius: 6;");
+        suggestionsContent.setStyle("-fx-background-color: #111; -fx-padding: 5; -fx-spacing: 2; -fx-background-radius: 6;");
+
+        scroll.getStyleClass().add("custom-scroll"); // your scrollbar CSS
+        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        
+        scroll.setStyle(
+        		
+        	    "-fx-background: black;" +           // outer
+        	    "-fx-background-color: black;" +     // fix white
+        	    "-fx-border-color: transparent;"
+        	);
+
+        	suggestionsContent.setStyle(
+        	    "-fx-background-color: #0f172a;" +
+        	    "-fx-padding: 6;" +
+        	    "-fx-spacing: 4;"
+        	);
+        	scroll.getStylesheets().add(
+        		    getClass().getResource("/view/css/scrollbar.css").toExternalForm()
+        		);
+        suggestionsPopup.getContent().add(scroll);
+        suggestionsPopup.setAutoHide(true);
+
+        // Typing listener
+        searchInput.textProperty().addListener((obs, oldText, newText) -> {
+            if (newText.isEmpty()) showLatestSearches();
+            else showSuggestions(newText);
+        });
+
+        // Enter key
+        searchInput.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                String text = searchInput.getText().trim();
+                if (!text.isEmpty()) {
+                    // Add to memory AND save to database inside FeaturedService
+                    featuredService.addToLatestSearch(text);
+
+                    // Hide popup
+                    suggestionsPopup.hide();
+                }
+               
+            }
+        });
+
+        searchInput.textProperty().addListener((obs, oldText, newText) -> {
+            if (ignoreTextChange) return; // ignore programmatic updates
+
+            if (newText.isEmpty()) showLatestSearches();
+            else showSuggestions(newText);
+        });
+    }
+
+    private HBox createSuggestionBox(String title, String posterUrl, boolean isSearchResult) {
+
+        HBox box = new HBox(10);
+        box.setPrefWidth(300);
+        box.setAlignment(Pos.CENTER_LEFT);
+        box.setStyle("-fx-background-color: transparent; -fx-padding: 8; -fx-background-radius: 6;");
+
+        // Poster
+        if (posterUrl != null) {
+            ImageView poster = new ImageView();
+            poster.setFitWidth(35);
+            poster.setFitHeight(50);
+            poster.setPreserveRatio(true);
+            try { poster.setImage(new Image(posterUrl, true)); } catch (Exception ignored) {}
+            box.getChildren().add(poster);
+        }
+
+        // Title
+        Label lbl = new Label(title);
+        lbl.setStyle("-fx-text-fill: white; -fx-font-size: 14;");
+        lbl.setMaxWidth(180);
+        lbl.setEllipsisString("...");
+        lbl.setWrapText(false);
+     // Add button (for search results)
+        if (isSearchResult) {
+            Button addBtn = new Button();
+            addBtn.setStyle("-fx-background-color: transparent; -fx-font-size: 14; -fx-font-weight: bold;");
+            addBtn.setPadding(new Insets(2, 5, 2, 5));
+           
+            try {
+                MylistService mylistService = new MylistService();
+                FeaturedItem item = featuredService.getFeaturedByTitle(title);
+                MyListManager.getInstance().addListener((filmId, serieId) -> {
+                    Platform.runLater(() -> {
+                        if (item != null) {
+                            int currentFilmId = "film".equalsIgnoreCase(item.getType()) ? item.getId() : 0;
+                            int currentSerieId = "serie".equalsIgnoreCase(item.getType()) ? item.getSerieId() : 0;
+
+                            // If the updated item matches this card's current item, refresh the button
+                            if (currentFilmId == filmId && currentSerieId == serieId) {
+                                updateAddButton(addBtn, item);
+                            }
+                        }
+                    });
+                });
+                if (item != null) {
+                    boolean alreadyInList = mylistService.isInList(Session.getUserId(),
+                                                                    item.getId(),
+                                                                    item.getSerieId());
+                    if (alreadyInList) {
+                        addBtn.setText("✔");
+                        addBtn.setTextFill(Color.BLUE);
+                    } else {
+                        addBtn.setText("+");
+                        addBtn.setTextFill(Color.GRAY);
+                    }
+
+                }
+               
+                // Click to add/remove
+                addBtn.setOnAction(e -> {
+                    if (item != null) {
+                        boolean inList = mylistService.isInList(Session.getUserId(), item.getId(), item.getSerieId());
+                        if (!inList) {
+                            mylistService.addItem(Session.getUserId(), item.getId(), item.getSerieId());
+                        } else {
+                            mylistService.removeItem(Session.getUserId(), item.getId(), item.getSerieId());
+                        }
+
+                        // Update this button immediately
+                        updateAddButton(addBtn, item);
+                       
+                        // 🔥 Notify all other listeners
+                        MyListManager.getInstance().notifyItemUpdated(item.getId(), item.getSerieId());
+                    }
+                });
+            
+            box.getChildren().add(addBtn);
+         } catch (Exception ex) { ex.printStackTrace(); }
+    }
+        // Tooltip to show full text on hover
+        javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(title);
+        tooltip.setStyle("-fx-background-color: #1e293b; -fx-text-fill: white; -fx-font-size: 13;");
+        javafx.scene.control.Tooltip.install(lbl, tooltip);
+
+        box.getChildren().add(lbl);
+
+        // Spacer for X button
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        box.getChildren().add(spacer);
+
+        // X button (latest searches only)
+        if (!isSearchResult) {
+            Button removeBtn = new Button("✕");
+            removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #888; -fx-font-size: 12;");
+            removeBtn.setOnMouseEntered(e -> removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: blue; -fx-font-size: 12;"));
+            removeBtn.setOnMouseExited(e -> removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #888; -fx-font-size: 12;"));
+            removeBtn.setOnAction(e -> {
+                featuredService.removeLatestSearch(title);
+                showLatestSearches();
+            });
+            box.getChildren().add(removeBtn);
+        }
+
+        // Hover background without shifting text
+        box.setOnMouseEntered(e -> box.setStyle(
+                "-fx-background-color: #1e293b;" +
+                "-fx-padding: 8;" +
+                "-fx-background-radius: 6;"
+        ));
+        box.setOnMouseExited(e -> box.setStyle(
+                "-fx-background-color: transparent;" +
+                "-fx-padding: 8;" +
+                "-fx-background-radius: 6;"
+        ));
+
+        // Click action
+        box.setOnMouseClicked(e -> {
+            ignoreTextChange = true;           // ignore listener temporarily
+            searchInput.setText(title);        // set text programmatically
+            ignoreTextChange = false;          // restore listener
+
+            if (isSearchResult) {
+                featuredService.addToLatestSearch(title); // update DB/list
+                try {
+                    FeaturedItem item = featuredService.getFeaturedByTitle(title);
+                    if (item != null) {
+                        switch (item.getType().toLowerCase()) {
+                            case "film" -> showFilmPopup(item);
+                            case "serie" -> showSeriePopup(item);
+                        }
+                    }
+                } catch (Exception ex) { ex.printStackTrace(); }
+            }
+
+            suggestionsPopup.hide();
+        });
+
+        return box;
+    }
+
    
-    
-    public void setItem(FeaturedItem item) {
-        this.currentItem = item;
-     // Make the whole card clickable like the play button
-        poster.getParent().setOnMouseClicked(e -> {
-            if (autoSlide != null) autoSlide.pause(); // pause carousel
+    private void showSuggestions(String text) {
+        suggestionsContent.getChildren().clear();
 
-            // Same logic as play button
-            String type = currentItem.getType().toLowerCase();
-            if (type.equals("film")) {
-                showFilmPopup(currentItem);
-            } else if (type.equals("serie")) {
-                showSeriePopup(currentItem);
-            }
-        });
-        // ------------------ Poster ------------------
-        poster.setImage(ImageUtil.load(item.getPosterUrl()));
-        // ------------------ Type Badge ------------------
-        if (item.getSerieId() != 0) {
-            typeBadge.setText("SERIE");
-        } else {
-            typeBadge.setText("FILM");
+        List<FeaturedItem> items;
+        try {
+            items = featuredService.searchByTitle(text);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
         }
 
-        // ------------------ Button Actions ------------------
-        playBtn.setOnAction(e -> {
-            if (autoSlide != null) autoSlide.pause(); // pause carousel
+        if (items.isEmpty()) {
+            Label empty = new Label("🔍 No results found");
+            empty.setStyle(
+                "-fx-text-fill: #e3f2fd;" +
+                "-fx-font-size: 14;" +
+                "-fx-padding: 20;"
+            );
+            empty.setMaxWidth(Double.MAX_VALUE);
+            empty.setAlignment(Pos.CENTER);
 
-            // Open the correct popup based on type
-            String type = currentItem.getType().toLowerCase();
-            if (type.equals("film")) {
-                showFilmPopup(currentItem);    // open film popup
-            } else if (type.equals("serie")) {
-                showSeriePopup(currentItem);   // open series popup
+            suggestionsContent.getChildren().add(empty);
+        } else {
+            for (FeaturedItem item : items) {
+                suggestionsContent.getChildren().add(
+                    createSuggestionBox(item.getTitle(), item.getPosterUrl(), true)
+                );
             }
-        });
-        addBtn.setOnAction(e -> handleAddToList());
-        updateAddButton(addBtn, item);
-        starsLabel.setText(getStars(item.getRating()));
-    }
-    private MylistService mylistService = new MylistService();
-    
+        }
 
-    // --- Toggle Add/Remove ---
+        // 🔥 Update popup size and hide scrollbar if not needed
+        Platform.runLater(() -> {
+            suggestionsContent.applyCss();
+            suggestionsContent.layout();
+
+            double contentHeight = suggestionsContent.getHeight();
+            double maxHeight = 250; // max height for scroll
+
+            suggestionsPopup.setWidth(300);
+            suggestionsPopup.setHeight(Math.min(contentHeight, maxHeight));
+
+            // Show or hide vertical scrollbar based on content
+            ScrollPane scroll = (ScrollPane) suggestionsPopup.getContent().get(0);
+            scroll.setVbarPolicy(contentHeight > maxHeight ? ScrollPane.ScrollBarPolicy.AS_NEEDED : ScrollPane.ScrollBarPolicy.NEVER);
+
+            showPopup();
+        });
+    }
+    private void showLatestSearches() {
+        suggestionsContent.getChildren().clear();
+        List<String> latest = featuredService.getLatestSearches();
+
+        if (latest.isEmpty()) {
+            // Do NOT show the popup if the list is empty
+            suggestionsPopup.hide();
+            return;
+        }
+
+        // Add all latest searches
+        for (String title : latest) {
+            HBox box = createSuggestionBox(title, null, false);
+            suggestionsContent.getChildren().add(box);
+        }
+
+        // 🔥 FORCE UI REFRESH (fixes scrollbar and layout)
+        Platform.runLater(() -> {
+            suggestionsContent.applyCss();
+            suggestionsContent.layout();
+            showPopup();
+        });
+    }
+    private void updateAddButton(Button addBtn, FeaturedItem item) {
+        if (addBtn == null || item == null) return;
+
+        try {
+            MylistService mylistService = new MylistService();
+            boolean inList = mylistService.isInList(Session.getUserId(), item.getId(), item.getSerieId());
+
+            // Set button text and color
+            if (inList) {
+                addBtn.setText("✔");
+                addBtn.setTextFill(Color.BLUE); // or LIME if you prefer
+            } else {
+                addBtn.setText("+");
+                addBtn.setTextFill(Color.GRAY);
+            }
+
+            // Ensure button padding and size are consistent
+            addBtn.setPadding(new Insets(2, 5, 2, 5));
+            addBtn.setMinWidth(25);
+            addBtn.setMaxWidth(25);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+  
+ // HeaderController.java
     @FXML
-    private void handleAddToList() {
-        if (currentItem == null) return;
-
-        int userId = Session.getUserId();
-        int filmId = "film".equalsIgnoreCase(currentItem.getType()) ? currentItem.getId() : 0;
-        int serieId = "serie".equalsIgnoreCase(currentItem.getType()) ? currentItem.getSerieId() : 0;
-
-        boolean alreadyAdded = mylistService.isInList(userId, filmId, serieId);
-
-        if (alreadyAdded) {
-            mylistService.removeItem(userId, filmId, serieId);
+    public void toggleSearch(ActionEvent event) {  // must be public and @FXML
+        if (searchInput.getPrefWidth() == 0) {
+            expandSearchField();
         } else {
-            mylistService.addItem(userId, filmId, serieId);
-        }
-
-        // Update this controller's button immediately
-        updateAddButton(addBtn, currentItem);
-
-        // Notify all other controllers to update
-        MyListManager.getInstance().notifyItemUpdated(filmId, serieId);
-    }
-
-    /** Updates the + button to show + or ✔ depending on whether the item is in the list */
-    private void updateAddButton(Button button, FeaturedItem item) {
-        int userId = Session.getUserId();
-        int filmId = 0;
-        int serieId = 0;
-
-        if ("film".equalsIgnoreCase(item.getType())) {
-            filmId = item.getId();
-        } else if ("serie".equalsIgnoreCase(item.getType())) {
-            serieId = item.getSerieId();
-        }
-
-        if (mylistService.isInList(userId, filmId, serieId)) {
-            button.setText("✔");
-            pumpButton(button); // optional animation
-        } else {
-            button.setText("+");
-            pumpButton(button);
+            collapseSearchField();
         }
     }
 
-    /** Simple pump animation for the button */
-    private void pumpButton(Button button) {
-        ScaleTransition st = new ScaleTransition(Duration.millis(150), button);
-        st.setFromX(1.0);
-        st.setFromY(1.0);
-        st.setToX(1.2);
-        st.setToY(1.2);
-        st.setAutoReverse(true);
-        st.setCycleCount(2);
-        st.play();
+    private void expandSearchField() {
+        Timeline expand = new Timeline(
+            new KeyFrame(Duration.millis(250),
+                new KeyValue(searchInput.prefWidthProperty(), 220),
+                new KeyValue(searchInput.maxWidthProperty(), 220))
+        );
+        expand.setOnFinished(e -> searchInput.requestFocus());
+        expand.play();
     }
-    private void setupButtonHover(Button button) {
-        // original style
-        String style = """
-            -fx-background-color: rgba(0,0,0,0.0);
-            -fx-text-fill: #1E90FF;
-            -fx-font-size: 10px;
-            -fx-font-weight: bold;
-            -fx-background-radius: 25;
-            -fx-border-color: #1E90FF;
-            -fx-border-width: 2;
-            -fx-border-radius: 25;
-            -fx-cursor: hand;
-            """;
-        button.setStyle(style);
 
-        // Hover animation: scale up
-        ScaleTransition scaleUp = new ScaleTransition(Duration.millis(150), button);
-        scaleUp.setToX(1.1); // 10% bigger
-        scaleUp.setToY(1.1);
+    private void collapseSearchField() {
+        Timeline collapse = new Timeline(
+            new KeyFrame(Duration.millis(250),
+                new KeyValue(searchInput.prefWidthProperty(), 0),
+                new KeyValue(searchInput.maxWidthProperty(), 0))
+        );
+        collapse.play();
+    }
+    private void showPopup() {
+        Platform.runLater(() -> {
 
-        // Hover animation: scale back
-        ScaleTransition scaleDown = new ScaleTransition(Duration.millis(150), button);
-        scaleDown.setToX(1.0); // back to original size
-        scaleDown.setToY(1.0);
+            // 🔥 ensure layout is updated
+            searchInput.applyCss();
+            searchInput.layout();
 
-        button.setOnMouseEntered(e -> {
-            scaleDown.stop(); // stop any running shrink animation
-            scaleUp.playFromStart(); // play grow animation
-        });
+            Bounds bounds = searchInput.localToScreen(searchInput.getBoundsInLocal());
 
-        button.setOnMouseExited(e -> {
-            scaleUp.stop(); // stop any running grow animation
-            scaleDown.playFromStart(); // play shrink animation
+            // update content size
+            suggestionsContent.applyCss();
+            suggestionsContent.layout();
+
+            double height = Math.min(suggestionsContent.getHeight(), 250);
+
+            suggestionsPopup.setWidth(searchInput.getWidth()); // 👈 SAME WIDTH as input
+            suggestionsPopup.setHeight(height);
+
+            if (!suggestionsPopup.isShowing()) {
+                suggestionsPopup.show(
+                    searchInput,
+                    bounds.getMinX(),
+                    bounds.getMaxY() + 5 // 👈 always directly under
+                );
+            } else {
+                // 🔥 update position if already visible
+                suggestionsPopup.setX(bounds.getMinX());
+                suggestionsPopup.setY(bounds.getMaxY() + 5);
+                
+            }
         });
     }
-    private String getStars(int rating) {
-        rating = Math.max(0, Math.min(5, rating)); // ensure rating is 0-5
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < rating; i++) sb.append("★");  // filled star
-        for (int i = rating; i < 5; i++) sb.append("☆");  // empty star
-        return sb.toString();
+
+    /** -------------------- BELL NOTIFICATION METHODS -------------------- **/
+    private void setupBellNotification() {
+        bellIcon.setImage(new Image(getClass().getResourceAsStream("/assets/images/bellwhiter.png")));
+
+        notificationDot = new Circle(4, Color.BLUE);
+        notificationDot.setTranslateX(10);
+        notificationDot.setTranslateY(-12);
+        notificationDot.setScaleX(0);
+        notificationDot.setScaleY(0);
+        bellContainer.getChildren().add(notificationDot);
+
+        bellContainer.setOnMouseEntered(e -> showNotificationDot());
+    }
+
+    private void showNotificationDot() {
+        if (!isNotificationVisible) {
+            isNotificationVisible = true;
+            notificationDot.setVisible(true);
+            Platform.runLater(() -> {
+                ScaleTransition bounce = new ScaleTransition(Duration.millis(500), notificationDot);
+                bounce.setFromX(0); bounce.setFromY(0);
+                bounce.setToX(1); bounce.setToY(1);
+                bounce.setInterpolator(Interpolator.EASE_OUT);
+                bounce.play();
+            });
+        }
+    }
+
+    /** -------------------- PAGE NAVIGATION -------------------- **/
+    public void goToHomepage() { navigateTo("/view/fxml/HomePage.fxml"); }
+    public void goToFilmView() { navigateTo("/view/fxml/FilmView.fxml"); }
+    public void goToSeriesView() { navigateTo("/view/fxml/SeriesView.fxml"); }
+    public void goToMyListView() { navigateTo("/view/fxml/MyList.fxml"); }
+
+    private void navigateTo(String fxmlPath) {
+        try {
+            var url = getClass().getResource(fxmlPath);
+            if (url == null) {
+                System.out.println("❌ FXML NOT FOUND: " + fxmlPath);
+                return;
+            }
+            Parent root = FXMLLoader.load(url);
+            Scene scene = btnHome.getScene();
+            scene.setRoot(root);
+        } catch (Exception e) { e.printStackTrace(); }
     }
     public void showFilmPopup(FeaturedItem item) {
         Stage popup = new Stage();
@@ -1269,4 +1653,5 @@ public class CardController {
 	    	        }
 	    	    }
 	    
+	    	 
 }

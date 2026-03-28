@@ -3,20 +3,31 @@ package JStream.controller;
 import JStream.entity.Category;
 import JStream.entity.FeaturedItem;
 import JStream.service.FeaturedService;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.ScaleTransition;
+import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.util.Duration;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 public class CarouselController {
@@ -32,9 +43,10 @@ public class CarouselController {
     private double currentTranslateX = 0;
     private int totalSlides = 0;
     private int currentSlideIndex = 0;
+    private boolean isAnimating = false;
 
     private final FeaturedService featuredService = new FeaturedService();
-
+   
     @FXML
     public void initialize() {
         // Clip viewport so content doesn’t overflow
@@ -62,23 +74,18 @@ public class CarouselController {
         });
     }
 
-    /** Load carousel items for a given category */
+    // ----------------- CATEGORY CAROUSEL -----------------
+
     public void setCategory(Category category) {
         categoryTitle.setText(category.getName());
-        contentBox.getChildren().clear();
-
         List<FeaturedItem> items = featuredService.getItemsByCategory(category.getName());
         loadItems(items);
-
-        // Reset carousel
-        currentSlideIndex = 0;
-        moveToSlide(0);
-        setupPagination();
-        updateArrowState();
     }
+
     public void setCategoryTitle(String title) {
         categoryTitle.setText(title);
     }
+
     public void loadItems(List<FeaturedItem> items) {
         contentBox.getChildren().clear();
 
@@ -86,7 +93,7 @@ public class CarouselController {
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Card.fxml"));
                 Node card = loader.load();
-                CardController controller = loader.getController();
+                JStream.controller.CardController controller = loader.getController();
                 controller.setItem(item);
 
                 card.setOnMouseEntered(e -> {
@@ -107,12 +114,12 @@ public class CarouselController {
         int totalCards = contentBox.getChildren().size();
         totalSlides = (int) Math.ceil((double) totalCards / CARDS_PER_SLIDE);
 
-        // Reset carousel
         currentSlideIndex = 0;
         moveToSlide(0);
         setupPagination();
         updateArrowState();
     }
+
     @FXML
     private void scrollRight() {
         if (currentSlideIndex < totalSlides - 1) {
@@ -129,7 +136,6 @@ public class CarouselController {
         }
     }
 
-    /** Move the carousel to a specific slide */
     private void moveToSlide(int slideIndex) {
         if (contentBox.getChildren().isEmpty()) return;
 
@@ -155,13 +161,11 @@ public class CarouselController {
         tt.play();
     }
 
-    /** Update arrow colors based on position */
     private void updateArrowState() {
         leftBtn.setTextFill(currentSlideIndex == 0 ? Color.GRAY : Color.WHITE);
         rightBtn.setTextFill(currentSlideIndex >= totalSlides - 1 ? Color.GRAY : Color.WHITE);
     }
 
-    /** Create pagination dots */
     private void setupPagination() {
         if (paginationBox == null) return;
         paginationBox.getChildren().clear();
@@ -175,12 +179,189 @@ public class CarouselController {
         }
     }
 
-    /** Update pagination dots on slide change */
     private void updatePagination() {
         if (paginationBox == null) return;
         for (int i = 0; i < paginationBox.getChildren().size(); i++) {
             Rectangle rect = (Rectangle) paginationBox.getChildren().get(i);
             rect.setFill(i == currentSlideIndex ? Color.WHITE : Color.GRAY);
         }
+    }
+
+    // ----------------- TOP RATED CAROUSEL -----------------
+ // ======= INFINITE TOP RATED LOOP =======
+    private TranslateTransition loopTransition;
+    private boolean isHovered = false;
+    private static final double TOP_CARD_WIDTH = 300;   
+    private static final double TOP_CARD_HEIGHT = 200;  
+    private static final double TOP_CARD_SPACING = 60;
+    private static final double LOOP_DURATION = 40; // seconds
+
+    void loadTopRatedInfinite(List<FeaturedItem> topItems) {
+        categoryTitle.setText("🔥 Top Rated");
+        contentBox.getChildren().clear();
+        contentBox.setSpacing(TOP_CARD_SPACING);
+
+        // Move carousel more to the top
+        contentBox.setTranslateY(-10);  
+        contentBox.setTranslateX(0);
+
+        int rank = 1;
+        for (FeaturedItem item : topItems) {
+            contentBox.getChildren().add(createTopCard(item, rank++));
+        }
+
+        List<Node> original = new ArrayList<>(contentBox.getChildren());
+        for (Node node : original) {
+            contentBox.getChildren().add(cloneCard((StackPane) node));
+        }
+
+        startInfiniteLoop();
+    }
+
+    // ================= Create a single top card =================
+    private StackPane createTopCard(FeaturedItem item, int rank) {
+        StackPane root = new StackPane();
+        root.setPrefSize(TOP_CARD_WIDTH, TOP_CARD_HEIGHT-100);
+        root.setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
+
+        // ================= Rating number with white outline =================
+     // ================= Rating number with white border =================
+        Text number = new Text(String.valueOf(rank)); 
+        number.setFont(Font.font("Arial Black", 200)); // bold font
+        number.setFill(Color.TRANSPARENT);             // transparent fill
+        number.setStroke(Color.GRAY);                // white border
+        number.setStrokeWidth(6);                     // thickness of border
+        number.setTranslateX(-TOP_CARD_WIDTH / 3.5);
+        
+        number.setMouseTransparent(true);
+
+        // ================= Card FXML (bigger, bottom-right) =================
+        Node cardNode;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Card.fxml"));
+            cardNode = loader.load();
+            JStream.controller.CardController controller = loader.getController();
+            controller.setItem(item);
+            cardNode.setUserData(item);
+
+            // ===== Properly set preferred size if cardNode is a Region =====
+            if (cardNode instanceof Region region) {
+                region.setPrefSize(TOP_CARD_WIDTH-100, TOP_CARD_HEIGHT);
+                region.setMinSize(Region.USE_PREF_SIZE-100, Region.USE_PREF_SIZE);
+                region.setMaxSize(Region.USE_PREF_SIZE-100, Region.USE_PREF_SIZE);
+            }
+
+            StackPane.setAlignment(cardNode, javafx.geometry.Pos.BOTTOM_RIGHT);
+            StackPane.setMargin(cardNode, new javafx.geometry.Insets(0, 0, 0, 0));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return root;
+        }
+        
+
+        // ================= Hover pump effect =================
+        cardNode.setOnMouseEntered(e -> {
+            cardNode.setScaleX(1.05);
+            cardNode.setScaleY(1.05);
+            stopLoop();
+        });
+        cardNode.setOnMouseExited(e -> {
+            cardNode.setScaleX(1.0);
+            cardNode.setScaleY(1.0);
+            resumeLoop();
+        });
+
+        root.getChildren().addAll(number, cardNode);
+        number.toBack();
+
+        return root;
+    }
+
+    // ===== Clone a card (same content) =====
+    private StackPane cloneCard(StackPane original) {
+        StackPane clone = new StackPane();
+        clone.setPrefSize(TOP_CARD_WIDTH, TOP_CARD_HEIGHT-100);
+        clone.setStyle("-fx-background-color: transparent;");
+
+        for (Node child : original.getChildren()) {
+            if (child instanceof Text) {
+                // Clone the rating number
+                Text txt = (Text) child;
+                Text copy = new Text(txt.getText());
+                copy.setFont(txt.getFont());
+                copy.setFill(txt.getFill());
+                copy.setStroke(txt.getStroke());
+                copy.setStrokeWidth(txt.getStrokeWidth());
+                copy.setTranslateX(txt.getTranslateX());
+                copy.setTranslateY(txt.getTranslateY());
+                copy.setMouseTransparent(true);
+                copy.toBack(); // ensure number stays behind card
+                clone.getChildren().add(copy);
+            } else {
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Card.fxml"));
+                    Node cardNode = loader.load();
+                    JStream.controller.CardController controller = loader.getController();
+
+                    if (child.getUserData() instanceof FeaturedItem) {
+                        controller.setItem((FeaturedItem) child.getUserData());
+                        cardNode.setUserData(child.getUserData());
+                    }
+                    if (cardNode instanceof Region region) {
+                        region.setPrefSize(TOP_CARD_WIDTH-100, TOP_CARD_HEIGHT);
+                        region.setMinSize(Region.USE_PREF_SIZE-100, Region.USE_PREF_SIZE+80);
+                        region.setMaxSize(Region.USE_PREF_SIZE-100, Region.USE_PREF_SIZE+80);
+                    }
+                    // Correctly scale the card to fit inside the slot
+                    double scaleWidth = 1;
+                    double scaleHeight = 1;
+                    
+                    // Align at bottom-right with small offset
+                    StackPane.setAlignment(cardNode, javafx.geometry.Pos.BOTTOM_RIGHT);
+                    StackPane.setMargin(cardNode, new javafx.geometry.Insets(0, 0, 0, 0));
+
+                    // Hover animation
+                    cardNode.setOnMouseEntered(e -> {
+                        cardNode.setScaleX(scaleWidth + 0.1);
+                        cardNode.setScaleY(scaleHeight + 0.1);
+                        stopLoop();
+                    });
+                    cardNode.setOnMouseExited(e -> {
+                        cardNode.setScaleX(scaleWidth);
+                        cardNode.setScaleY(scaleHeight);
+                        resumeLoop();
+                    });
+
+                    clone.getChildren().add(cardNode);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return clone;
+    }
+    // ===== Smooth infinite scroll =====
+    private void startInfiniteLoop() {
+        double totalWidth = (contentBox.getChildren().size() / 2.0) * (TOP_CARD_WIDTH + TOP_CARD_SPACING);
+
+        loopTransition = new TranslateTransition(Duration.seconds(LOOP_DURATION), contentBox);
+        loopTransition.setFromX(0);
+        loopTransition.setToX(-totalWidth);
+        loopTransition.setInterpolator(javafx.animation.Interpolator.LINEAR);
+        loopTransition.setCycleCount(Animation.INDEFINITE);
+        loopTransition.play();
+    }
+
+    private void stopLoop() {
+        isHovered = true;
+        if (loopTransition != null) loopTransition.pause();
+    }
+
+    private void resumeLoop() {
+        isHovered = false;
+        if (loopTransition != null) loopTransition.play();
     }
 }

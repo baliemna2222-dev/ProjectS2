@@ -2,7 +2,7 @@ package JStream.entity;
 
 public class Session {
     private static int currentUserId = 1;
-    private static String currentUsername;
+    private static String currentUsername="test";
 
     // Call this when login succeeds
     public static void login(int userId, String username) {

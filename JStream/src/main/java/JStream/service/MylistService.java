@@ -1,6 +1,9 @@
 package JStream.service;
 
+import java.util.List;
+
 import JStream.dao.MylistDAO;
+import JStream.entity.FeaturedItem;
 import JStream.utils.Database;
 
 public class MylistService {
@@ -19,5 +22,8 @@ public class MylistService {
 	    }
 	    public boolean removeItem(int userId, int filmId, int serieId) {
 	        return dao.removeItem(userId, filmId, serieId);
+	    }
+	    public List<FeaturedItem> getUserList(int userId) {
+	        return dao.getItemsByUser(userId);
 	    }
 	}

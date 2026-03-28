@@ -1,66 +1,100 @@
 package JStream.service;
 
+import java.sql.SQLException;
 import java.util.Random;
+
 import JStream.dao.UserDAO;
 import JStream.entity.User;
 import JStream.utils.SecurityUtils;
 
 public class UserService {
 
-    private final UserDAO userDAO = new UserDAO();
+    private final UserDAO userDAO;
 
     // Verification code
     private String currentCode;
     private long codeExpiry;
 
+    // ===== Constructor =====
+    public UserService() {
+        UserDAO dao = null;
+        try {
+            dao = new UserDAO(); // DAO opens its own connection
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        this.userDAO = dao;
+    }
+
     // ================= REGISTER =================
     public boolean register(String username, String email, String password) {
+        try {
+            if (userDAO.usernameExists(username)) {
+                System.out.println("Username already exists");
+                return false;
+            }
+            if (userDAO.emailExists(email)) {
+                System.out.println("Email already exists");
+                return false;
+            }
 
-        if (userDAO.usernameExists(username)) {
-            System.out.println("Username already exists");
-            return false; // username already taken
+            // Hash password
+            String hashedPassword = SecurityUtils.hashPassword(password);
+
+            // Create user object
+            User user = new User();
+            user.setUsername(username);
+            user.setEmail(email);
+            user.setPassword(hashedPassword);
+
+            // Insert user
+            return userDAO.insertUser(user);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
-
-        if (userDAO.emailExists(email)) {
-            System.out.println("Email already exists");
-            return false; // email already taken
-        }
-
-        // Hash password with BCrypt
-        String hashedPassword = SecurityUtils.hashPassword(password);
-
-        // Insert user
-        User user = new User();
-        user.setUsername(username);
-        user.setEmail(email);
-        user.setPassword(hashedPassword);
-
-        return userDAO.insertUser(user);
     }
 
     // ================= LOGIN =================
     public User login(String username, String password) {
-        // Get user by username
-        User user = userDAO.getUserByUsername(username);
-        if (user != null) {
-            // Compare entered password with hashed password
-            if (SecurityUtils.checkPassword(password, user.getPassword())) {
+        try {
+            User user = userDAO.getUserByUsername(username);
+            if (user != null && SecurityUtils.checkPassword(password, user.getPassword())) {
                 return user; // login success
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return null; // login failed
     }
+
     public boolean usernameExists(String username) {
-        return userDAO.usernameExists(username);
+        try {
+            return userDAO.usernameExists(username);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean emailExists(String email) {
-        return userDAO.emailExists(email);
+        try {
+            return userDAO.emailExists(email);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     // ================= FORGOT PASSWORD =================
     public boolean sendVerificationCode(String email) {
-        if (!userDAO.emailExists(email)) return false;
+        try {
+            if (!userDAO.emailExists(email)) return false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
 
         // Generate 6-digit code
         currentCode = String.format("%06d", new Random().nextInt(1000000));
@@ -75,5 +109,12 @@ public class UserService {
         if (currentCode == null) return false;
         if (System.currentTimeMillis() > codeExpiry) return false;
         return currentCode.equals(code);
+    }
+
+    // ================= CLEAN UP =================
+    public void close() {
+        if (userDAO != null) {
+            userDAO.close(); // close DAO connection
+        }
     }
 }

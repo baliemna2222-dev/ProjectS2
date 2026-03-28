@@ -1,5 +1,6 @@
 package JStream.controller;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.Random;
 import java.util.ResourceBundle;
@@ -8,10 +9,14 @@ import java.util.regex.Pattern;
 import JStream.entity.Session;
 import JStream.entity.User;
 import JStream.service.UserService;
+import javafx.animation.FadeTransition;
 import javafx.animation.TranslateTransition;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
@@ -90,7 +95,7 @@ public class Logincontroller implements Initializable {
     }
 
     // ========== LOGIN ==========
-    @FXML private void handleLogin() {
+    @FXML private void handleLogin(ActionEvent event) {
         clearLoginMessages();
         String username = loginUsername.getText().trim();
         String password = loginPassword.getText();
@@ -104,7 +109,7 @@ public class Logincontroller implements Initializable {
         User user = userService.login(username, password);
         if(user != null) {
         	Session.login(user.getId(), user.getUsername());
-            goToHomepage();
+            goToHomepage(event);
         } else {
             loginError.setText("Invalid username or password");
             loginError.setVisible(true);
@@ -112,7 +117,7 @@ public class Logincontroller implements Initializable {
     }
 
     // ========== SIGNUP ==========
-    @FXML private void handleSignup() {
+    @FXML private void handleSignup(ActionEvent event) {
         clearSignupMessages();
 
         String username = signupUsername.getText().trim();
@@ -136,7 +141,7 @@ public class Logincontroller implements Initializable {
         if(success) {
         	User user = userService.login(username, password);
         	 Session.login(user.getId(), user.getUsername());
-        	 goToHomepage();
+        	 goToHomepage(event);
             
         } else {
             // Provide clear feedback on what failed
@@ -176,12 +181,12 @@ public class Logincontroller implements Initializable {
         verifyBtn.setVisible(true);
     }
 
-    @FXML private void handleVerifyCode() {
+    @FXML private void handleVerifyCode(ActionEvent event) {
         clearForgotMessages();
         String code = verificationCode.getText().trim();
         if(code.isEmpty()) { showError("Enter verification code"); return; }
 
-        if(userService.verifyCode(code)) goToHomepage();
+        if(userService.verifyCode(code)) goToHomepage(event);
         else showError("Invalid or expired code");
     }
 
@@ -245,13 +250,27 @@ public class Logincontroller implements Initializable {
     }
 
     // ========== HOME PAGE ==========
-    @FXML private void goToHomepage() {
+    @FXML
+    private void goToHomepage(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/homepage.fxml"));
-            Scene scene = new Scene(loader.load());
-            Stage stage = (Stage) loginForm.getScene().getWindow();
-            stage.setScene(scene); 
-            stage.centerOnScreen();
-        } catch (Exception e) { e.printStackTrace(); }
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/HomePage.fxml"));
+            Parent root = loader.load();
+
+            // Get current stage
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            
+            // Replace the root of the current scene instead of creating a new scene
+            Scene scene = stage.getScene();
+            scene.setRoot(root);
+
+            // Fade animation
+            FadeTransition ft = new FadeTransition(Duration.millis(500), root);
+            ft.setFromValue(0);
+            ft.setToValue(1);
+            ft.play();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

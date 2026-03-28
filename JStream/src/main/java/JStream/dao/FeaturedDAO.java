@@ -9,8 +9,10 @@ import JStream.entity.Serie;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FeaturedDAO {
 
@@ -380,4 +382,377 @@ public class FeaturedDAO {
         }
         return categories;
     }
+    public List<FeaturedItem> getTopRated(int limit) throws SQLException {
+        List<FeaturedItem> items = new ArrayList<>();
+
+        // -------- TOP FILMS --------
+        String filmSql =
+            "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+            "FROM film f " +
+            "JOIN film_category fc ON f.film_id = fc.film_id " +
+            "JOIN category c ON fc.category_id = c.category_id " +
+            "GROUP BY f.film_id " +
+            "ORDER BY f.rating DESC " +
+            "LIMIT ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(filmSql)) {
+            ps.setInt(1, limit);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                List<String> categories = List.of(rs.getString("categories").split(","));
+
+                items.add(new FeaturedItem(
+                    rs.getInt("film_id"),
+                    rs.getString("title"),
+                    rs.getString("synopsis"),
+                    rs.getString("video_url"),
+                    rs.getString("image_url"),
+                    rs.getString("title_image_url"),
+                    rs.getString("poster_url"),
+                    categories,
+                    rs.getString("age_rating"),
+                    rs.getInt("rating")
+                ));
+            }
+        }
+
+        // -------- TOP SERIES (latest season only) --------
+        String seasonSql =
+            "SELECT " +
+            "    s.season_id, " +
+            "    s.poster_url, " +
+            "    s.trailer_url, " +
+            "    s.season_num, " +
+            "    s.status, " +
+            "    se.serie_id, " +
+            "    se.title AS serie_title, " +
+            "    se.synopsis, " +
+            "    se.title_url, " +
+            "    se.covert_url, " +
+            "    se.age_rating, " +
+            "    se.rating, " +
+            "    GROUP_CONCAT(DISTINCT c.name SEPARATOR ',') AS categories, " +
+            "    COALESCE(MAX(e.num_episode),0) AS last_episode " +
+            "FROM season s " +
+            "JOIN serie se ON s.serie_id = se.serie_id " +
+            "JOIN serie_category sc ON se.serie_id = sc.serie_id " +
+            "JOIN category c ON sc.category_id = c.category_id " +
+            "LEFT JOIN episode e ON e.season_id = s.season_id " +
+            "WHERE s.season_id = ( " +
+            "   SELECT s2.season_id " +
+            "   FROM season s2 " +
+            "   LEFT JOIN episode e2 ON e2.season_id = s2.season_id " +
+            "   WHERE s2.serie_id = s.serie_id " +
+            "   GROUP BY s2.season_id " +
+            "   ORDER BY MAX(e2.released_at) DESC " +
+            "   LIMIT 1 " +
+            ") " +
+            "GROUP BY s.season_id " +
+            "ORDER BY se.rating DESC " +
+            "LIMIT ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(seasonSql)) {
+            ps.setInt(1, limit);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                List<String> categories = new ArrayList<>(
+                    new LinkedHashSet<>(List.of(rs.getString("categories").split(",")))
+                );
+
+                items.add(new FeaturedItem(
+                    rs.getInt("season_id"),
+                    rs.getInt("serie_id"),
+                    rs.getString("serie_title"),
+                    rs.getString("synopsis"),
+                    rs.getString("trailer_url"),
+                    rs.getString("covert_url"),
+                    rs.getString("title_url"),
+                    rs.getString("poster_url"),
+                    categories,
+                    rs.getString("age_rating"),
+                    rs.getInt("rating"),
+                    rs.getString("status"),
+                    rs.getInt("season_num"),
+                    rs.getInt("last_episode")
+                ));
+            }
+        }
+
+        // 🔥 SORT EVERYTHING TOGETHER (IMPORTANT)
+        items.sort((a, b) -> Integer.compare(b.getRating(), a.getRating()));
+
+        // 🔥 LIMIT FINAL RESULT (Top 10 mixed)
+        return items.stream().limit(limit).toList();
     }
+    public List<FeaturedItem> getFilteredItems(
+            Set<String> categories,  // can be empty
+            Set<String> types,       // can be empty (film, serie)
+            Set<Integer> years       // can be empty
+    ) throws SQLException {
+
+        List<FeaturedItem> items = new ArrayList<>();
+        boolean filterFilms = types.isEmpty() || types.stream().anyMatch(t -> t.equalsIgnoreCase("film"));
+        boolean filterSeries = types.isEmpty() || types.stream().anyMatch(t -> t.equalsIgnoreCase("serie"));
+        // ---------------- FILMS ----------------
+        if (filterFilms) {
+            StringBuilder filmSql = new StringBuilder(
+                "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+                "FROM film f " +
+                "JOIN film_category fc ON f.film_id = fc.film_id " +
+                "JOIN category c ON fc.category_id = c.category_id " +
+                "WHERE 1=1 "
+            );
+
+            // categories
+            if (!categories.isEmpty()) {
+                filmSql.append(" AND c.name IN (")
+                       .append(String.join(",", Collections.nCopies(categories.size(), "?")))
+                       .append(") ");
+            }
+
+            // years
+            if (!years.isEmpty()) {
+                filmSql.append(" AND YEAR(f.release_date) IN (")
+                       .append(String.join(",", Collections.nCopies(years.size(), "?")))
+                       .append(") ");
+            }
+
+            filmSql.append(" GROUP BY f.film_id ORDER BY f.release_date DESC");
+
+            try (PreparedStatement ps = connection.prepareStatement(filmSql.toString())) {
+                int index = 1;
+                for (String cat : categories) ps.setString(index++, cat);
+                for (Integer year : years) ps.setInt(index++, year);
+
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    List<String> filmCategories = List.of(rs.getString("categories").split(","));
+                    items.add(new FeaturedItem(
+                        rs.getInt("film_id"),
+                        rs.getString("title"),
+                        rs.getString("synopsis"),
+                        rs.getString("video_url"),
+                        rs.getString("image_url"),
+                        rs.getString("title_image_url"),
+                        rs.getString("poster_url"),
+                        filmCategories,
+                        rs.getString("age_rating"),
+                        rs.getInt("rating")
+                    ));
+                }
+            }
+        }
+
+        // ---------------- SERIES ----------------
+        if (filterSeries) {
+            StringBuilder seriesSql = new StringBuilder(
+                "SELECT s.season_id, s.poster_url, s.trailer_url, s.season_num, s.status, " +
+                "se.serie_id, se.title AS serie_title, se.synopsis, se.title_url, se.covert_url, se.age_rating, se.rating, " +
+                "GROUP_CONCAT(DISTINCT c.name SEPARATOR ',') AS categories, " +
+                "COALESCE(MAX(e.num_episode),0) AS last_episode, MAX(e.released_at) AS last_release, COUNT(e.ep_id) AS episode_count " +
+                "FROM season s " +
+                "JOIN serie se ON s.serie_id = se.serie_id " +
+                "JOIN serie_category sc ON se.serie_id = sc.serie_id " +
+                "JOIN category c ON sc.category_id = c.category_id " +
+                "LEFT JOIN episode e ON e.season_id = s.season_id " +
+                "WHERE 1=1 "
+            );
+
+            if (!categories.isEmpty()) {
+                seriesSql.append(" AND c.name IN (")
+                         .append(String.join(",", Collections.nCopies(categories.size(), "?")))
+                         .append(") ");
+            }
+
+            if (!years.isEmpty()) {
+                seriesSql.append(" AND YEAR(se.created_at) IN (")
+                         .append(String.join(",", Collections.nCopies(years.size(), "?")))
+                         .append(") ");
+            }
+
+            seriesSql.append(
+                "AND s.season_id = ( " +
+                "   SELECT s2.season_id " +
+                "   FROM season s2 " +
+                "   LEFT JOIN episode e2 ON e2.season_id = s2.season_id " +
+                "   WHERE s2.serie_id = s.serie_id " +
+                "   GROUP BY s2.season_id " +
+                "   ORDER BY MAX(e2.released_at) DESC LIMIT 1" +
+                ") " +
+                "GROUP BY s.season_id ORDER BY last_release DESC, episode_count DESC, se.rating DESC"
+            );
+
+            try (PreparedStatement ps = connection.prepareStatement(seriesSql.toString())) {
+                int index = 1;
+                for (String cat : categories) ps.setString(index++, cat);
+                for (Integer year : years) ps.setInt(index++, year);
+
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    List<String> serieCategories = new ArrayList<>(
+                        new LinkedHashSet<>(List.of(rs.getString("categories").split(",")))
+                    );
+                    items.add(new FeaturedItem(
+                        rs.getInt("season_id"),
+                        rs.getInt("serie_id"),
+                        rs.getString("serie_title"),
+                        rs.getString("synopsis"),
+                        rs.getString("trailer_url"),
+                        rs.getString("covert_url"),
+                        rs.getString("title_url"),
+                        rs.getString("poster_url"),
+                        serieCategories,
+                        rs.getString("age_rating"),
+                        rs.getInt("rating"),
+                        rs.getString("status"),
+                        rs.getInt("season_num"),
+                        rs.getInt("last_episode")
+                    ));
+                }
+            }
+        }
+
+        // 🔥 Sort all by rating
+        items.sort((a, b) -> Integer.compare(b.getRating(), a.getRating()));
+
+        return items;
+    }
+    public List<FeaturedItem> searchByTitle(String query) throws SQLException {
+        List<FeaturedItem> results = new ArrayList<>();
+        String likeQuery = "%" + query + "%";
+
+        // Search films
+        String filmSql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+                         "FROM film f " +
+                         "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
+                         "LEFT JOIN category c ON fc.category_id = c.category_id " +
+                         "WHERE f.title LIKE ? " +
+                         "GROUP BY f.film_id";
+
+        try (PreparedStatement ps = connection.prepareStatement(filmSql)) {
+            ps.setString(1, likeQuery);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                List<String> categories = rs.getString("categories") != null
+                        ? List.of(rs.getString("categories").split(","))
+                        : new ArrayList<>();
+
+                results.add(new FeaturedItem(
+                    rs.getInt("film_id"),
+                    rs.getString("title"),
+                    rs.getString("synopsis"),
+                    rs.getString("video_url"),
+                    rs.getString("image_url"),
+                    rs.getString("title_image_url"),
+                    rs.getString("poster_url"),
+                    categories,
+                    rs.getString("age_rating"),
+                    rs.getInt("rating")
+                ));
+            }
+        }
+
+        // Search series (latest season only)
+        String seriesSql = "SELECT s.season_id, s.poster_url, s.trailer_url, s.season_num, s.status, " +
+                           "se.serie_id, se.title AS serie_title, se.synopsis, se.title_url, se.covert_url, se.age_rating, se.rating, " +
+                           "GROUP_CONCAT(DISTINCT c.name SEPARATOR ',') AS categories, " +
+                           "COALESCE(MAX(e.num_episode),0) AS last_episode " +
+                           "FROM season s " +
+                           "JOIN serie se ON s.serie_id = se.serie_id " +
+                           "LEFT JOIN serie_category sc ON se.serie_id = sc.serie_id " +
+                           "LEFT JOIN category c ON sc.category_id = c.category_id " +
+                           "LEFT JOIN episode e ON e.season_id = s.season_id " +
+                           "WHERE se.title LIKE ? " +
+                           "AND s.season_id = ( " +
+                           "   SELECT s2.season_id FROM season s2 " +
+                           "   LEFT JOIN episode e2 ON e2.season_id = s2.season_id " +
+                           "   WHERE s2.serie_id = s.serie_id " +
+                           "   GROUP BY s2.season_id ORDER BY MAX(e2.released_at) DESC LIMIT 1" +
+                           ") " +
+                           "GROUP BY s.season_id";
+
+        try (PreparedStatement ps = connection.prepareStatement(seriesSql)) {
+            ps.setString(1, likeQuery);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                List<String> categories = rs.getString("categories") != null
+                        ? new ArrayList<>(new LinkedHashSet<>(List.of(rs.getString("categories").split(","))))
+                        : new ArrayList<>();
+
+                results.add(new FeaturedItem(
+                    rs.getInt("season_id"),
+                    rs.getInt("serie_id"),
+                    rs.getString("serie_title"),
+                    rs.getString("synopsis"),
+                    rs.getString("trailer_url"),
+                    rs.getString("covert_url"),
+                    rs.getString("title_url"),
+                    rs.getString("poster_url"),
+                    categories,
+                    rs.getString("age_rating"),
+                    rs.getInt("rating"),
+                    rs.getString("status"),
+                    rs.getInt("season_num"),
+                    rs.getInt("last_episode")
+                ));
+            }
+        }
+
+        return results;
+    }
+    public void addLatestSearch(int userId, String title) throws SQLException {
+        title = title.trim();
+        if (title.isEmpty()) return;
+
+        // 1. Remove duplicate (so it goes to top)
+        String deleteDuplicate = "DELETE FROM latest_search WHERE user_id = ? AND title = ?";
+        try (PreparedStatement ps = connection.prepareStatement(deleteDuplicate)) {
+            ps.setInt(1, userId);
+            ps.setString(2, title);
+            ps.executeUpdate();
+        }
+
+        // 2. Insert new search
+        String insertSql = "INSERT INTO latest_search(user_id, title) VALUES (?, ?)";
+        try (PreparedStatement ps = connection.prepareStatement(insertSql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, title);
+            ps.executeUpdate();
+        }
+
+        // 3. Keep ONLY 5 latest searches
+        String deleteOld = 
+            "DELETE FROM latest_search WHERE user_id = ? AND searched_at NOT IN (" +
+            "SELECT searched_at FROM (" +
+            "SELECT searched_at FROM latest_search WHERE user_id = ? ORDER BY searched_at DESC LIMIT 5" +
+            ") AS temp)";
+
+        try (PreparedStatement ps = connection.prepareStatement(deleteOld)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    public List<String> getLatestSearches(int userId, int limit) throws SQLException {
+        List<String> searches = new ArrayList<>();
+        String sql = "SELECT title FROM latest_search WHERE user_id=? ORDER BY searched_at DESC LIMIT ?";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setInt(1, userId);
+        ps.setInt(2, limit);
+        ResultSet rs = ps.executeQuery();
+        while(rs.next()) searches.add(rs.getString("title"));
+        return searches;
+    }
+ // FeaturedDAO.java
+    public void deleteLatestSearch(int userId, String title) throws SQLException {
+        String sql = "DELETE FROM latest_search WHERE user_id = ? AND title = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, title);
+            ps.executeUpdate();
+        }
+    }
+}
