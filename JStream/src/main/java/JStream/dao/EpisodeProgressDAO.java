@@ -57,33 +57,57 @@ public class EpisodeProgressDAO {
 
     // ----------------- Mark episode completed -----------------
     public void setCompleted(int userId, int epId, int lastPosition) {
-        String sql = "UPDATE episode_progress SET status='COMPLETED', last_position=? " +
-                     "WHERE user_id=? AND ep_id=?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, lastPosition);
-            ps.setInt(2, userId);
-            ps.setInt(3, epId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // ----------------- Get status for a single episode -----------------
-    public WatchStatus getEpisodeStatus(int userId, int epId) {
-        String sql = "SELECT status FROM episode_progress WHERE user_id=? AND ep_id=?";
+        // ⚠️ Nesta3mlou INSERT ... ON DUPLICATE KEY UPDATE be-sh dima yemshi 
+        // swa el record jdid walla 9dim
+        String sql = "INSERT INTO episode_progress (user_id, ep_id, status, last_position) " +
+                     "VALUES (?, ?, 'COMPLETED', ?) " +
+                     "ON DUPLICATE KEY UPDATE status='COMPLETED', last_position=?";
+        
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ps.setInt(2, epId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                String dbStatus = rs.getString("status");
-                if (dbStatus != null) return WatchStatus.valueOf(dbStatus);
+            ps.setInt(3, lastPosition); // Insert value
+            ps.setInt(4, lastPosition); // Update value ken l9ah mawjoud
+            
+            int rowsAffected = ps.executeUpdate();
+            System.out.println("✅ DB: Episode " + epId + " marked as COMPLETED. Rows: " + rowsAffected);
+        } catch (SQLException e) {
+            System.err.println("❌ SQL Error in setCompleted: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    // ----------------- Get status for a single episode -----------------
+ 
+    public WatchStatus getEpisodeStatus(int userId, int epId) {
+        String sql = "SELECT status FROM episode_progress WHERE user_id=? AND ep_id=?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) { // Auto-close
+            ps.setInt(1, userId);
+            ps.setInt(2, epId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String dbStatus = rs.getString("status");
+                    return (dbStatus != null) ? WatchStatus.valueOf(dbStatus) : WatchStatus.NOT_STARTED;
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return WatchStatus.NOT_STARTED;
     }
-
+    
+    //-------------------------------
+    public int getLastPosition(int userId, int epId) throws SQLException {
+        // ⚠️ Kenet film_id, baddelneha ep_id
+        String sql = "SELECT last_position FROM episode_progress WHERE user_id = ? AND ep_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, epId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("last_position");
+            }
+        }
+        return 0;
+    }
+    
 }

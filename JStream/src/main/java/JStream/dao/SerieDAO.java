@@ -16,10 +16,14 @@ public class SerieDAO {
 
     // ===== INSERT =====
     public boolean insertSerie(Serie serie) {
-        String sql = "INSERT INTO series (title, synopsis, casting, covert_url, title_url, " +
+        String sql = "INSERT INTO serie (title, synopsis, casting, covert_url, title_url, " +
                      "age_rating) VALUES (?,?,?,?,?,?)";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        Connection conn = null;
+        try {
+            conn = Database.getConnection();
+            conn.setAutoCommit(false); // Start transaction
+
+            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, serie.getTitle());
             ps.setString(2, serie.getSynopsis());
@@ -28,52 +32,76 @@ public class SerieDAO {
             ps.setString(5, serie.getTitleUrl());
             ps.setString(6, serie.getAge_rating());
 
-            int rows = ps.executeUpdate();
-            if (rows > 0) {
-                ResultSet rs = ps.getGeneratedKeys();
-                if (rs.next()) {
-                    serie.setSerieId(rs.getInt(1));
-                    insertSerieCategories(conn, serie.getSerieId(), serie.getCategories());
-                }
-                return true;
+            ps.executeUpdate();
+            
+            ResultSet rs = ps.getGeneratedKeys();
+            if (rs.next()) {
+                serie.setSerieId(rs.getInt(1));
+                insertSerieCategories(conn, serie.getSerieId(), serie.getCategories());
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
+
+        conn.commit(); // Save changes
+        return true;
+    } catch (SQLException e) {
+        if (conn != null) try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+        e.printStackTrace();
         return false;
+    } finally {
+        if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { e.printStackTrace(); }
     }
+}
 
     // ===== UPDATE =====
     public boolean updateSerie(Serie serie) {
-        String sql = "UPDATE series SET title=?, synopsis=?, casting=?, covert_url=?, " +
+        String sql = "UPDATE serie SET title=?, synopsis=?, casting=?, covert_url=?, " +
                      "title_url=?, age_rating=? WHERE serie_id=?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        
+        Connection conn = null;
+        try {
+            conn = Database.getConnection();
+            conn.setAutoCommit(false); // Start Transaction
 
-            ps.setString(1, serie.getTitle());
-            ps.setString(2, serie.getSynopsis());
-            ps.setString(3, serie.getCasting());
-            ps.setString(4, serie.getCovertUrl());
-            ps.setString(5, serie.getTitleUrl());
-            ps.setString(6, serie.getAge_rating());
-            ps.setInt(7,    serie.getSerieId());
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, serie.getTitle());
+                ps.setString(2, serie.getSynopsis());
+                ps.setString(3, serie.getCasting());
+                ps.setString(4, serie.getCovertUrl());
+                ps.setString(5, serie.getTitleUrl());
+                ps.setString(6, serie.getAge_rating());
+                ps.setInt(7,    serie.getSerieId());
 
-            boolean updated = ps.executeUpdate() > 0;
-            if (updated && serie.getCategories() != null) {
-                deleteSerieCategories(conn, serie.getSerieId());
-                insertSerieCategories(conn, serie.getSerieId(), serie.getCategories());
+                boolean updated = ps.executeUpdate() > 0;
+
+                if (updated && serie.getCategories() != null) {
+                    // IMPORTANT: Ensure these helper methods DO NOT close the connection
+                    deleteSerieCategories(conn, serie.getSerieId());
+                    insertSerieCategories(conn, serie.getSerieId(), serie.getCategories());
+                }
+
+                conn.commit(); // Commit all changes at once
+                return updated;
             }
-            return updated;
 
         } catch (SQLException e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
             e.printStackTrace();
+            return false;
+        } finally {
+            if (conn != null) {
+                try { 
+                    conn.setAutoCommit(true); 
+                    conn.close(); 
+                } catch (SQLException e) { e.printStackTrace(); }
+            }
         }
-        return false;
     }
 
     // ===== DELETE =====
     public boolean deleteSerie(int serieId) {
-        String sql = "DELETE FROM series WHERE serie_id = ?";
+        String sql = "DELETE FROM serie WHERE serie_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -90,7 +118,7 @@ public class SerieDAO {
     public List<Serie> getAllSeries() {
         List<Serie> list = new ArrayList<>();
         String sql = "SELECT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM series s " +
+                     "FROM serie s " +
                      "LEFT JOIN serie_category sc ON s.serie_id = sc.serie_id " +
                      "LEFT JOIN category c ON sc.category_id = c.category_id " +
                      "GROUP BY s.serie_id ORDER BY s.created_at DESC";
@@ -109,7 +137,7 @@ public class SerieDAO {
     // ===== GET BY ID =====
     public Serie getSerieById(int serieId) {
         String sql = "SELECT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM series s " +
+                     "FROM serie s " +
                      "LEFT JOIN serie_category sc ON s.serie_id = sc.serie_id " +
                      "LEFT JOIN category c ON sc.category_id = c.category_id " +
                      "WHERE s.serie_id = ? GROUP BY s.serie_id";
@@ -130,7 +158,7 @@ public class SerieDAO {
     public List<Serie> searchSeries(String keyword) {
         List<Serie> list = new ArrayList<>();
         String sql = "SELECT DISTINCT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM series s " +
+                     "FROM serie s " +
                      "LEFT JOIN serie_category sc ON s.serie_id = sc.serie_id " +
                      "LEFT JOIN category c ON sc.category_id = c.category_id " +
                      "WHERE s.title LIKE ? OR c.name LIKE ? " +
@@ -154,7 +182,7 @@ public class SerieDAO {
     private void insertSerieCategories(Connection conn, int serieId, List<Category> categories)
             throws SQLException {
         if (categories == null || categories.isEmpty()) return;
-        String sql = "INSERT IGNORE INTO serie_categories (serie_id, category_id) VALUES (?,?)";
+        String sql = "INSERT IGNORE INTO serie_category (serie_id, category_id) VALUES (?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             for (Category c : categories) {
                 ps.setInt(1, serieId);
@@ -166,7 +194,7 @@ public class SerieDAO {
     }
 
     private void deleteSerieCategories(Connection conn, int serieId) throws SQLException {
-        String sql = "DELETE FROM serie_categories WHERE serie_id = ?";
+        String sql = "DELETE FROM serie_category WHERE serie_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, serieId);
             ps.executeUpdate();

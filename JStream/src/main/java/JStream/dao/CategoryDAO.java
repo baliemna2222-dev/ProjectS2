@@ -15,7 +15,7 @@ public class CategoryDAO {
 
     // ===== INSERT =====
     public boolean insertCategory(Category category) {
-        String sql = "INSERT INTO categories (name, description) VALUES (?, ?)";
+        String sql = "INSERT INTO category (name, description) VALUES (?, ?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -36,7 +36,7 @@ public class CategoryDAO {
 
     // ===== UPDATE =====
     public boolean updateCategory(Category category) {
-        String sql = "UPDATE categories SET name=?, description=? WHERE category_id=?";
+        String sql = "UPDATE category SET name=?, description=? WHERE category_id=?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -53,7 +53,7 @@ public class CategoryDAO {
 
     // ===== DELETE =====
     public boolean deleteCategory(int categoryId) {
-        String sql = "DELETE FROM categories WHERE category_id = ?";
+        String sql = "DELETE FROM category WHERE category_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -69,7 +69,7 @@ public class CategoryDAO {
     // ===== GET ALL =====
     public List<Category> getAllCategories() {
         List<Category> list = new ArrayList<>();
-        String sql = "SELECT * FROM categories ORDER BY name";
+        String sql = "SELECT * FROM category ORDER BY name";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -84,7 +84,7 @@ public class CategoryDAO {
 
     // ===== GET BY ID =====
     public Category getCategoryById(int id) {
-        String sql = "SELECT * FROM categories WHERE category_id = ?";
+        String sql = "SELECT * FROM category WHERE category_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -100,7 +100,7 @@ public class CategoryDAO {
 
     // ===== NAME EXISTS (avoid duplicates) =====
     public boolean nameExists(String name) {
-        String sql = "SELECT category_id FROM categories WHERE name = ?";
+        String sql = "SELECT category_id FROM category WHERE name = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 

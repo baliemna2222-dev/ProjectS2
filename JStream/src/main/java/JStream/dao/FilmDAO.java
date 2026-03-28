@@ -4,34 +4,33 @@ import JStream.entity.Category;
 import JStream.entity.Film;
 import JStream.utils.Database;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FilmDAO {
 
-    // ===== INSERT =====
+    // ===== INSERT (Zidna trailer_url w posterV_url) =====
     public boolean insertFilm(Film film) {
-        String sql = "INSERT INTO films (title, synopsis, casting, video_url, image_url, " +
-                     "title_image_url, poster_url, release_date, duration, age_rating) " +
-                     "VALUES (?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO film (title, synopsis, casting, trailer_url, video_url, image_url, " +
+                     "title_image_url, poster_url, posterV_url, release_date, duration, age_rating, rating) " +
+                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, film.getTitle());
             ps.setString(2, film.getSynopsis());
             ps.setString(3, film.getCasting());
-            ps.setString(4, film.getVideo_url());
-            ps.setString(5, film.getImage_url());
-            ps.setString(6, film.getTitle_image_url());
-            ps.setString(7, film.getPoster_url());
-            ps.setObject(8, film.getRelease_date());
-            ps.setDouble(9, film.getDuration());
-            ps.setString(10, film.getAge_rating());
+            ps.setString(4, film.getTrailer_url()); // <--- Jdid
+            ps.setString(5, film.getVideo_url());
+            ps.setString(6, film.getImage_url());
+            ps.setString(7, film.getTitle_image_url());
+            ps.setString(8, film.getPoster_url());
+            ps.setString(9, film.getPosterV_url()); // <--- Jdid
+            ps.setObject(10, film.getRelease_date());
+            ps.setDouble(11, film.getDuration());
+            ps.setString(12, film.getAge_rating());
+            ps.setInt(13, film.getRating());
 
             int rows = ps.executeUpdate();
             if (rows > 0) {
@@ -48,10 +47,10 @@ public class FilmDAO {
         return false;
     }
 
-    // ===== UPDATE =====
+    // ===== UPDATE (Zidna el jdod) =====
     public boolean updateFilm(Film film) {
-        String sql = "UPDATE films SET title=?, synopsis=?, casting=?, video_url=?, image_url=?, " +
-                     "title_image_url=?, poster_url=?, release_date=?, duration=?, age_rating=? " +
+        String sql = "UPDATE film SET title=?, synopsis=?, casting=?, trailer_url=?, video_url=?, image_url=?, " +
+                     "title_image_url=?, poster_url=?, posterV_url=?, release_date=?, duration=?, age_rating=?, rating=? " +
                      "WHERE film_id=?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -59,14 +58,17 @@ public class FilmDAO {
             ps.setString(1,  film.getTitle());
             ps.setString(2,  film.getSynopsis());
             ps.setString(3,  film.getCasting());
-            ps.setString(4,  film.getVideo_url());
-            ps.setString(5,  film.getImage_url());
-            ps.setString(6,  film.getTitle_image_url());
-            ps.setString(7,  film.getPoster_url());
-            ps.setObject(8,  film.getRelease_date());
-            ps.setDouble(9,  film.getDuration());
-            ps.setString(10, film.getAge_rating());
-            ps.setInt(11,    film.getFilm_id());
+            ps.setString(4,  film.getTrailer_url());
+            ps.setString(5,  film.getVideo_url());
+            ps.setString(6,  film.getImage_url());
+            ps.setString(7,  film.getTitle_image_url());
+            ps.setString(8,  film.getPoster_url());
+            ps.setString(9,  film.getPosterV_url());
+            ps.setObject(10, film.getRelease_date());
+            ps.setDouble(11, film.getDuration());
+            ps.setString(12, film.getAge_rating());
+            ps.setInt(13,    film.getRating());
+            ps.setInt(14,    film.getFilm_id());
 
             boolean updated = ps.executeUpdate() > 0;
             if (updated && film.getCategories() != null) {
@@ -81,35 +83,31 @@ public class FilmDAO {
         return false;
     }
 
-    // ===== DELETE =====
+    // ===== DELETE (Ma yetbaddelch) =====
     public boolean deleteFilm(int filmId) {
-        String sql = "DELETE FROM films WHERE film_id = ?";
+        String sql = "DELETE FROM film WHERE film_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, filmId);
             return ps.executeUpdate() > 0;
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    // ===== GET ALL =====
+    // ===== GET ALL (Badelna f-el mapRow) =====
     public List<Film> getAllFilms() {
         List<Film> list = new ArrayList<>();
         String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM films f " +
+                     "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
                      "GROUP BY f.film_id ORDER BY f.release_date DESC";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ResultSet rs = ps.executeQuery();
             while (rs.next()) list.add(mapRow(rs));
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -119,17 +117,15 @@ public class FilmDAO {
     // ===== GET BY ID =====
     public Film getFilmById(int filmId) {
         String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM films f " +
+                     "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
                      "WHERE f.film_id = ? GROUP BY f.film_id";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, filmId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return mapRow(rs);
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -140,71 +136,29 @@ public class FilmDAO {
     public List<Film> searchFilms(String keyword) {
         List<Film> list = new ArrayList<>();
         String sql = "SELECT DISTINCT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
-                     "FROM films f " +
+                     "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
                      "WHERE f.title LIKE ? OR c.name LIKE ? OR YEAR(f.release_date) LIKE ? " +
                      "GROUP BY f.film_id ORDER BY f.title";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             String like = "%" + keyword + "%";
             ps.setString(1, like);
             ps.setString(2, like);
             ps.setString(3, like);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) list.add(mapRow(rs));
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return list;
     }
 
-    // ===== TOP 5 MOST WATCHED (admin dashboard) =====
-    public List<String[]> getTop5MostWatched() {
-        List<String[]> result = new ArrayList<>();
-        String sql = "SELECT f.title, COUNT(h.id) AS views " +
-                     "FROM films f JOIN history h ON f.film_id = h.film_id " +
-                     "GROUP BY f.film_id ORDER BY views DESC LIMIT 5";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ResultSet rs = ps.executeQuery();
-            while (rs.next())
-                result.add(new String[]{ rs.getString("title"), rs.getString("views") });
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    // ===== FILMS PER CATEGORY (pie chart) =====
-    public List<String[]> getFilmsPerCategory() {
-        List<String[]> result = new ArrayList<>();
-        String sql = "SELECT c.name, COUNT(fc.film_id) AS total " +
-                     "FROM category c " +
-                     "LEFT JOIN film_category fc ON c.category_id = fc.category_id " +
-                     "GROUP BY c.category_id ORDER BY total DESC";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ResultSet rs = ps.executeQuery();
-            while (rs.next())
-                result.add(new String[]{ rs.getString("name"), rs.getString("total") });
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    // ===== HELPERS =====
-    private void insertFilmCategories(Connection conn, int filmId, List<Category> categories)
-            throws SQLException {
+    // ===== HELPERS (Baddelna el mapping hna) =====
+    private void insertFilmCategories(Connection conn, int filmId, List<Category> categories) throws SQLException {
         if (categories == null || categories.isEmpty()) return;
-        String sql = "INSERT IGNORE INTO film_categories (film_id, category_id) VALUES (?,?)";
+        String sql = "INSERT IGNORE INTO film_category (film_id, category_id) VALUES (?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             for (Category c : categories) {
                 ps.setInt(1, filmId);
@@ -216,7 +170,7 @@ public class FilmDAO {
     }
 
     private void deleteFilmCategories(Connection conn, int filmId) throws SQLException {
-        String sql = "DELETE FROM film_categories WHERE film_id = ?";
+        String sql = "DELETE FROM film_category WHERE film_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, filmId);
             ps.executeUpdate();
@@ -229,6 +183,12 @@ public class FilmDAO {
         film.setTitle(rs.getString("title"));
         film.setSynopsis(rs.getString("synopsis"));
         film.setCasting(rs.getString("casting"));
+        
+        // --- Zidna el mapping jdid ---
+        film.setTrailer_url(rs.getString("trailer_url")); 
+        film.setPosterV_url(rs.getString("posterV_url"));
+        // -----------------------------
+
         film.setVideo_url(rs.getString("video_url"));
         film.setImage_url(rs.getString("image_url"));
         film.setTitle_image_url(rs.getString("title_image_url"));
@@ -237,12 +197,13 @@ public class FilmDAO {
         film.setAge_rating(rs.getString("age_rating"));
         film.setRating(rs.getInt("rating"));
         film.setUpdated_at(rs.getTimestamp("updated_at"));
+        
         if (rs.getTimestamp("release_date") != null)
             film.setRelease_date(rs.getTimestamp("release_date").toLocalDateTime());
 
         List<Category> cats = new ArrayList<>();
         String catStr = rs.getString("categories");
-        if (catStr != null) {
+        if (catStr != null && !catStr.isEmpty()) {
             for (String name : catStr.split(",")) {
                 Category c = new Category();
                 c.setName(name.trim());

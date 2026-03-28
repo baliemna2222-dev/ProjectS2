@@ -1,74 +1,391 @@
 package JStream.controller;
 
+import java.net.URL;
+import java.sql.SQLException;
+
 import JStream.entity.Episode;
+import JStream.entity.FeaturedItem;
 import JStream.entity.Film;
-import JStream.entity.Serie;
+import JStream.entity.MyListManager;
 import JStream.entity.Season;
+import JStream.entity.Serie;
+import JStream.entity.Session;
 import JStream.service.FeaturedService;
+import JStream.service.MylistService;
+import javafx.animation.FadeTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.RotateTransition;
+import javafx.animation.ScaleTransition;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Modality;
+import javafx.stage.Popup;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.util.Duration;
 
-import java.sql.SQLException;
+
 
 public class LecturePageController {
+	@FXML private String currentTrailerUrl;
+	@FXML private Button addToListButton;
+	private MylistService mylistService = new MylistService();
+	private FeaturedItem currentItem;
+    // --- NAVBAR ---
+    @FXML private ImageView logoNav, bellIcon;
+    @FXML private Button btnMostWatched, btnMyList;
+    @FXML private StackPane bellContainer;
+    @FXML private Circle notificationCircle;
+    @FXML private Button btnBack, playButton, btnNotification, profileBtn;
 
-    @FXML private Label titleLabel;
-    @FXML private ImageView posterImage;
-    @FXML private Label descriptionLabel;
-    @FXML private Label durationLabel;
-    @FXML private HBox starsBox;
-    @FXML private Label categoriesLabel;
-    @FXML private Label episodeInfoLabel; // Only for episodes
-    @FXML private Button playTrailerButton;
+    // --- HERO & CONTAINERS ---
+    @FXML private VBox mainContainer;
+    @FXML private ImageView backgroundImage, posterImage;
+    @FXML private Label titleLabel, scoreLabel, yearLabel, durationLabel, ageRatingLabel, descriptionLabel;
+    @FXML private Label starringLabel, directorLabel, categoriesLabel, episodeInfoLabel;
+    @FXML private HBox starsBox, castBox;
 
-    // ---------------- Init Data for Film ----------------
-    public void initFilm(int filmId) {
-        episodeInfoLabel.setVisible(false); // hide for films
-        try {
-            Film film = new FeaturedService().getFilmDetails(filmId);
-            titleLabel.setText(film.getTitle());
-           
-            descriptionLabel.setText(film.getSynopsis());
-            durationLabel.setText(film.getDuration() + " min");
-            categoriesLabel.setText(film.getCasting());
-            populateStars(film.getRating());
-        } catch (SQLException e) {
-            e.printStackTrace();
+    // --- TABS ---
+    @FXML private Rectangle lineOverview, lineTrailers;
+    @FXML private Button tabOverview, tabTrailers;
+
+    private AudioClip bellSound;
+    private Popup notificationPopup = new Popup();
+    private VBox notificationContent = new VBox();
+    private boolean isNotificationVisible = false;
+
+    // ============== INITIALIZE ==============
+    @FXML
+    public void initialize() {
+    	setupNavbar();
+        setupNotificationSystem();
+        setupTabLogic(); // Logic mta3 el tabs Overview/Trailers
+        
+       
+        if (btnBack != null) {
+            btnBack.setOnAction(e -> handleBackAction());
+        }
+        
+        btnNotification.setOnAction(e -> {
+            if (isNotificationVisible) {
+                hideNotification(); // El dot tetna7a b-animation mezyena
+            }
+            showPopup();});
+        // Entrance Animation
+        if (mainContainer != null) {
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), mainContainer);
+            fadeIn.setFromValue(0.0);
+            fadeIn.setToValue(1.0);
+            fadeIn.play();
+        }
+        populateStars(9.0);
+     // Fi west el initialize() walla initFilm/initEpisode
+        if (playButton != null) {
+            playButton.setOnAction(e -> {
+                // currentTrailerUrl walla videoUrl mta3 el film
+                if (currentTrailerUrl != null) {
+                    openVideoPlayer(currentTrailerUrl, titleLabel.getText());
+                } else {
+                    System.out.println("⚠️ Mafamech video url 7adher!");
+                }
+            });
+        }
+        if (posterImage != null) addHoverEffect(posterImage);
+        if (playButton != null) addHoverEffect(playButton);
+        if (addToListButton != null) {
+            
+            addToListButton.setOnAction(e -> handleAddToList());
+          
+        }
+        if (btnBack != null) {
+            addButtonInteractions(btnBack);
+        }
+        if (btnMostWatched != null) {
+            addButtonInteractions(btnMostWatched); // Be-ch yekbar w yglowy kima tlabt
+            btnMostWatched.setOnAction(e -> navigateTo("/view/MostWatched.fxml"));
+        }
+
+        if (btnMyList != null) {
+            addButtonInteractions(btnMyList);
+            btnMyList.setOnAction(e -> navigateTo("/view/MyList.fxml"));
+        }
+        loadCast();
+    }
+
+    private void setupTabLogic() {
+        if (tabOverview != null && tabTrailers != null) {
+            tabOverview.setOnAction(e -> {
+                lineOverview.setVisible(true);
+                lineTrailers.setVisible(false);
+                tabOverview.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+                tabTrailers.setStyle("-fx-background-color: transparent; -fx-text-fill: #7a80a0;");
+            });
+
+            tabTrailers.setOnAction(e -> {
+                lineOverview.setVisible(false);
+                lineTrailers.setVisible(true);
+                tabTrailers.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+                tabOverview.setStyle("-fx-background-color: transparent; -fx-text-fill: #7a80a0;");
+
+                // 🔥 Hna el "Trigger" mta3 el Video
+                if (this.currentTrailerUrl != null && !this.currentTrailerUrl.isEmpty()) {
+                    showTrailerPopup(this.currentTrailerUrl);
+                } else {
+                    System.out.println("⚠️ Trailer URL mal9inehch l-hal content!");
+                }
+            });
+        }
+    }
+    private void addHoverEffect(Node node) {
+        ScaleTransition stIn = new ScaleTransition(Duration.millis(200), node);
+        stIn.setToX(1.05); stIn.setToY(1.05);
+
+        ScaleTransition stOut = new ScaleTransition(Duration.millis(200), node);
+        stOut.setToX(1.0); stOut.setToY(1.0);
+
+        node.setOnMouseEntered(e -> {
+            stIn.play();
+            node.setEffect(new javafx.scene.effect.DropShadow(25, Color.web("#2d54ff", 0.6)));
+        });
+        node.setOnMouseExited(e -> {
+            stOut.play();
+            node.setEffect(null); 
+        });
+    }
+
+    private void loadCast() {
+        if (castBox == null) return;
+        castBox.getChildren().clear();
+        for (int i = 0; i < 5; i++) {
+            VBox actorCard = createActorCard("Actor Name", "/assets/images/profile.png");
+            castBox.getChildren().add(actorCard);
         }
     }
 
-    // ---------------- Init Data for Episode ----------------
+    private VBox createActorCard(String name, String imgPath) {
+        VBox card = new VBox(8);
+        card.setAlignment(Pos.CENTER);
+        try {
+            ImageView img = new ImageView(new Image(getClass().getResourceAsStream(imgPath)));
+            img.setFitWidth(80); img.setFitHeight(80);
+            Circle clip = new Circle(40, 40, 40);
+            img.setClip(clip);
+            Label n = new Label(name); n.setStyle("-fx-text-fill: white; -fx-font-size: 12px;");
+            card.getChildren().addAll(img, n);
+            addHoverEffect(card);
+        } catch (Exception e) {}
+        return card;
+    }
+
+    private void setupNavbar() {
+        try {
+            if (logoNav != null) logoNav.setImage(new Image(getClass().getResourceAsStream("/assets/images/logo/Raksha.png")));
+            if (bellIcon != null) bellIcon.setImage(new Image(getClass().getResourceAsStream("/assets/images/bellwhiter.png")));
+        } catch (Exception e) {}
+    }
+
+    private void setupNotificationSystem() {
+        try {
+            bellSound = new AudioClip(getClass().getResource("/assets/sounds/notification.mp3").toString());
+        } catch (Exception e) {}
+
+        notificationContent.setStyle("-fx-background-color: #111111; -fx-background-radius: 8; -fx-padding: 15; -fx-spacing: 10;");
+        notificationContent.setPrefWidth(250);
+        Label popTitle = new Label("Notifications");
+        popTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+        notificationContent.getChildren().add(popTitle);
+        notificationPopup.getContent().add(notificationContent);
+        notificationPopup.setAutoHide(true);
+
+        bellContainer.setOnMouseEntered(e -> {
+            shakeBell();
+            if (bellSound != null) bellSound.play();
+            showNotificationDot();
+            showPopup();
+        });
+    }
+    
+
+    public void initFilm(int filmId) {
+        if (episodeInfoLabel != null) episodeInfoLabel.setVisible(false);
+        try {
+            Film film = new FeaturedService().getFilmDetails(filmId);
+            this.currentTrailerUrl = film.getVideo_url();
+            this.currentItem = new FeaturedItem(
+            	    film.getFilm_id(),
+            	    film.getTitle(),
+            	    film.getSynopsis(),
+            	    film.getVideo_url(),
+            	    film.getImage_url(),
+            	    film.getTitle_image_url(),
+            	    film.getPoster_url(),
+            	    film.getCategories() != null ?
+            	        film.getCategories().stream()
+            	            .map(c -> c.getName())
+            	            .collect(java.util.stream.Collectors.toList())
+            	        : new java.util.ArrayList<>(),
+            	    film.getAge_rating(),
+            	    film.getRating()
+            	);
+            updateUI(film.getTitle(), film.getSynopsis(), film.getDuration() + " min", 
+                     film.getRating(), film.getCasting(), film.getPoster_url(), null);
+            if (scoreLabel != null) scoreLabel.setText(String.valueOf(film.getRating()));
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
     public void initEpisode(int serieId, int seasonNum, int episodeNum) {
         try {
             Serie serie = new FeaturedService().getFullSerie(serieId);
             Episode ep = findEpisodeInSerie(serie, seasonNum, episodeNum);
-
-            titleLabel.setText(ep.getTitle() + " (" + serie.getTitle() + ")");
             
-            descriptionLabel.setText(ep.getResume());
-            durationLabel.setText(ep.getDuration() + " min");
-            episodeInfoLabel.setText("Season " + ep.getSeasonId() + " - Episode " + ep.getNumEpisode());
-            episodeInfoLabel.setVisible(true);
-            categoriesLabel.setText(serie.getCategoriesAsString());
-            populateStars(serie.getRating());
+            if (ep != null) {
+                // Nlawjou 3al Saison el s7i7a besh njibdou el Trailer mte3ha
+                if (serie.getSeasons() != null) {
+                    for (Season s : serie.getSeasons()) {
+                        if (s.getSeasonNum() == seasonNum) {
+                            this.currentTrailerUrl = s.getTrailerUrl(); // Sajjel el URL
+                            break; 
+                        }
+                    }
+                    this.currentItem = new FeaturedItem(
+                    	    0,
+                    	    serie.getSerieId(),
+                    	    serie.getTitle(),
+                    	    serie.getSynopsis(),
+                    	    this.currentTrailerUrl,
+                    	    serie.getCovertUrl(),
+                    	    serie.getTitleUrl(),
+                    	    serie.getCovertUrl(),
+                    	    serie.getCategories() != null ?
+                    	        serie.getCategories().stream()
+                    	            .map(c -> c.getName())
+                    	            .collect(java.util.stream.Collectors.toList())
+                    	        : new java.util.ArrayList<>(),
+                    	    serie.getAge_rating(),
+                    	    serie.getRating(),
+                    	    null, seasonNum, episodeNum
+                    	);
+                }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+                updateUI(ep.getTitle(), ep.getResume() != null ? ep.getResume() : serie.getSynopsis(), 
+                         ep.getDuration() + " min", serie.getRating(), serie.getCasting(), 
+                         serie.getCovertUrl(), "S" + seasonNum + " - E" + episodeNum);
+                
+                if (scoreLabel != null) scoreLabel.setText(String.valueOf(serie.getRating()));
+            }
+        } catch (SQLException e) { 
+            e.printStackTrace(); 
         }
     }
 
-    private void populateStars(int rating) {
+    private void updateUI(String title, String desc, String duration, int rating, String cast, String imgPath, String epInfo) {
+        titleLabel.setText(title);
+        descriptionLabel.setText(desc);
+        durationLabel.setText(duration);
+        starringLabel.setText(cast);
+        
+        if (epInfo != null && episodeInfoLabel != null) {
+            episodeInfoLabel.setText(epInfo);
+            episodeInfoLabel.setVisible(true);
+        }
+
+        if (imgPath != null) {
+            try {
+                Image img = new Image(getClass().getResourceAsStream(imgPath));
+                posterImage.setImage(img);
+                backgroundImage.setImage(img);
+            } catch (Exception e) {}
+        }
+        populateStars(rating);
+    }
+
+    private void populateStars(double rating) {
+        if (starsBox == null) return;
+        
         starsBox.getChildren().clear();
-        for (int i = 0; i < 5; i++) {
+        
+        // Na7i el "/ 2.0" ken el rating dima 3la 5
+        double starsToHighlight = rating; 
+
+        for (int i = 1; i <= 5; i++) {
             Label star = new Label("★");
-            star.setTextFill(i < rating ? Color.DEEPSKYBLUE : Color.GRAY);
+            
+            // Ken el i asgher mel rating (mathalan 3), i-highlighty el star
+            if (i <= starsToHighlight) {
+                star.setStyle("-fx-text-fill: #00d4ff; " + 
+                              "-fx-font-size: 22px; " + 
+                              "-fx-effect: dropshadow(three-pass-box, rgba(0, 212, 255, 0.8), 15, 0, 0, 0);");
+            } else {
+                star.setStyle("-fx-text-fill: #2a3140; " + 
+                              "-fx-font-size: 22px;");
+            }
+            
             starsBox.getChildren().add(star);
         }
+    }
+
+    private void shakeBell() {
+        RotateTransition rt = new RotateTransition(Duration.millis(100), bellIcon);
+        rt.setFromAngle(-10); rt.setToAngle(10);
+        rt.setCycleCount(4); rt.setAutoReverse(true);
+        rt.play();
+    }
+
+    private void showNotificationDot() {
+        if (!isNotificationVisible) {
+            notificationCircle.setVisible(true);
+            isNotificationVisible = true;
+        }
+    }
+    private void hideNotification() {
+        if (notificationCircle == null || !isNotificationVisible) return;
+        
+        isNotificationVisible = false;
+
+        // Animation Parallel: Fade + Scale
+        ParallelTransition hide = new ParallelTransition();
+
+        FadeTransition fade = new FadeTransition(Duration.millis(300), notificationCircle);
+        fade.setFromValue(1.0);
+        fade.setToValue(0.0);
+
+        ScaleTransition scale = new ScaleTransition(Duration.millis(300), notificationCircle);
+        scale.setToX(0);
+        scale.setToY(0);
+
+        hide.getChildren().addAll(fade, scale);
+        
+        // Ki toufa el animation, n-raj3ou el scale 1 (bech el marra el jaya tban s7i7a) w n-sakrou el visibility
+        hide.setOnFinished(e -> {
+            notificationCircle.setVisible(false);
+            notificationCircle.setScaleX(1);
+            notificationCircle.setScaleY(1);
+            notificationCircle.setOpacity(1);
+        });
+        
+        hide.play();
+    }
+
+    private void showPopup() {
+        Bounds bounds = bellContainer.localToScreen(bellContainer.getBoundsInLocal());
+        notificationPopup.show(bellContainer, bounds.getMinX() - 200, bounds.getMaxY() + 10);
     }
 
     private Episode findEpisodeInSerie(Serie serie, int seasonNum, int episodeNum) {
@@ -80,5 +397,264 @@ public class LecturePageController {
             }
         }
         return null;
+    }
+    @FXML
+    private void handleBackAction() {
+        try {
+            // 1. Chargi el Home Page FXML
+           
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/fxml/HomePage.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            // 2. jib el Stage el 7aliya mel button
+            javafx.stage.Stage stage = (javafx.stage.Stage) btnBack.getScene().getWindow();
+
+            // 3. Beddel el Scene
+            stage.getScene().setRoot(root);
+            
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+    private void addButtonInteractions(Button btn) {
+        // 1. Animation mta3 el kbor (Scale)
+        ScaleTransition scaleUp = new ScaleTransition(Duration.millis(100), btn);
+        scaleUp.setToX(1.1);
+        scaleUp.setToY(1.1);
+
+        ScaleTransition scaleDown = new ScaleTransition(Duration.millis(100), btn);
+        scaleDown.setToX(1.0);
+        scaleDown.setToY(1.0);
+
+        // 2. Glow Effect (DropShadow)
+        javafx.scene.effect.DropShadow glow = new javafx.scene.effect.DropShadow();
+        glow.setColor(Color.web("#00d4ff", 0.8)); // Nafs el bleu mta3 el stars
+        glow.setRadius(20);
+        glow.setSpread(0.12);
+
+        // 3. Event Handlers
+        btn.setOnMouseEntered(e -> {
+            scaleUp.play();
+            btn.setEffect(glow);
+        });
+
+        btn.setOnMouseExited(e -> {
+            scaleDown.play();
+            btn.setEffect(null);
+        });
+
+        // Ken t7ebha "t-vibri" chwaya ki t-cliqui (optional)
+        btn.setOnMousePressed(e -> {
+            btn.setScaleX(0.95);
+            btn.setScaleY(0.95);
+        });
+        
+        btn.setOnMouseReleased(e -> {
+            btn.setScaleX(1.1);
+            btn.setScaleY(1.1);
+        });
+    }
+    private void navigateTo(String fxmlPath) {
+        try {
+            URL fxmlLocation = getClass().getResource(fxmlPath);
+            if (fxmlLocation == null) {
+                System.err.println("FXML mal9itchou: " + fxmlPath);
+                return;
+            }
+            
+            FXMLLoader loader = new FXMLLoader(fxmlLocation);
+            Parent root = loader.load();
+            
+            Stage stage = (Stage) btnBack.getScene().getWindow();
+            stage.getScene().setRoot(root);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private void showTrailerPopup(String url) {
+        try {
+            URL videoUrl = getClass().getResource(url);
+            if (videoUrl == null) {
+                System.out.println("Video file not found: " + url);
+                return;
+            }
+
+            String videoPath = url.startsWith("http") ? url : videoUrl.toExternalForm();
+
+            javafx.scene.web.WebView webView = new javafx.scene.web.WebView();
+            webView.setPrefSize(1500, 700);
+
+            String html =
+                "<html><body style='margin:0; background:black;'>" +
+                "<video width='100%' height='100%' controls autoplay>" +
+                "<source src='" + videoPath + "' type='video/mp4'>" +
+                "Your browser does not support the video tag." +
+                "</video></body></html>";
+
+            webView.getEngine().loadContent(html);
+
+            javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getBounds();
+            double fullWidth = screenBounds.getWidth();
+            double fullHeight = screenBounds.getHeight();
+            double smallWidth = 1200;
+            double smallHeight = 600;
+
+            Stage popup = new Stage();
+            popup.initOwner(btnBack.getScene().getWindow()); // 👈 hna el far9
+            popup.initModality(Modality.WINDOW_MODAL);
+            popup.setTitle("Trailer");
+            popup.initStyle(StageStyle.TRANSPARENT);
+            popup.setWidth(fullWidth);
+            popup.setHeight(fullHeight);
+            popup.setX(0);
+            popup.setY(0);
+
+            StackPane root = new StackPane();
+            root.setStyle("-fx-background-color: rgba(0,0,0,0.85);");
+
+            VBox layout = new VBox(15);
+            layout.setStyle("-fx-background-color: rgba(0,0,0,0.2); -fx-background-radius:15; -fx-padding:15; -fx-alignment:center;");
+            layout.setPrefSize(fullWidth, fullHeight);
+
+            Button toggleSize = new Button("🗗");
+            toggleSize.setStyle("-fx-background-color:#008cff;-fx-text-fill:white;-fx-font-weight:bold;-fx-background-radius:50%;-fx-padding:5 8;");
+
+            Button exitButton = new Button("✕");
+            exitButton.setStyle("-fx-background-color:#008cff;-fx-text-fill:white;-fx-font-weight:bold;-fx-background-radius:50%;-fx-padding:5 8;");
+            exitButton.setOnAction(ev -> {
+                webView.getEngine().load(null);
+                popup.close();
+                // Reset tab → Overview
+                lineOverview.setVisible(true);
+                lineTrailers.setVisible(false);
+                tabOverview.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+                tabTrailers.setStyle("-fx-background-color: transparent; -fx-text-fill: #7a80a0;");
+            });
+
+            final boolean[] isFullScreen = {true};
+            toggleSize.setOnAction(ev -> {
+                if (isFullScreen[0]) {
+                    popup.setWidth(smallWidth);
+                    popup.setHeight(smallHeight);
+                    popup.setX((screenBounds.getWidth() - smallWidth) / 2);
+                    popup.setY((screenBounds.getHeight() - smallHeight) / 2);
+                    layout.setPrefSize(smallWidth, smallHeight);
+                    isFullScreen[0] = false;
+                } else {
+                    popup.setWidth(fullWidth);
+                    popup.setHeight(fullHeight);
+                    popup.setX(0); popup.setY(0);
+                    layout.setPrefSize(fullWidth, fullHeight);
+                    isFullScreen[0] = true;
+                }
+            });
+
+            HBox topBar = new HBox(10, toggleSize, exitButton);
+            topBar.setAlignment(Pos.TOP_RIGHT);
+            topBar.setPadding(new javafx.geometry.Insets(10));
+            topBar.setPickOnBounds(false);
+
+            layout.getChildren().addAll(topBar, webView);
+            root.getChildren().add(layout);
+
+            Scene scene = new Scene(root);
+            scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+            popup.setScene(scene);
+
+            popup.setOnHidden(ev -> {
+                webView.getEngine().load(null);
+                // Reset tab → Overview
+                lineOverview.setVisible(true);
+                lineTrailers.setVisible(false);
+                tabOverview.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+                tabTrailers.setStyle("-fx-background-color: transparent; -fx-text-fill: #7a80a0;");
+            });
+
+            popup.show();
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    private void handleAddToList() {
+        if (currentItem == null) return;
+
+        int userId = Session.getUserId();
+        int filmId = "film".equalsIgnoreCase(currentItem.getType()) ? currentItem.getId() : 0;
+        int serieId = "serie".equalsIgnoreCase(currentItem.getType()) ? currentItem.getSerieId() : 0;
+
+        boolean alreadyAdded = mylistService.isInList(userId, filmId, serieId);
+        if (alreadyAdded) {
+            mylistService.removeItem(userId, filmId, serieId);
+        } else {
+            mylistService.addItem(userId, filmId, serieId);
+        }
+
+        MyListManager.getInstance().notifyItemUpdated(filmId, serieId);
+    }
+
+  
+    private void openVideoPlayer(String videoUrl, String title) {
+        // ── Step 0: Check URL valid ──────────────────────────────────────────
+        if (videoUrl == null || videoUrl.trim().isEmpty()) {
+            System.err.println("❌ Video URL is NULL or empty!");
+            return;
+        }
+
+        try {
+            // ── Step 1: Load FXML ─────────────────────────────────────────────
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/VideoPlayer.fxml"));
+            Parent root = loader.load();
+            VideoPlayerController controller = loader.getController();
+
+            // ── Step 2: Init Stage ────────────────────────────────────────────
+            Stage videoStage = new Stage();
+            videoStage.initOwner(mainContainer.getScene().getWindow());
+            videoStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            videoStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+
+            controller.setStage(videoStage);       
+            controller.loadVideo(videoUrl, title); 
+
+            // ── Step 3: SMART CONTEXT (Film vs Episode) ──────────────────────
+            // Hna n-thabtou daxel el currentItem mte3ek
+            if (currentItem.getType().equalsIgnoreCase("MOVIE")) {
+                // Kenou film, n-ab3ath el ID lel filmId
+                controller.setContext(currentItem.getId(), null);
+                System.out.println("🎬 Mode: Film (ID: " + currentItem.getId() + ")");
+            } else {
+                // Kenou episode, n-ab3ath el ID lel episodeId
+                controller.setContext(null, currentItem.getId());
+                System.out.println("📺 Mode: Episode (ID: " + currentItem.getId() + ")");
+            }
+
+            // ── Step 4: Scene & UI ────────────────────────────────────────────
+            Scene scene = new Scene(root);
+            scene.setFill(javafx.scene.paint.Color.BLACK);
+
+            java.net.URL cssUrl = getClass().getResource("/view/css/player.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+
+            videoStage.setScene(scene);
+
+            // Maximize to screen
+            javafx.geometry.Rectangle2D screen = javafx.stage.Screen.getPrimary().getBounds();
+            videoStage.setX(screen.getMinX());
+            videoStage.setY(screen.getMinY());
+            videoStage.setWidth(screen.getWidth());
+            videoStage.setHeight(screen.getHeight());
+
+            videoStage.show(); 
+
+            // ── Step 5: Start Playback ───────────────────────────────────────
+            controller.startPlayback();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("❌ Erreur f-el VideoPlayer: " + e.getMessage());
+        }
     }
 }

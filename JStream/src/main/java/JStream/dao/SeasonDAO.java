@@ -15,7 +15,7 @@ public class SeasonDAO {
 
     // ===== INSERT =====
     public boolean insertSeason(Season season) {
-        String sql = "INSERT INTO seasons (serie_id, season_num, title, synopsis, trailer_url, " +
+        String sql = "INSERT INTO season (serie_id, season_num, title, synopsis, trailer_url, " +
                      "poster_url, title_url, image_url, planned_episodes, status) " +
                      "VALUES (?,?,?,?,?,?,?,?,?,?)";
         try (Connection conn = Database.getConnection();
@@ -46,7 +46,7 @@ public class SeasonDAO {
 
     // ===== UPDATE =====
     public boolean updateSeason(Season season) {
-        String sql = "UPDATE seasons SET title=?, synopsis=?, trailer_url=?, poster_url=?, " +
+        String sql = "UPDATE season SET title=?, synopsis=?, trailer_url=?, poster_url=?, " +
                      "title_url=?, image_url=?, planned_episodes=?, status=?, rating=? " +
                      "WHERE season_id=?";
         try (Connection conn = Database.getConnection();
@@ -72,7 +72,7 @@ public class SeasonDAO {
 
     // ===== DELETE =====
     public boolean deleteSeason(int seasonId) {
-        String sql = "DELETE FROM seasons WHERE season_id = ?";
+        String sql = "DELETE FROM season WHERE season_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -88,7 +88,7 @@ public class SeasonDAO {
     // ===== GET ALL SEASONS OF A SERIE =====
     public List<Season> getSeasonsBySerie(int serieId) {
         List<Season> list = new ArrayList<>();
-        String sql = "SELECT * FROM seasons WHERE serie_id = ? ORDER BY season_num";
+        String sql = "SELECT * FROM season WHERE serie_id = ? ORDER BY season_num";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -104,7 +104,7 @@ public class SeasonDAO {
 
     // ===== GET BY ID =====
     public Season getSeasonById(int seasonId) {
-        String sql = "SELECT * FROM seasons WHERE season_id = ?";
+        String sql = "SELECT * FROM season WHERE season_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 

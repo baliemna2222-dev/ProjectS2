@@ -15,7 +15,7 @@ public class EpisodeDAO {
 
     // ===== INSERT =====
     public boolean insertEpisode(Episode episode) {
-        String sql = "INSERT INTO episodes (season_id, num_episode, title, duration, resume, " +
+        String sql = "INSERT INTO episode (season_id, num_episode, title, duration, resume, " +
                      "video_url, covert_url, released_at) VALUES (?,?,?,?,?,?,?,?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -43,7 +43,7 @@ public class EpisodeDAO {
 
     // ===== UPDATE =====
     public boolean updateEpisode(Episode episode) {
-        String sql = "UPDATE episodes SET title=?, duration=?, resume=?, video_url=?, " +
+        String sql = "UPDATE episode SET title=?, duration=?, resume=?, video_url=?, " +
                      "covert_url=?, released_at=? WHERE ep_id=?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -65,7 +65,7 @@ public class EpisodeDAO {
 
     // ===== DELETE =====
     public boolean deleteEpisode(int epId) {
-        String sql = "DELETE FROM episodes WHERE ep_id = ?";
+        String sql = "DELETE FROM episode WHERE ep_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -81,7 +81,7 @@ public class EpisodeDAO {
     // ===== GET ALL EPISODES OF A SEASON =====
     public List<Episode> getEpisodesBySeason(int seasonId) {
         List<Episode> list = new ArrayList<>();
-        String sql = "SELECT * FROM episodes WHERE season_id = ? ORDER BY num_episode";
+        String sql = "SELECT * FROM episode WHERE season_id = ? ORDER BY num_episode";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -97,7 +97,7 @@ public class EpisodeDAO {
 
     // ===== GET BY ID =====
     public Episode getEpisodeById(int epId) {
-        String sql = "SELECT * FROM episodes WHERE ep_id = ?";
+        String sql = "SELECT * FROM episode WHERE ep_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -113,7 +113,7 @@ public class EpisodeDAO {
 
     // ===== NEXT EPISODE (for binge-watching auto-play) =====
     public Episode getNextEpisode(int seasonId, int currentNumEpisode) {
-        String sql = "SELECT * FROM episodes WHERE season_id = ? AND num_episode = ?";
+        String sql = "SELECT * FROM episode WHERE season_id = ? AND num_episode = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 

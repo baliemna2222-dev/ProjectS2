@@ -14,3 +14,59 @@
             #000000CC 100% 
         );
 }
+/* Custom Scrollbar */
+.scroll-pane .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 6;
+}
+.scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(45, 84, 255, 0.2);
+    -fx-background-radius: 10;
+}
+.scroll-pane .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #2d54ff;
+}
+.scroll-pane .scroll-bar:horizontal {
+    -fx-opacity: 0;
+}
+/* Title & Text */
+.netflix-title {
+    -fx-text-fill: white;
+    -fx-font-size: 22px;
+    -fx-font-family: "Segoe UI Semibold";
+}
+
+/* Buttons Controls */
+.netflix-control-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-cursor: hand;
+}
+.netflix-control-btn:hover {
+    -fx-text-fill: #00d4ff; /* El Cyan mta3 el stars mte3ek */
+}
+
+/* Back Button */
+.netflix-back-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 30px;
+    -fx-cursor: hand;
+}
+
+/* --- THE NETFLIX SLIDER (JStream Colors) --- */
+.netflix-slider .track {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-pref-height: 4px;
+}
+.netflix-slider .thumb {
+    -fx-background-color: #00d4ff; /* Color mte3ek */
+    -fx-background-radius: 50%;
+    -fx-padding: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 212, 255, 0.6), 10, 0, 0, 0);
+}
+/* Progress Color */
+.netflix-slider .colored-track {
+    -fx-background-color: #00d4ff; 
+}

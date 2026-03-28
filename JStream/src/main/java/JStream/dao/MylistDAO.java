@@ -61,6 +61,7 @@ public class MylistDAO {
 	        }
 	        return false;
 	    }
+	  
 	    public boolean removeItem(int userId, int filmId, int serieId) {
 	        String sql = "DELETE FROM my_list WHERE user_id = ? AND film_id = ? AND serie_id = ?";
 	        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
