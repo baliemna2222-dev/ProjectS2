@@ -6,6 +6,7 @@ import JStream.entity.WatchStatus;
 import JStream.utils.Database;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 public class FilmProgressService {
 
@@ -30,5 +31,21 @@ public class FilmProgressService {
     public void markCompleted(int userId, int filmId, int lastPosition) {
         filmProgressDAO.setCompleted(userId, filmId, lastPosition);
     }
-
+    public int getLastPosition(int userId, int filmId) {
+    	  try {
+              return filmProgressDAO.getLastPosition(userId, filmId);
+          } catch (SQLException e) {
+              e.printStackTrace();
+              return 0; // fallback (start from beginning)
+          }
+      
+    }
+    public boolean exists(int userId, int filmId) {
+        try {
+            return filmProgressDAO.exists(userId, filmId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

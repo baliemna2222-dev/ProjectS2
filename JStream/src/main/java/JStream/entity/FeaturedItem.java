@@ -47,7 +47,7 @@ public class FeaturedItem {
         this.type = "serie";
         this.title = title;
         this.synopsis = synopsis;
-        this.trailerUrl = trailerUrl;
+        this.trailerUrl = trailerUrl; 
         this.mainImageUrl = mainImageUrl;
         this.titleImageUrl = titleImageUrl;
         this.posterUrl = posterUrl;

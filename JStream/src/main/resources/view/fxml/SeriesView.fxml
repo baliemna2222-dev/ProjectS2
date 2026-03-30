@@ -28,12 +28,14 @@
                 <VBox fx:id="categoryContainer" spacing="20">
                     <!-- Filter bar and results will be added dynamically -->
                 </VBox>
-
+				<fx:include source="Footer.fxml"/> 
             </VBox>
 
             <!-- ================= FLOATING HEADER ================= -->
             <fx:include source="Header.fxml"/>
 
         </StackPane>
+        
     </ScrollPane>
+    
 </StackPane>

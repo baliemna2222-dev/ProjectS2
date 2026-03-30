@@ -107,7 +107,7 @@ public class EpisodeProgressDAO {
                 return rs.getInt("last_position");
             }
         }
-        return 0;
+        return 0; 
     }
     
 }

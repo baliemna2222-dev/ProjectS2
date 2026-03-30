@@ -50,7 +50,27 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
     <artifactId>controlsfx</artifactId>
     <version>11.1.1</version>
 </dependency>
+<!-- Core library -->
 
+<dependency>
+    <groupId>de.jensd</groupId>
+    <artifactId>fontawesomefx-commons</artifactId>
+    <version>9.1.2</version>
+</dependency>
+
+<!-- FontAwesomeFX FontIcon -->
+<dependency>
+    <groupId>de.jensd</groupId>
+    <artifactId>fontawesomefx</artifactId>
+    <version>8.9</version>
+</dependency>
+
+<!-- Optional: if you use controls in FXML -->
+<dependency>
+    <groupId>de.jensd</groupId>
+    <artifactId>fontawesomefx-controls</artifactId>
+    <version>9.1.2</version>
+</dependency>
          <!-- MySQL modules -->
      <dependency>
     <groupId>com.sun.mail</groupId>

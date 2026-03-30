@@ -1,6 +1,7 @@
 package JStream.service;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
 import JStream.dao.EpisodeProgressDAO;
 import JStream.entity.WatchStatus;
@@ -29,11 +30,20 @@ public class EpisodeProgressService {
     // ----------------- Mark an episode as completed -----------------
     public void markCompleted(int userId, int epId, int lastPosition) {
         dao.setCompleted(userId, epId, lastPosition);
-    }
+    } 
 
     // ----------------- Get status of a single episode -----------------
     public WatchStatus getEpisodeStatus(int userId, int epId) {
         return dao.getEpisodeStatus(userId, epId);
+    }
+    public int getEpisodeLastPosition(int userId, int epId) {
+        try {
+            EpisodeProgressDAO epDAO = new EpisodeProgressDAO(Database.getConnection());
+            return epDAO.getLastPosition(userId, epId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 
 }

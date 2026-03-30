@@ -18,7 +18,7 @@ public class Database {
         } catch (ClassNotFoundException e) {
             System.out.println("MySQL Driver NOT FOUND");
             e.printStackTrace();
-        }
+        } 
     }
 
     private static Connection connection;

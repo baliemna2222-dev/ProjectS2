@@ -1,21 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.media.MediaView?>
-
-<StackPane xmlns="http://javafx.com/javafx"
-           xmlns:fx="http://javafx.com/fxml"
-           fx:controller="JStream.controller.Logocontroller">
-
-    <MediaView fx:id="mediaView"
-    			  AnchorPane.topAnchor="0"
-               AnchorPane.bottomAnchor="0"
-               AnchorPane.leftAnchor="0"
-               AnchorPane.rightAnchor="0"
-               preserveRatio="true"/>
-               
+<StackPane fx:id="rootPane" prefHeight="500.0" prefWidth="800.0" styleClass="auth-wrapper" stylesheets="@/view/css/scrollbar.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.LoginSignupController">
+   <fx:include source="Raksha.fxml"/>
 </StackPane>

@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import JStream.entity.WatchStatus;
 
@@ -14,7 +16,25 @@ public class FilmProgressDAO {
     public FilmProgressDAO(Connection connection) {
         this.connection = connection;
     }
+    public List<Integer> getWatchedFilmIds(int userId) {
+        List<Integer> list = new ArrayList<>();
 
+        String sql = "SELECT film_id FROM film_progress WHERE user_id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(rs.getInt("film_id"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
     // ----------------- Get film status -----------------
     public WatchStatus getFilmStatus(int userId, int filmId) {
         String sql = "SELECT watch_status FROM film_progress WHERE user_id=? AND film_id=?";
@@ -75,7 +95,16 @@ public class FilmProgressDAO {
             if (rs.next()) {
                 return rs.getInt("last_position");
             }
-        }
+        } 
         return 0; // Ken ma l9ach chay, yabda mel sfer
+    }
+    public boolean exists(int userId, int filmId) throws SQLException {
+        String sql = "SELECT 1 FROM film_progress WHERE user_id = ? AND film_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, filmId);
+            ResultSet rs = ps.executeQuery();
+            return rs.next(); // true if found
+        }
     }
 }

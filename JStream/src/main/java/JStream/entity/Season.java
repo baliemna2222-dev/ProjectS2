@@ -10,7 +10,7 @@ public class Season {
     private int seasonNum;       // e.g., 1, 2, 3...
     private String title;        // season title
     private String synopsis;     // season synopsis
-    private String trailerUrl;   // trailer or preview
+    private String trailerUrl;   // trailer or preview 
     private String posterUrl;    // poster image
     private String titleUrl;     // logo/title image
     private String imageUrl;     // general image

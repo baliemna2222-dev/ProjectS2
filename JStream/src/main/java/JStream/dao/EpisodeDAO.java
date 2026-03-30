@@ -23,7 +23,7 @@ public class EpisodeDAO {
             ps.setInt(1,    episode.getSeasonId());
             ps.setInt(2,    episode.getNumEpisode());
             ps.setString(3, episode.getTitle());
-            ps.setInt(4,    episode.getDuration());
+            ps.setInt(4,    episode.getDuration()); 
             ps.setString(5, episode.getResume());
             ps.setString(6, episode.getVideoUrl());
             ps.setString(7, episode.getCovertUrl());
@@ -113,21 +113,30 @@ public class EpisodeDAO {
 
     // ===== NEXT EPISODE (for binge-watching auto-play) =====
     public Episode getNextEpisode(int seasonId, int currentNumEpisode) {
-        String sql = "SELECT * FROM episode WHERE season_id = ? AND num_episode = ?";
+        System.out.println("Recherche épisode après : S" + seasonId + " E" + currentNumEpisode);
+        String sql = "SELECT * FROM episode " +
+                     "WHERE season_id = ? AND num_episode > ? " +
+                     "ORDER BY num_episode ASC LIMIT 1";
+
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, seasonId);
-            ps.setInt(2, currentNumEpisode + 1);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapRow(rs);
+            ps.setInt(2, currentNumEpisode);
 
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                Episode ep = mapRow(rs);
+                System.out.println("Épisode trouvé : " + ep.getTitle());
+                return ep;
+            } else {
+                System.out.println("Aucun épisode suivant trouvé dans cette saison.");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
-
     private Episode mapRow(ResultSet rs) throws SQLException {
         Episode ep = new Episode();
         ep.setEpId(rs.getInt("ep_id"));

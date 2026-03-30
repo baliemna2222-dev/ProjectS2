@@ -18,6 +18,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
@@ -184,7 +185,21 @@ public class HomepageController {
 	        carousel.getChildren().addAll(left, filterScrollPane, right);
 	        // Add filter carousel at top
 	        categoryContainer.getChildren().add(carousel);
-	        
+	        Pane divider = new Pane();
+	        divider.setPrefHeight(3);
+	        divider.setMaxWidth(Double.MAX_VALUE);
+
+	        divider.setStyle("""
+	            -fx-background-color: linear-gradient(to right, transparent, #0a1f44, #1e3a8a, #0a1f44, transparent);
+	            -fx-background-radius: 2;
+	            -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);
+	        """); 
+
+	        // Add spacing around it (important!)
+	        VBox.setMargin(divider, new Insets(10, 60, 20, 60));
+
+	        // Add to layout
+	        categoryContainer.getChildren().add(divider);
 	        // Results container
 	        resultsContainer = new VBox();
 	        resultsContainer.setSpacing(15);

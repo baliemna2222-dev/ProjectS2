@@ -101,7 +101,7 @@ public class LecturePageController {
             playButton.setOnAction(e -> {
                 // currentTrailerUrl walla videoUrl mta3 el film
                 if (currentTrailerUrl != null) {
-                    openVideoPlayer(currentTrailerUrl, titleLabel.getText());
+                    openVideoPlayer(ep.getVideoUrl(),ep.getTitle(),ep.getEpId());
                 } else {
                     System.out.println("⚠️ Mafamech video url 7adher!");
                 }
@@ -121,7 +121,7 @@ public class LecturePageController {
             addButtonInteractions(btnMostWatched); // Be-ch yekbar w yglowy kima tlabt
             btnMostWatched.setOnAction(e -> navigateTo("/view/MostWatched.fxml"));
         }
-
+ 
         if (btnMyList != null) {
             addButtonInteractions(btnMyList);
             btnMyList.setOnAction(e -> navigateTo("/view/MyList.fxml"));
@@ -249,11 +249,12 @@ public class LecturePageController {
             if (scoreLabel != null) scoreLabel.setText(String.valueOf(film.getRating()));
         } catch (SQLException e) { e.printStackTrace(); }
     }
-
+    private Serie serie ;
+    private Episode ep ;
     public void initEpisode(int serieId, int seasonNum, int episodeNum) {
         try {
-            Serie serie = new FeaturedService().getFullSerie(serieId);
-            Episode ep = findEpisodeInSerie(serie, seasonNum, episodeNum);
+             serie = new FeaturedService().getFullSerie(serieId);
+            ep = findEpisodeInSerie(serie, seasonNum, episodeNum);
             
             if (ep != null) {
                 // Nlawjou 3al Saison el s7i7a besh njibdou el Trailer mte3ha
@@ -265,7 +266,7 @@ public class LecturePageController {
                         }
                     }
                     this.currentItem = new FeaturedItem(
-                    	    0,
+                    		ep.getSeasonId(),
                     	    serie.getSerieId(),
                     	    serie.getTitle(),
                     	    serie.getSynopsis(),
@@ -595,20 +596,18 @@ public class LecturePageController {
     }
 
   
-    private void openVideoPlayer(String videoUrl, String title) {
-        // ── Step 0: Check URL valid ──────────────────────────────────────────
+    private void openVideoPlayer(String videoUrl, String title, Integer episodeId) {
+
         if (videoUrl == null || videoUrl.trim().isEmpty()) {
             System.err.println("❌ Video URL is NULL or empty!");
             return;
         }
 
         try {
-            // ── Step 1: Load FXML ─────────────────────────────────────────────
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/VideoPlayer.fxml"));
             Parent root = loader.load();
             VideoPlayerController controller = loader.getController();
 
-            // ── Step 2: Init Stage ────────────────────────────────────────────
             Stage videoStage = new Stage();
             videoStage.initOwner(mainContainer.getScene().getWindow());
             videoStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
@@ -617,30 +616,29 @@ public class LecturePageController {
             controller.setStage(videoStage);       
             controller.loadVideo(videoUrl, title); 
 
-            // ── Step 3: SMART CONTEXT (Film vs Episode) ──────────────────────
-            // Hna n-thabtou daxel el currentItem mte3ek
-            if (currentItem.getType().equalsIgnoreCase("MOVIE")) {
-                // Kenou film, n-ab3ath el ID lel filmId
+            if (episodeId == null) {
+                // 🎬 FILM
                 controller.setContext(currentItem.getId(), null);
-                System.out.println("🎬 Mode: Film (ID: " + currentItem.getId() + ")");
-            } else {
-                // Kenou episode, n-ab3ath el ID lel episodeId
-                controller.setContext(null, currentItem.getId());
-                System.out.println("📺 Mode: Episode (ID: " + currentItem.getId() + ")");
-            }
 
-            // ── Step 4: Scene & UI ────────────────────────────────────────────
+                System.out.println("🎬 Mode: Film (ID: " + currentItem.getId() + ")");
+
+            } else {
+                // 📺 EPISODE
+                controller.setContext(null, episodeId);
+
+                // ✅ VERY IMPORTANT (for next episode)
+                controller.setEpisodeContext(
+                    ep.getSeasonId(),
+                    ep.getNumEpisode()
+                );
+
+                System.out.println("📺 Mode: Episode (ID: " + episodeId + ")");
+            }
             Scene scene = new Scene(root);
             scene.setFill(javafx.scene.paint.Color.BLACK);
 
-            java.net.URL cssUrl = getClass().getResource("/view/css/player.css");
-            if (cssUrl != null) {
-                scene.getStylesheets().add(cssUrl.toExternalForm());
-            }
-
             videoStage.setScene(scene);
 
-            // Maximize to screen
             javafx.geometry.Rectangle2D screen = javafx.stage.Screen.getPrimary().getBounds();
             videoStage.setX(screen.getMinX());
             videoStage.setY(screen.getMinY());
@@ -648,8 +646,6 @@ public class LecturePageController {
             videoStage.setHeight(screen.getHeight());
 
             videoStage.show(); 
-
-            // ── Step 5: Start Playback ───────────────────────────────────────
             controller.startPlayback();
 
         } catch (Exception e) {

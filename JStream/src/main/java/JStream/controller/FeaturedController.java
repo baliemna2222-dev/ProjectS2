@@ -795,50 +795,56 @@ public class FeaturedController {
                     });
                 }
              // Status label
-                Label statusLabel = new Label("NOT_STARTED"); // initial status
+             // 🎯 Status label
+                Label statusLabel = new Label();
                 statusLabel.setStyle(
-                    "-fx-background-color: #008cff;" + // blue background
-                    "-fx-text-fill: white;" +          // white text
+                    "-fx-text-fill: white;" +
                     "-fx-font-size: 14;" +
                     "-fx-font-weight: bold;" +
-                    "-fx-padding: 4 10 4 10;" +        // top/right/bottom/left
-                    "-fx-background-radius: 20;" +     // rounded pill shape
+                    "-fx-padding: 4 10;" +
+                    "-fx-background-radius: 20;" +
                     "-fx-border-radius: 20;" +
-                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4,0,0,2);" // subtle shadow
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4,0,0,2);"
                 );
-                // Load current status
-                WatchStatus currentStatus = filmProgressService.getFilmStatus(Session.getUserId(), film.getFilm_id());
-                statusLabel.setText(currentStatus.toString());
 
-                // Optionally, change color depending on status
-                switch (currentStatus) {
-                    case NOT_STARTED -> statusLabel.setStyle(statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color: #888888;"));
-                    case IN_PROGRESS -> statusLabel.setStyle(statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color:  #008cff;"));
-                    case COMPLETED -> statusLabel.setStyle(statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color:  #008cff;"));
-                }
-                // Add status label under the film info
-                right.getChildren().add(statusLabel);
+                int userId = Session.getUserId();
+                int filmId = film.getFilm_id();
+                int dur = (int) film.getDuration();
 
-                // Play button action
-                play.setOnAction(e -> {
-                    int lastPosition = 0; // replace with actual current position if you track time
+                WatchStatus status;
 
-                    if (lastPosition >= film.getDuration()) {
-                        // Film completed
-                        filmProgressService.markCompleted(Session.getUserId(), film.getFilm_id(), (int)film.getDuration());
-                        statusLabel.setText("COMPLETED");
-                        statusLabel.setStyle(
-                            statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color: #008cff;")
-                        );
+                // 🔥 Determine status
+                if (!filmProgressService.exists(userId, filmId)) {
+                    status = WatchStatus.NOT_STARTED;
+                } else {
+                    int lastPosition = filmProgressService.getLastPosition(userId, filmId);
+
+                    if (lastPosition >= dur - 2) {
+                        status = WatchStatus.COMPLETED;
                     } else {
-                        // Film in progress
-                        filmProgressService.markInProgress(Session.getUserId(), film.getFilm_id(), lastPosition);
-                        statusLabel.setText("IN_PROGRESS");
-                        statusLabel.setStyle(
-                            statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color: #008cff;")
-                        );
+                        status = WatchStatus.IN_PROGRESS;
                     }
+                }
 
+                // 🏷 Apply text
+                statusLabel.setText(status.toString());
+
+                // 🎨 Apply color
+                switch (status) {
+                    case NOT_STARTED -> statusLabel.setStyle(
+                        statusLabel.getStyle() + "-fx-background-color: #777777;"
+                    );
+                    case IN_PROGRESS -> statusLabel.setStyle(
+                        statusLabel.getStyle() + "-fx-background-color: #008cff;"
+                    );
+                    case COMPLETED -> statusLabel.setStyle(
+                        statusLabel.getStyle() + "-fx-background-color: #00c853;"
+                    );
+                }
+
+                // ✅ Add to UI
+                right.getChildren().add(statusLabel);
+                play.setOnAction(e -> {
                     goToLecturePageFilm(film.getFilm_id()); // start playback
                 });
                 root.getChildren().add(content);
@@ -1329,10 +1335,10 @@ public class FeaturedController {
 
                 // Play button updates status dynamically
                 play.setOnAction(e -> {
-                    goToLecturePageEpisode(s.getSerieId(), s.getSeasonNum(), ep.getNumEpisode());
-                    episodeProgressService.markInProgress(userId, ep.getEpId(), 0);
+                    goToLecturePageEpisode(s.getSerieId(), s.getSeasonNum(), ep.getEpId());
+                    episodeProgressService.markInProgress(userId, ep.getEpId(), episodeProgressService.getEpisodeLastPosition(userId, ep.getEpId()));
 
-                    epStatus.setText("In Progress");
+                    epStatus.setText("In Progress"); 
                     epStatus.setStyle(
                         "-fx-background-color:#00aaff;" +
                         "-fx-text-fill:white;" +
@@ -1508,33 +1514,40 @@ public class FeaturedController {
     	}
     	private void goToLecturePageFilm(int filmId) {
     	    try {
-    	    	FXMLLoader loader = new FXMLLoader(); loader.setLocation(getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml")); Parent root = loader.load();
+    	        FXMLLoader loader = new FXMLLoader(
+    	            getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml")
+    	        );
+    	        Parent root = loader.load();
+
     	        LecturePageController controller = loader.getController();
     	        controller.initFilm(filmId);
 
-    	        Stage stage = new Stage();
-    	        stage.initOwner(rootPane.getScene().getWindow());
-    	        stage.initModality(Modality.WINDOW_MODAL);
-    	        stage.setScene(new Scene(root));
-    	        stage.setTitle("Lecture: Film");
-    	        stage.show();
+    	        // 🔥 Get current stage
+    	        Stage stage = (Stage) rootPane.getScene().getWindow();
+
+    	        // 🔥 Replace scene
+    	        stage.getScene().setRoot(root);
+
     	    } catch (IOException e) {
     	        e.printStackTrace();
     	    }
     	}
-
     	private void goToLecturePageEpisode(int serieId, int seasonNum, int episodeNum) {
     	    try {
-    	    	FXMLLoader loader = new FXMLLoader(); loader.setLocation(getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml")); Parent root = loader.load();
+    	        FXMLLoader loader = new FXMLLoader(
+    	            getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml")
+    	        );
+    	        Parent root = loader.load();
+
     	        LecturePageController controller = loader.getController();
     	        controller.initEpisode(serieId, seasonNum, episodeNum);
+ 
+    	        // 🔥 Get current stage
+    	        Stage stage = (Stage) rootPane.getScene().getWindow();
 
-    	        Stage stage = new Stage();
-    	        stage.initOwner(rootPane.getScene().getWindow());
-    	        stage.initModality(Modality.WINDOW_MODAL);
-    	        stage.setScene(new Scene(root));
-    	        stage.setTitle("Lecture: Episode");
-    	        stage.show();
+    	        // 🔥 Replace scene
+    	        stage.getScene().setRoot(root);
+
     	    } catch (IOException e) {
     	        e.printStackTrace();
     	    }

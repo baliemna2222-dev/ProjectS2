@@ -20,6 +20,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -56,7 +58,7 @@ public class Logincontroller implements Initializable {
     @FXML private Button sendCodeBtn;
     @FXML private Button verifyBtn;
     @FXML private Label messageLabel;
-
+    @FXML private ImageView logoImage;
     // Hyperlinks
     @FXML private Hyperlink goToSignUp, goToLogin, forgotPassword;
 
@@ -65,6 +67,8 @@ public class Logincontroller implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         // Floating rectangles animation
+    	  logoImage.setImage(new Image(getClass().getResource("/assets/images/logo/Raksha.png").toExternalForm()));
+    
         Random random = new Random();
         for (int i = 0; i < ELEMENTS; i++) {
             Rectangle rect = new Rectangle(10,10);
@@ -92,6 +96,16 @@ public class Logincontroller implements Initializable {
         // Initially hide forgot password fields
         verificationCode.setVisible(false);
         verifyBtn.setVisible(false);
+    }
+    @FXML
+    private void handleBack(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource("/view/fxml/Raksha.fxml"));
+            Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     // ========== LOGIN ==========

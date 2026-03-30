@@ -3,18 +3,21 @@ package JStream.controller;
 import JStream.entity.FeaturedItem;
 import JStream.entity.MyListManager;
 import JStream.entity.Session;
+import JStream.entity.UsernameChangeNotifier;
 import JStream.service.MylistService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
-
+import javafx.scene.layout.VBox;
 
 import java.net.URL;
 import java.util.List;
@@ -31,9 +34,9 @@ public class MyListController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
     	 mylistService = new MylistService();
-
-    	    usernameLabel.setText("Welcome , " + Session.getUsername() + " !");
-
+    	  UsernameChangeNotifier.addListener(newName -> usernameLabel.setText(newName));
+    	    usernameLabel.setText("Welcome , " + Session.getUsername() + " to your WatchList !");
+    	    
     	    // Load the list first
     	    loadMyList();
 
@@ -46,7 +49,7 @@ public class MyListController implements Initializable {
     private void loadMyList() {
         int userId = Session.getUserId();
         List<FeaturedItem> items = mylistService.getUserList(userId);
-
+        
         filmContainer.getChildren().clear();
         serieContainer.getChildren().clear();
 
@@ -76,13 +79,13 @@ public class MyListController implements Initializable {
                 e.printStackTrace();
             }
         }
-
+        
         // Show message if no items
         if (filmContainer.getChildren().isEmpty()) {
         	 Label empty = new Label("You haven’t added any films yet. Start exploring and add your favorites to watch later!");
              empty.setStyle("-fx-text-fill: white; -fx-font-size: 18px; ");
              StackPane wrapper = new StackPane(empty);
-             wrapper.setPrefHeight(200);
+             wrapper.setPrefHeight(150);
              wrapper.setAlignment(Pos.CENTER);
             filmContainer.getChildren().add(wrapper);
         }
@@ -90,11 +93,12 @@ public class MyListController implements Initializable {
         	 Label empty = new Label("You haven’t added any Series yet. Start exploring and add your favorites to watch later!");
              empty.setStyle("-fx-text-fill: white; -fx-font-size: 18px; ");
              StackPane wrapper = new StackPane(empty);
-             wrapper.setPrefHeight(200);
+             wrapper.setPrefHeight(150);
              wrapper.setAlignment(Pos.CENTER);
             serieContainer.getChildren().add(wrapper);
         }
     }
+    
     private void removeCardFromUI(int filmId, int serieId) {
         // Remove from films
         filmContainer.getChildren().removeIf(node -> {
@@ -113,7 +117,7 @@ public class MyListController implements Initializable {
             Label empty = new Label("You haven’t added any films yet. Start exploring and add your favorites to watch later!");
             empty.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
             StackPane wrapper = new StackPane(empty);
-            wrapper.setPrefHeight(200);
+            wrapper.setPrefHeight(150);
             wrapper.setAlignment(Pos.CENTER);
             filmContainer.getChildren().add(wrapper);
         }
@@ -122,7 +126,7 @@ public class MyListController implements Initializable {
             Label empty = new Label("You haven’t added any Series yet. Start exploring and add your favorites to watch later!");
             empty.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
             StackPane wrapper = new StackPane(empty);
-            wrapper.setPrefHeight(200);
+            wrapper.setPrefHeight(150);
             wrapper.setAlignment(Pos.CENTER);
             serieContainer.getChildren().add(wrapper);
         }

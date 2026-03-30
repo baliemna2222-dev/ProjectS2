@@ -1,72 +1,62 @@
-.root { 
-    -fx-background-image: url("assets/images/mbg1.jpeg");
-    -fx-background-size: cover;
-    -fx-background-position: center;
+.auth-wrapper {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #00d4ff;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(three-pass-box, #00d4ff, 25, 0, 0, 0);
 }
 
-/* Overlay shadow */
-.shadow-overlay {
-    -fx-background-color: 
-        radial-gradient(
-            center 50% 50%, 
-            radius 50%, 
-            #00000088 0%,  
-            #000000CC 100% 
-        );
-}
-/* Custom Scrollbar */
-.scroll-pane .scroll-bar:vertical {
-    -fx-background-color: transparent;
-    -fx-pref-width: 6;
-}
-.scroll-pane .scroll-bar:vertical .thumb {
-    -fx-background-color: rgba(45, 84, 255, 0.2);
-    -fx-background-radius: 10;
-}
-.scroll-pane .scroll-bar:vertical .thumb:hover {
-    -fx-background-color: #2d54ff;
-}
-.scroll-pane .scroll-bar:horizontal {
-    -fx-opacity: 0;
-}
-/* Title & Text */
-.netflix-title {
-    -fx-text-fill: white;
-    -fx-font-size: 22px;
-    -fx-font-family: "Segoe UI Semibold";
+.credentials-panel {
+    -fx-padding: 40px;
 }
 
-/* Buttons Controls */
-.netflix-control-btn {
+.header-text {
+    -fx-font-family: "Poppins";
+    -fx-font-size: 32px;
+    -fx-fill: white;
+    -fx-font-weight: bold;
+}
+
+.field-input {
     -fx-background-color: transparent;
+    -fx-border-color: transparent transparent white transparent;
+    -fx-border-width: 0 0 2 0;
     -fx-text-fill: white;
-    -fx-font-size: 20px;
+    -fx-font-size: 16px;
+    -fx-padding: 5 0 5 0;
+}
+
+.field-input:focused {
+    -fx-border-color: transparent transparent #00d4ff transparent;
+}
+
+.submit-button {
+    -fx-background-color: transparent;
+    -fx-border-color: #00d4ff;
+    -fx-border-radius: 40px;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
     -fx-cursor: hand;
-}
-.netflix-control-btn:hover {
-    -fx-text-fill: #00d4ff; /* El Cyan mta3 el stars mte3ek */
+    -fx-padding: 10 20;
 }
 
-/* Back Button */
-.netflix-back-btn {
-    -fx-background-color: transparent;
-    -fx-text-fill: white;
-    -fx-font-size: 30px;
-    -fx-cursor: hand;
+.submit-button:hover {
+    -fx-background-color: #00d4ff;
+    -fx-text-fill: #1a1a2e;
 }
 
-/* --- THE NETFLIX SLIDER (JStream Colors) --- */
-.netflix-slider .track {
-    -fx-background-color: rgba(255, 255, 255, 0.2);
-    -fx-pref-height: 4px;
+.switch-link {
+    -fx-text-fill: #00d4ff;
+    -fx-underline: false;
 }
-.netflix-slider .thumb {
-    -fx-background-color: #00d4ff; /* Color mte3ek */
-    -fx-background-radius: 50%;
-    -fx-padding: 8px;
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 212, 255, 0.6), 10, 0, 0, 0);
+
+/* The Sliding Blue Section */
+.sliding-overlay {
+    -fx-background-color: linear-gradient(to bottom right, #1a1a2e, #00d4ff);
 }
-/* Progress Color */
-.netflix-slider .colored-track {
-    -fx-background-color: #00d4ff; 
+
+.welcome-header {
+    -fx-font-size: 36px;
+    -fx-fill: white;
+    -fx-font-weight: bold;
 }

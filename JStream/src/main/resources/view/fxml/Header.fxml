@@ -75,8 +75,8 @@
 
     <Button fx:id="btnResearch"
             onAction="#toggleSearch"
-            prefWidth="40"
-            prefHeight="40"
+            prefWidth="50"
+            prefHeight="50"
             styleClass="btn-search"/>
 </HBox>
 
@@ -89,7 +89,11 @@
                             </StackPane>
                         </graphic>
                     </Button>
-                    <Button fx:id="profile" prefWidth="36" prefHeight="36" style="-fx-background-color: transparent; -fx-background-image: url('/assets/images/profile.png'); -fx-background-repeat: no-repeat; -fx-background-position: center; -fx-background-size: 34 34;"/>
-                </HBox>
+                <Button fx:id="profile" prefWidth="60" prefHeight="60" 
+    style="-fx-background-color: transparent; 
+           -fx-background-image: url('/assets/images/profile.png'); 
+           -fx-background-repeat: no-repeat; 
+           -fx-background-position: center; 
+           -fx-background-size: 34 34;"/>           </HBox>
 
             </HBox>

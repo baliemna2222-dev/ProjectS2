@@ -69,7 +69,7 @@ public class MylistDAO {
 	            stmt.setInt(2, filmId);
 	            stmt.setInt(3, serieId);
 	            int affected = stmt.executeUpdate();
-	            return affected > 0;
+	            return affected > 0; 
 	        } catch (SQLException e) {
 	            e.printStackTrace();
 	        }

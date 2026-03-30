@@ -137,4 +137,5 @@ public class HistoryDAO {
             rs.getTimestamp("updated_at")
         );
     }
+    
 }

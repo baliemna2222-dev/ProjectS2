@@ -1,5 +1,6 @@
 package JStream.controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
@@ -9,17 +10,21 @@ import java.util.Map;
 
 import JStream.entity.Episode;
 import JStream.entity.FeaturedItem;
+import JStream.entity.FeaturedItemProgress;
 import JStream.entity.Film;
 import JStream.entity.MyListManager;
 import JStream.entity.Season;
 import JStream.entity.Serie;
 import JStream.entity.Session;
+import JStream.entity.UsernameChangeNotifier;
 import JStream.entity.WatchStatus;
 import JStream.service.EpisodeProgressService;
 import JStream.service.FeaturedService;
 import JStream.service.FilmProgressService;
 import JStream.service.MylistService;
+import JStream.service.UserService;
 import JStream.utils.ImageUtil;
+import JStream.utils.SecurityUtils;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -35,9 +40,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -49,22 +58,29 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Popup;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import javafx.util.Duration;
 
 public class HeaderController {
-	@FXML private Button profile;
+	
 	@FXML private StackPane profileMenu;
 	@FXML private ImageView profileImage;
 	@FXML private Label uploadLabel;
 	// Add this field to your controller
 	private boolean ignoreTextChange = false;
 	@FXML private Button btnMenuLogout, btnMenuSettings, btnMenuMyList, btnMenuLastWatched;
+	@FXML
+	private Button profile;
+
+	private Popup profilePopup;
 
 	private Image defaultImage = new Image("/assets/images/profile.png");
 
@@ -104,7 +120,9 @@ public class HeaderController {
 
     @FXML
     private void initialize() {
-
+    	loadUserProfile();
+        setupProfileButton();
+        setupProfilePopup();
         // Logo
         logoImage.setImage(new Image(getClass().getResourceAsStream("/assets/images/logo/Raksha.png")));
 
@@ -119,7 +137,9 @@ public class HeaderController {
         setupButton(btnMovies, lineMovies, this::goToFilmView);
         setupButton(btnSeries, lineSeries, this::goToSeriesView);
         setupButton(btnMyList, lineMyList, this::goToMyListView);
-
+        addHoverAnimation(btnResearch);
+        addHoverAnimation(profile);
+        
         // Activate last active
         Platform.runLater(() -> {
             switch (lastActive) {
@@ -148,7 +168,16 @@ public class HeaderController {
         // Optional: hover effect
         clearBtn.setOnMouseEntered(e -> clearBtn.setStyle("-fx-text-fill: Blue;-fx-background-color: transparent;"));
         clearBtn.setOnMouseExited(e -> clearBtn.setStyle("-fx-text-fill: #888;-fx-background-color: transparent;"));
+        setupProfilePopup();
 
+        profile.setOnAction(e -> {
+            if (profilePopup.isShowing()) {
+                profilePopup.hide();
+            } else {
+                Bounds bounds = profile.localToScreen(profile.getBoundsInLocal());
+                profilePopup.show(profile, bounds.getMinX(), bounds.getMaxY() + 5);
+            }
+        });
     }
 
     /** -------------------- HEADER BUTTON METHODS -------------------- **/
@@ -213,7 +242,7 @@ public class HeaderController {
             timeline.play();
         });
     }
-
+    
     /** -------------------- SEARCH METHODS -------------------- **/
     private void setupSearchSuggestions() {
         // Scrollable VBox
@@ -615,7 +644,7 @@ public class HeaderController {
     public void goToFilmView() { navigateTo("/view/fxml/FilmView.fxml"); }
     public void goToSeriesView() { navigateTo("/view/fxml/SeriesView.fxml"); }
     public void goToMyListView() { navigateTo("/view/fxml/MyList.fxml"); }
-
+    public void goToMyHistoryView() { navigateTo("/view/fxml/MyHistory.fxml"); }
     private void navigateTo(String fxmlPath) {
         try {
             var url = getClass().getResource(fxmlPath);
@@ -776,51 +805,56 @@ public class HeaderController {
                         }
                     });
                 }
-             // Status label
-                Label statusLabel = new Label("NOT_STARTED"); // initial status
+                // 🎯 Status label
+                Label statusLabel = new Label();
                 statusLabel.setStyle(
-                    "-fx-background-color: #008cff;" + // blue background
-                    "-fx-text-fill: white;" +          // white text
+                    "-fx-text-fill: white;" +
                     "-fx-font-size: 14;" +
                     "-fx-font-weight: bold;" +
-                    "-fx-padding: 4 10 4 10;" +        // top/right/bottom/left
-                    "-fx-background-radius: 20;" +     // rounded pill shape
+                    "-fx-padding: 4 10;" +
+                    "-fx-background-radius: 20;" +
                     "-fx-border-radius: 20;" +
-                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4,0,0,2);" // subtle shadow
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4,0,0,2);"
                 );
-                // Load current status
-                WatchStatus currentStatus = filmProgressService.getFilmStatus(Session.getUserId(), film.getFilm_id());
-                statusLabel.setText(currentStatus.toString());
 
-                // Optionally, change color depending on status
-                switch (currentStatus) {
-                    case NOT_STARTED -> statusLabel.setStyle(statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color: #888888;"));
-                    case IN_PROGRESS -> statusLabel.setStyle(statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color:  #008cff;"));
-                    case COMPLETED -> statusLabel.setStyle(statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color:  #008cff;"));
-                }
-                // Add status label under the film info
-                right.getChildren().add(statusLabel);
+                int userId = Session.getUserId();
+                int filmId = film.getFilm_id();
+                int dur = (int) film.getDuration();
 
-                // Play button action
-                play.setOnAction(e -> {
-                    int lastPosition = 0; // replace with actual current position if you track time
+                WatchStatus status;
 
-                    if (lastPosition >= film.getDuration()) {
-                        // Film completed
-                        filmProgressService.markCompleted(Session.getUserId(), film.getFilm_id(), (int)film.getDuration());
-                        statusLabel.setText("COMPLETED");
-                        statusLabel.setStyle(
-                            statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color: #008cff;")
-                        );
+                // 🔥 Determine status
+                if (!filmProgressService.exists(userId, filmId)) {
+                    status = WatchStatus.NOT_STARTED;
+                } else {
+                    int lastPosition = filmProgressService.getLastPosition(userId, filmId);
+
+                    if (lastPosition >= dur - 2) {
+                        status = WatchStatus.COMPLETED;
                     } else {
-                        // Film in progress
-                        filmProgressService.markInProgress(Session.getUserId(), film.getFilm_id(), lastPosition);
-                        statusLabel.setText("IN_PROGRESS");
-                        statusLabel.setStyle(
-                            statusLabel.getStyle().replaceAll("-fx-background-color:.*?;", "-fx-background-color: #008cff;")
-                        );
+                        status = WatchStatus.IN_PROGRESS;
                     }
+                }
 
+                // 🏷 Apply text
+                statusLabel.setText(status.toString());
+
+                // 🎨 Apply color
+                switch (status) {
+                    case NOT_STARTED -> statusLabel.setStyle(
+                        statusLabel.getStyle() + "-fx-background-color: #777777;"
+                    );
+                    case IN_PROGRESS -> statusLabel.setStyle(
+                        statusLabel.getStyle() + "-fx-background-color: #008cff;"
+                    );
+                    case COMPLETED -> statusLabel.setStyle(
+                        statusLabel.getStyle() + "-fx-background-color: #00c853;"
+                    );
+                }
+
+                // ✅ Add to UI
+                right.getChildren().add(statusLabel);
+                play.setOnAction(e -> {
                     goToLecturePageFilm(film.getFilm_id()); // start playback
                 });
                 root.getChildren().add(content);
@@ -847,18 +881,42 @@ public class HeaderController {
 	    btn.setOnMouseEntered(e -> up.playFromStart());
 	    btn.setOnMouseExited(e -> down.playFromStart());
 	}
-	private void goToLecturePageFilm(int filmId) {
+   	private void goToLecturePageFilm(int filmId) {
 	    try {
-	    	FXMLLoader loader = new FXMLLoader(); loader.setLocation(getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml")); Parent root = loader.load();
+	        FXMLLoader loader = new FXMLLoader(
+	            getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml")
+	        );
+	        Parent root = loader.load();
+
 	        LecturePageController controller = loader.getController();
 	        controller.initFilm(filmId);
 
-	        Stage stage = new Stage();
-	        stage.initOwner(rootPane.getScene().getWindow());
-	        stage.initModality(Modality.WINDOW_MODAL);
-	        stage.setScene(new Scene(root));
-	        stage.setTitle("Lecture: Film");
-	        stage.show();
+	        // 🔥 Get current stage
+	        Stage stage = (Stage) rootPane.getScene().getWindow();
+
+	        // 🔥 Replace scene
+	        stage.getScene().setRoot(root);
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+	}
+	private void goToLecturePageEpisode(int serieId, int seasonNum, int episodeNum) {
+	    try {
+	        FXMLLoader loader = new FXMLLoader(
+	            getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml")
+	        );
+	        Parent root = loader.load();
+
+	        LecturePageController controller = loader.getController();
+	        controller.initEpisode(serieId, seasonNum, episodeNum);
+
+	        // 🔥 Get current stage
+	        Stage stage = (Stage) rootPane.getScene().getWindow();
+
+	        // 🔥 Replace scene
+	        stage.getScene().setRoot(root);
+
 	    } catch (IOException e) {
 	        e.printStackTrace();
 	    }
@@ -1461,7 +1519,7 @@ public class HeaderController {
 	                // Play button updates status dynamically
 	                play.setOnAction(e -> {
 	                    goToLecturePageEpisode(s.getSerieId(), s.getSeasonNum(), ep.getNumEpisode());
-	                    episodeProgressService.markInProgress(userId, ep.getEpId(), 0);
+	                    episodeProgressService.markInProgress(userId, ep.getEpId(), episodeProgressService.getEpisodeLastPosition(userId, ep.getEpId()));
 
 	                    epStatus.setText("In Progress");
 	                    epStatus.setStyle(
@@ -1628,22 +1686,7 @@ public class HeaderController {
 	    }
 	    
 
-	    	private void goToLecturePageEpisode(int serieId, int seasonNum, int episodeNum) {
-	    	    try {
-	    	    	FXMLLoader loader = new FXMLLoader(); loader.setLocation(getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml")); Parent root = loader.load();
-	    	        LecturePageController controller = loader.getController();
-	    	        controller.initEpisode(serieId, seasonNum, episodeNum);
-
-	    	        Stage stage = new Stage();
-	    	        stage.initOwner(rootPane.getScene().getWindow());
-	    	        stage.initModality(Modality.WINDOW_MODAL);
-	    	        stage.setScene(new Scene(root));
-	    	        stage.setTitle("Lecture: Episode");
-	    	        stage.show();
-	    	    } catch (IOException e) {
-	    	        e.printStackTrace();
-	    	    }
-	    	}
+	    	
 	    	 public void showPopup(FeaturedItem item) {
 	    	        CardController controller = new CardController();
 	    	        if (item.getType().equalsIgnoreCase("film")) {
@@ -1652,6 +1695,363 @@ public class HeaderController {
 	    	            controller.showSeriePopup(item);
 	    	        }
 	    	    }
-	    
-	    	 
+	    	 private UserService userService = new UserService();
+	    	// Load profile from DB at login
+	    	    private void loadUserProfile() {
+	    	        String imagePath = userService.getProfilePhoto(Session.getUserId());
+	    	        if (imagePath != null && !imagePath.isEmpty()) {
+	    	            setProfileButton(profile, imagePath);
+	    	        }
+	    	    }
+
+	    	    // Set profile button appearance
+	    	    private void setProfileButton(Button profileButton, String imagePath) {
+	    	        // Load image
+	    	        Image img = new Image(imagePath, false);
+
+	    	        // Create ImageView
+	    	        ImageView view = new ImageView(img);
+	    	        view.setFitWidth(45);
+	    	        view.setFitHeight(45);
+	    	        view.setPreserveRatio(false);
+	    	        view.setSmooth(true);
+
+	    	        // 🔥 Make it circular using clip
+	    	        Circle clip = new Circle(22.5, 22.5, 22.5); // centerX, centerY, radius
+	    	        view.setClip(clip);
+
+	    	        // Optional: remove button background
+	    	        profileButton.setStyle(
+	    	            "-fx-background-color: transparent;" +
+	    	            "-fx-padding: 0;"
+	    	        );
+
+	    	        // Apply to button
+	    	        profileButton.setGraphic(view);
+	    	        profileButton.setText("");
+	    	    }
+
+	    	    private void setupProfileButton() {
+	    	        profile.setOnAction(e -> {
+	    	            if (!profilePopup.isShowing()) {
+	    	                // Position near the button if needed
+	    	                profilePopup.show(profile.getScene().getWindow());
+	    	            }
+	    	        });
+	    	    }
+
+	    	    // Setup modern profile popup with square profile image
+	    	    private void setupProfilePopup() {
+	    	        profilePopup = new Popup();
+
+	    	        VBox root = new VBox(15);
+	    	        root.setPadding(new Insets(15, 10, 15, 10));
+	    	        root.setStyle(
+	    	            "-fx-background-color: #111;" +
+	    	            "-fx-border-color: #222;" +
+	    	            "-fx-border-width: 1;" +
+	    	            "-fx-effect: dropshadow(gaussian, #00000055, 8, 0.2, 0, 2);"
+	    	        );
+	    	        root.setPrefWidth(250);
+	    	        root.setAlignment(Pos.TOP_LEFT);
+
+	    	        HBox topBox = new HBox(10);
+	    	        topBox.setAlignment(Pos.CENTER_LEFT);
+
+	    	        // Profile button in popup
+	    	        Button profileCircle = new Button();
+	    	        profileCircle.setStyle(
+	    	            "-fx-background-color: black;" +       // button background
+	    	            "-fx-background-radius: 50%;" +        // make button itself round
+	    	            "-fx-min-width: 80px; -fx-min-height: 80px;" +
+	    	            "-fx-max-width: 80px; -fx-max-height: 80px;" +
+	    	            "-fx-padding: 0;" +                    // remove gaps
+	    	            "-fx-cursor: hand;"
+	    	        );
+	    	        addHoverAnimation(profileCircle);
+	    	        
+	    	        // Load user profile image
+	    	        String imagePath = userService.getProfilePhoto(Session.getUserId());
+	    	        if (imagePath == null || imagePath.isEmpty()) {
+	    	            imagePath = "/assets/images/profile.png"; // default
+	    	        }
+
+	    	        // Create ImageView and make it circular
+	    	        ImageView profileImgView = new ImageView(new Image(imagePath));
+	    	        profileImgView.setFitWidth(72);
+	    	        profileImgView.setFitHeight(72);
+	    	        profileImgView.setPreserveRatio(false);
+	    	        profileImgView.setSmooth(true);
+
+	    	        // 🔥 Clip to circle
+	    	        Circle clip = new Circle(36, 36, 36); // centerX, centerY, radius (half of 72)
+	    	        profileImgView.setClip(clip);
+
+	    	        // Apply to button
+	    	        profileCircle.setGraphic(profileImgView);
+
+	    	        // Also update main header profile button as circle
+	    	        setProfileButton(profile, imagePath);
+
+	    	        profileCircle.setOnAction(e -> {
+	    	            FileChooser fileChooser = new FileChooser();
+	    	            fileChooser.setTitle("Choose Profile Picture");
+	    	            fileChooser.getExtensionFilters().add(
+	    	                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+	    	            );
+
+	    	            File selectedFile = fileChooser.showOpenDialog(profileCircle.getScene().getWindow());
+	    	            if (selectedFile != null) {
+	    	                String imageUrl = selectedFile.toURI().toString();
+
+	    	                // Update popup button
+	    	                ImageView newPopupViews = new ImageView(new Image(imageUrl));
+	    	                newPopupViews.setFitWidth(72);
+	    	                newPopupViews.setFitHeight(72);
+	    	                newPopupViews.setPreserveRatio(false);
+	    	                newPopupViews.setSmooth(true);
+	    	                profileCircle.setGraphic(newPopupViews);
+
+	    	                // Update header profile button
+	    	                setProfileButton(profile, imageUrl);
+
+	    	                // Save to DB & session
+	    	                userService.updateProfilePhoto(Session.getUserId(), imageUrl);
+	    	                Session.setProfileImagePath(imageUrl);
+	    	            }
+	    	        });
+
+	    	        // Username label
+	    	        Label username = new Label(Session.getUsername());
+	    	        username.setStyle(
+	    	            "-fx-text-fill: white;" +
+	    	            "-fx-font-size: 24;" +
+	    	            "-fx-font-family: 'Segoe UI', sans-serif;"
+	    	        );
+
+	    	        VBox usernameBox = new VBox(username);
+	    	        usernameBox.setAlignment(Pos.CENTER_LEFT);
+	    	        usernameBox.setPadding(new Insets(0, 0, 20, 10));
+	    	  	  UsernameChangeNotifier.addListener(newName -> username.setText(newName));
+	    	      
+	    	        topBox.getChildren().addAll(profileCircle, usernameBox);
+	    	        root.getChildren().add(topBox);
+
+	    	        // Buttons in popup
+	    	        String normalBtnStyle = """
+	    	            -fx-background-color: transparent;
+	    	            -fx-text-fill: white;
+	    	            -fx-font-size: 14;
+	    	            -fx-alignment: CENTER_LEFT;
+	    	            -fx-padding: 10 5 10 5;
+	    	            -fx-border-color: #ffffff22;
+	    	            -fx-border-width: 0 0 1 0;
+	    	            -fx-cursor: hand;
+	    	        """;
+
+	    	        String hoverBtnStyle = """
+	    	            -fx-background-color: #222;
+	    	            -fx-text-fill: white;
+	    	            -fx-font-size: 14;
+	    	            -fx-alignment: CENTER_LEFT;
+	    	            -fx-padding: 10 5 10 5;
+	    	            -fx-border-color: #ffffff22;
+	    	            -fx-border-width: 0 0 1 0;
+	    	            -fx-cursor: hand;
+	    	        """;
+
+	    	        Button btnMyList = new Button("My List");
+
+	    	        Button btnWatched = new Button("My History");
+
+	    	        Button btnSettings = new Button("Settings");
+	    	        List<Button> buttons = List.of(btnMyList, btnWatched, btnSettings);
+	    	        for (Button b : buttons) {
+	    	            b.setStyle(normalBtnStyle);
+	    	            b.setMaxWidth(Double.MAX_VALUE);
+	    	            b.setOnMouseEntered(ev -> b.setStyle(hoverBtnStyle));
+	    	            b.setOnMouseExited(ev -> b.setStyle(normalBtnStyle));
+	    	        }
+	    	        btnMyList.setOnAction(e -> goToMyListView());
+	    	        btnWatched.setOnAction(e->goToMyHistoryView());
+	    	        
+	    	        btnSettings.setOnAction(e -> showSettingsPopup());
+
+	    	        // Logout button (round)
+	    	     // Logout button (normal rectangular shape)
+	    	        Button btnLogout = new Button("Logout");
+	    	        btnLogout.setStyle(
+	    	            "-fx-background-color: #00aaff;" +
+	    	            "-fx-text-fill: white;" +
+	    	            "-fx-font-size: 14;" +
+	    	            "-fx-padding: 8 20 8 20;" + // top/right/bottom/left padding
+	    	            "-fx-cursor: hand;"
+	    	        );
+
+	    	        // Hover effect (slightly lighter)
+	    	        btnLogout.setOnMouseEntered(ev -> btnLogout.setStyle(
+	    	            "-fx-background-color: #3399ff;" +
+	    	            "-fx-text-fill: white;" +
+	    	            "-fx-font-size: 14;" +
+	    	            "-fx-padding: 8 20 8 20;" +
+	    	            "-fx-cursor: hand;"
+	    	        ));
+
+	    	        btnLogout.setOnMouseExited(ev -> btnLogout.setStyle(
+	    	            "-fx-background-color: #00aaff;" +
+	    	            "-fx-text-fill: white;" +
+	    	            "-fx-font-size: 14;" +
+	    	            "-fx-padding: 8 20 8 20;" +
+	    	            "-fx-cursor: hand;"
+	    	        ));
+
+	    	        // Action
+	    	        btnLogout.setOnAction(ev -> Platform.exit());
+	    	        VBox buttonsBox = new VBox(0);
+	    	        buttonsBox.getChildren().addAll(btnMyList, btnWatched, btnSettings);
+
+	    	        root.getChildren().addAll(buttonsBox, btnLogout);
+
+	    	        profilePopup.getContent().add(root);
+	    	        profilePopup.setAutoHide(true);
+	    	    }
+
+	    	    // Main profile button (header) updater
+	    	
+	    	    private void showSettingsPopup() {
+	    	        Popup settingsPopup = new Popup();
+
+	    	        VBox root = new VBox(20);
+	    	        root.setPadding(new Insets(30, 20, 20, 20));
+	    	        root.setStyle(
+	    	            "-fx-background-color: linear-gradient(to bottom, #0b0c10, #11161f);" +
+	    	            "-fx-background-radius: 20;" +
+	    	            "-fx-border-radius: 1;" 
+	    	        );
+	    	        root.setEffect(new DropShadow(25, Color.BLACK));
+	    	        root.setMaxWidth(550);
+
+	    	        // --- Top bar with X ---
+	    	        HBox topBar = new HBox();
+	    	        topBar.setAlignment(Pos.TOP_RIGHT);
+	    	        Button btnClose = new Button("✖");
+	    	        btnClose.setStyle(
+	    	            "-fx-background-color: transparent;" +
+	    	            "-fx-text-fill: #ffffff;" +
+	    	            "-fx-font-size: 16;" +
+	    	            "-fx-font-weight: bold;" +
+	    	            "-fx-cursor: hand;"
+	    	        );
+	    	        btnClose.setOnAction(e -> settingsPopup.hide());
+	    	        topBar.getChildren().add(btnClose);
+
+	    	        // --- Title ---
+	    	        Label lblTitle = new Label("Account Settings");
+	    	        lblTitle.setStyle("-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;");
+
+	    	        // --- Username input ---
+	    	        Label lblUsername = new Label("Username (change if you want):");
+	    	        lblUsername.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");
+	    	        TextField tfUsername = new TextField(Session.getUsername());
+	    	        tfUsername.setStyle(
+	    	            "-fx-background-radius: 15;" +
+	    	            "-fx-border-radius: 15;" +
+	    	            "-fx-border-color: #1e40af;" +
+	    	            "-fx-border-width: 1.5;" +
+	    	            "-fx-background-color: #11161f;" +
+	    	            "-fx-text-fill: #ffffff;" +
+	    	            "-fx-padding: 12;"
+	    	        );
+	    	        tfUsername.setMaxWidth(Double.MAX_VALUE);
+	    	        Label usernameWarning = new Label();
+	    	        usernameWarning.setStyle("-fx-text-fill: #ff4d4d; -fx-font-size: 12;");
+	    	        usernameWarning.setVisible(false);
+
+	    	        // --- Password input ---
+	    	        Label lblPassword = new Label("Password (change if you want):");
+	    	        lblPassword.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");
+	    	        PasswordField pfPassword = new PasswordField();
+	    	        pfPassword.setPromptText("Enter new password");
+	    	        pfPassword.setStyle(
+	    	            "-fx-background-radius: 15;" +
+	    	            "-fx-border-radius: 15;" +
+	    	            "-fx-border-color: #1e40af;" +
+	    	            "-fx-border-width: 1.5;" +
+	    	            "-fx-background-color: #11161f;" +
+	    	            "-fx-text-fill: #ffffff;" +
+	    	            "-fx-padding: 12;"
+	    	        );
+	    	        pfPassword.setMaxWidth(Double.MAX_VALUE);
+
+	    	        // --- Buttons ---
+	    	        HBox buttonsBox = new HBox(15);
+	    	        buttonsBox.setAlignment(Pos.CENTER);
+	    	        Button btnSave = new Button(" Save");
+	    	        Button btnCancel = new Button(" Cancel");
+
+	    	        // Modern rounded rectangle style
+	    	        for (Button b : List.of(btnSave, btnCancel)) {
+	    	            b.setStyle(
+	    	                "-fx-background-color: #008cff;" +
+	    	                "-fx-text-fill: white;" +
+	    	                "-fx-font-weight: bold;" +
+	    	                "-fx-background-radius: 12;" +   // nicer rounded rectangle
+	    	                "-fx-border-radius: 2;" +
+	    	                
+	    	                "-fx-border-width: 2;" +
+	    	                "-fx-padding: 8 20;" +
+	    	                "-fx-cursor: hand;"
+	    	            );
+	    	            b.setOnMouseEntered(ev -> b.setEffect(new DropShadow(20, Color.CYAN)));
+	    	            b.setOnMouseExited(ev -> b.setEffect(null));
+	    	        }
+
+	    	        btnSave.setOnAction(e -> {
+	    	            boolean saved = false;
+
+	    	            String newUsername = tfUsername.getText().trim();
+	    	            if(!newUsername.isEmpty() && !newUsername.equals(Session.getUsername())) {
+	    	                if(userService.usernameExists(newUsername)) {
+	    	                    usernameWarning.setText("Username already exists");
+	    	                    usernameWarning.setVisible(true);
+	    	                } else {
+	    	                    userService.updateUsername(Session.getUserId(), newUsername);
+	    	                    Session.setUsername(newUsername);
+	    	                    UsernameChangeNotifier.notifyAllListeners(newUsername);
+	    	                    usernameWarning.setVisible(false);
+	    	                    saved = true;
+	    	                }
+	    	            }
+
+	    	            String newPassword = pfPassword.getText();
+	    	            if(!newPassword.isEmpty()) {
+	    	                String hashed = SecurityUtils.hashPassword(newPassword);
+	    	                userService.updateUserPassword(Session.getUserId(), hashed);
+	    	                saved = true;
+	    	            }
+
+	    	            if(saved) {
+	    	                settingsPopup.hide();
+	    	             
+	    	            }
+	    	        });
+
+	    	        btnCancel.setOnAction(e -> settingsPopup.hide());
+
+	    	        buttonsBox.getChildren().addAll(btnSave, btnCancel);
+
+	    	        VBox content = new VBox(15);
+	    	        content.getChildren().addAll(topBar, lblTitle,
+	    	            lblUsername, tfUsername, usernameWarning,
+	    	            lblPassword, pfPassword,
+	    	            buttonsBox 
+	    	        );
+	    	        content.setAlignment(Pos.CENTER_LEFT);
+
+	    	        root.getChildren().add(content);
+	    	        settingsPopup.getContent().add(root);
+	    	        settingsPopup.setAutoHide(false);
+	    	        settingsPopup.show(profile.getScene().getWindow());
+	    	    }
 }
+	    	 

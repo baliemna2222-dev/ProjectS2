@@ -1,12 +1,16 @@
 package JStream.service;
 
+import JStream.dao.EpisodeProgressDAO;
 import JStream.dao.FeaturedDAO;
+import JStream.dao.FilmProgressDAO;
 import JStream.entity.FeaturedItem;
+import JStream.entity.FeaturedItemProgress;
 import JStream.entity.Category;
 import JStream.entity.Episode;
 import JStream.entity.Film;
 import JStream.entity.Serie;
 import JStream.entity.Session;
+import JStream.entity.WatchStatus;
 import JStream.entity.Season;
 import JStream.utils.Database;
 
@@ -14,8 +18,10 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class FeaturedService {
@@ -133,6 +139,23 @@ public class FeaturedService {
         }
         return null;
     }
+ // FeaturedService.java
+    public List<Episode> getEpisodesBySerie(int serieId) {
+        List<Episode> allEpisodes = new ArrayList<>();
+        try {
+            // 1️⃣ Get all seasons of the series
+            List<Season> seasons = getSeasonsBySerie(serieId);
+
+            // 2️⃣ For each season, get its episodes
+            for (Season season : seasons) {
+                List<Episode> episodes = getEpisodesBySeason(season.getSeasonId());
+                allEpisodes.addAll(episodes);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return allEpisodes;
+    } 
 
     public List<Category> getCategoriesBySerie(int serieId) throws SQLException {
         return dao.getFullSerie(serieId).getCategories();
@@ -196,5 +219,30 @@ public class FeaturedService {
         Set<Integer> years = (releaseAfter == null) ? Set.of() : Set.of(releaseAfter.toLocalDate().getYear());
         return getFilteredItems(categories, types, years);
     }
+    public FeaturedItem getFilmById(int filmId) throws SQLException {
+        return dao.getFilmById(filmId);
+    }
 
+    public FeaturedItem getSerieById(int serieId) throws SQLException {
+        return dao.getSerieById(serieId);
+    }
+    public int getSerieIdBySeason(int seasonId) {
+        try {
+            return dao.getSerieIdBySeason(seasonId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    // Get full Serie object from season
+    public Serie getSerieBySeason(int seasonId) {
+        try {
+            return dao.getSerieBySeason(seasonId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }     
+    
 }

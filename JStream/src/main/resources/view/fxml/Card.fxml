@@ -38,4 +38,20 @@
                 
     <Button fx:id="playBtn" prefHeight="30.5" prefWidth="30.0" style="-fx-background-color: rgba(0,0,0,0.0); -fx-text-fill: #1E90FF; -fx-font-size: 22px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-border-color: #1E90FF; -fx-border-width: 2; -fx-border-radius: 25; -fx-cursor: hand;" text="▶" />
 </HBox>
+<!-- Progress bar overlay -->
+<StackPane alignment="BOTTOM_LEFT" mouseTransparent="true">
+    <Rectangle fx:id="progressBg"
+               height="4"
+               width="180"
+               arcHeight="2"
+               arcWidth="2"
+               fill="#444444AA"/>
+
+    <Rectangle fx:id="progressFill"
+               height="4"
+               width="0"
+               arcHeight="2"
+               arcWidth="2"
+               fill="#1E90FF"/>
+</StackPane>
 </StackPane>

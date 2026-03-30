@@ -755,4 +755,104 @@ public class FeaturedDAO {
             ps.executeUpdate();
         }
     }
+ // ----------------- Get FeaturedItem by Film ID -----------------
+    public FeaturedItem getFilmById(int filmId) throws SQLException {
+        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+                     "FROM film f " +
+                     "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
+                     "LEFT JOIN category c ON fc.category_id = c.category_id " +
+                     "WHERE f.film_id = ? " +
+                     "GROUP BY f.film_id";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, filmId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                List<String> categories = rs.getString("categories") != null
+                        ? List.of(rs.getString("categories").split(","))
+                        : new ArrayList<>();
+
+                return new FeaturedItem(
+                        rs.getInt("film_id"),
+                        rs.getString("title"),
+                        rs.getString("synopsis"),
+                        rs.getString("video_url"),
+                        rs.getString("image_url"),
+                        rs.getString("title_image_url"),
+                        rs.getString("poster_url"),
+                        categories,
+                        rs.getString("age_rating"),
+                        rs.getInt("rating")
+                );
+            }
+        }
+        return null;
+    }
+    public int getSerieIdBySeason(int seasonId) throws SQLException {
+        String sql = "SELECT serie_id FROM season WHERE season_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, seasonId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("serie_id"); 
+            }
+        }
+        return -1; 
+    }
+    public Serie getSerieBySeason(int seasonId) throws SQLException {
+        int serieId = getSerieIdBySeason(seasonId);
+        if (serieId == -1) return null;
+        return getFullSerie(serieId); // reuse your existing getFullSerie()
+    }
+    // ----------------- Get FeaturedItem by Serie ID (latest season info) -----------------
+    public FeaturedItem getSerieById(int serieId) throws SQLException {
+        String sql =
+            "SELECT s.season_id, s.poster_url, s.trailer_url, s.season_num, s.status, " +
+            "se.serie_id, se.title AS serie_title, se.synopsis, se.title_url, se.covert_url, " +
+            "se.age_rating, se.rating, " +
+            "GROUP_CONCAT(DISTINCT c.name SEPARATOR ',') AS categories, " +
+            "COALESCE(MAX(e.num_episode),0) AS last_episode " +
+            "FROM season s " +
+            "JOIN serie se ON s.serie_id = se.serie_id " +
+            "LEFT JOIN serie_category sc ON se.serie_id = sc.serie_id " +
+            "LEFT JOIN category c ON sc.category_id = c.category_id " +
+            "LEFT JOIN episode e ON e.season_id = s.season_id " +
+            "WHERE se.serie_id = ? " +
+            "AND s.season_id = ( " +
+            "    SELECT s2.season_id FROM season s2 " +
+            "    LEFT JOIN episode e2 ON e2.season_id = s2.season_id " +
+            "    WHERE s2.serie_id = s.serie_id " +
+            "    GROUP BY s2.season_id " +
+            "    ORDER BY MAX(e2.released_at) DESC LIMIT 1" +
+            ") " +
+            "GROUP BY s.season_id";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, serieId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                List<String> categories = rs.getString("categories") != null
+                        ? new ArrayList<>(new LinkedHashSet<>(List.of(rs.getString("categories").split(","))))
+                        : new ArrayList<>();
+
+                return new FeaturedItem(
+                        rs.getInt("season_id"),
+                        rs.getInt("serie_id"),
+                        rs.getString("serie_title"),
+                        rs.getString("synopsis"),
+                        rs.getString("trailer_url"),
+                        rs.getString("covert_url"),
+                        rs.getString("title_url"),
+                        rs.getString("poster_url"),
+                        categories,
+                        rs.getString("age_rating"),
+                        rs.getInt("rating"),
+                        rs.getString("status"),
+                        rs.getInt("season_num"),
+                        rs.getInt("last_episode")
+                );
+            }
+        }
+        return null;
+    }
 }

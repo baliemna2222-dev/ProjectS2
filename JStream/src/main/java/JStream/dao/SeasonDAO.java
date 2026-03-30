@@ -11,7 +11,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SeasonDAO {
+public class SeasonDAO { 
 
     // ===== INSERT =====
     public boolean insertSeason(Season season) {

@@ -70,7 +70,50 @@ public class UserDAO {
             }
         }
     }
+ // ===== Update username =====
+    public boolean updateUsername(int userId, String newUsername) throws SQLException {
+        String sql = "UPDATE users SET username = ? WHERE user_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, newUsername);
+            stmt.setInt(2, userId);
+            int updated = stmt.executeUpdate();
+            return updated > 0;
+        }
+    }
+ // ===== Update profile photo =====
+    public boolean updateProfilePhoto(int userId, String imagePath) throws SQLException {
+        String sql = "UPDATE users SET profile_photo = ? WHERE user_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, imagePath);
+            stmt.setInt(2, userId);
+            int updated = stmt.executeUpdate();
+            return updated > 0;
+        }
+    }
 
+    public String getProfilePhotoPath(int userId) throws SQLException {
+        String sql = "SELECT profile_photo FROM users WHERE user_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("profile_photo");
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+    // ===== Update user password =====
+    public boolean updateUserPassword(int userId, String newPassword) throws SQLException {
+        String sql = "UPDATE users SET password = ? WHERE user_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, newPassword); // optionally hash it
+            stmt.setInt(2, userId);
+            int updated = stmt.executeUpdate();
+            return updated > 0;
+        }
+    }
     // ===== Close connection =====
     public void close() {
         try {

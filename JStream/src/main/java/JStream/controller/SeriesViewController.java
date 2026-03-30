@@ -187,7 +187,21 @@ public class SeriesViewController {
         });
 
         categoryContainer.getChildren().add(carousel);
+        Pane divider = new Pane();
+        divider.setPrefHeight(3);
+        divider.setMaxWidth(Double.MAX_VALUE);
 
+        divider.setStyle("""
+            -fx-background-color: linear-gradient(to right, transparent, #0a1f44, #1e3a8a, #0a1f44, transparent);
+            -fx-background-radius: 2;
+            -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);
+        """);
+
+        // Add spacing around it (important!)
+        VBox.setMargin(divider, new Insets(10, 60, 20, 60));
+
+        // Add to layout
+        categoryContainer.getChildren().add(divider);
         // Series results container
         seriesResultsContainer = new VBox();
         seriesResultsContainer.setSpacing(15);

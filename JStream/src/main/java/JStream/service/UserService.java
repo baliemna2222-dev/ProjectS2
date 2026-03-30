@@ -110,7 +110,47 @@ public class UserService {
         if (System.currentTimeMillis() > codeExpiry) return false;
         return currentCode.equals(code);
     }
+    // Get profile image path
+    public String getProfilePhoto(int userId) {
+        try {
+            return userDAO.getProfilePhotoPath(userId);
+        } catch (SQLException e) { 
+            e.printStackTrace();
+            return null;
+        }
+    }
+ // ===== Update username =====
+    public boolean updateUsername(int userId, String newUsername) {
+        try {
+            // Check if new username already exists
+            if (userDAO.usernameExists(newUsername)) {
+                System.out.println("Username already exists!");
+                return false;
+            }
+            return userDAO.updateUsername(userId, newUsername);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public boolean updateProfilePhoto(int userId, String imagePath) {
+        try {
+            return userDAO.updateProfilePhoto(userId, imagePath);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
+    // Update user password
+    public boolean updateUserPassword(int userId, String newPassword) {
+        try {
+            return userDAO.updateUserPassword(userId, newPassword);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
     // ================= CLEAN UP =================
     public void close() {
         if (userDAO != null) {
