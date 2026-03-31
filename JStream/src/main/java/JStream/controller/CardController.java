@@ -71,6 +71,7 @@ public class CardController {
     @FXML private Button addBtn;
     @FXML private StackPane rootPane;
     @FXML private Label starsLabel;
+    @FXML private Rectangle progressBg;
     private Timeline autoSlide;
     private FeaturedItem currentItem;
     private FeaturedController featuredController;
@@ -144,6 +145,11 @@ public class CardController {
         addBtn.setOnAction(e -> handleAddToList());
         updateAddButton(addBtn, item);
         starsLabel.setText(getStars(item.getRating()));
+        show(playBtn);
+        show(addBtn);
+        show(starsLabel);
+        show(typeBadge);
+        hide(progressFill);
     }
     private MylistService mylistService = new MylistService();
     
@@ -1287,6 +1293,11 @@ public class CardController {
 	    	 @FXML private Rectangle progressFill;
 
 	    	 public void setData(FeaturedItemProgress data) {
+	    		 show(playBtn);
+	    	     show(addBtn);
+	    	     show(starsLabel);
+	    	     show(progressFill);
+	    	     show(typeBadge);
 	    	     FeaturedItem item = data.getItem();
 	    	     this.currentItem = item;
 
@@ -1378,5 +1389,44 @@ public class CardController {
 	    	         case IN_PROGRESS -> progressFill.setStyle("-fx-fill: #1E90FF;");
 	    	         case NOT_STARTED -> progressFill.setWidth(0);
 	    	     }
+	    	    
 	    	 }
+	    	 public void setItem2(FeaturedItem item) {
+	    	        this.currentItem = item;
+	    	        
+	    	     // Make the whole card clickable like the play button
+	    	        poster.getParent().setOnMouseClicked(e -> {
+	    	            if (autoSlide != null) autoSlide.pause(); // pause carousel
+
+	    	            // Same logic as play button
+	    	            String type = currentItem.getType().toLowerCase();
+	    	            if (type.equals("film")) {
+	    	                showFilmPopup(currentItem);
+	    	            } else if (type.equals("serie")) {
+	    	                showSeriePopup(currentItem);
+	    	            }
+	    	        });
+	    	        // ------------------ Poster ------------------
+	    	        poster.setImage(ImageUtil.load(item.getPosterUrl()));
+	    	        // ------------------ Type Badge ------------------
+	    	       
+	    	        addBtn.setOnAction(e -> handleAddToList());
+	    	        updateAddButton(addBtn, item);
+	    	        starsLabel.setText(getStars(item.getRating()));
+	    	        hide(playBtn);
+	    	        hide(starsLabel);
+	    	        hide(progressFill);
+	    	        hide(progressBg);
+	    	        
+	    	        
+	    	    }
+	    	 private void show(Node node) {
+	    		    node.setVisible(true);
+	    		    node.setManaged(true);
+	    		}
+
+	    		private void hide(Node node) {
+	    		    node.setVisible(false);
+	    		    node.setManaged(false);
+	    		}
 }

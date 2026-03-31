@@ -25,33 +25,41 @@
             </LinearGradient>
         </fill>
     </Rectangle>
+
     <!-- Top container for badge -->
     <HBox alignment="TOP_RIGHT" prefHeight="100.0" prefWidth="200.0" style="-fx-padding: 8;">
-        <Label fx:id="typeBadge" style="-fx-text-fill: #1E90FF; -fx-background-color: rgba(0,0,0,0,1); -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 4 10; -fx-background-radius: 12; -fx-cursor: default;" text="FILM" />
+        <Label fx:id="typeBadge" visible="false" managed="false"
+               style="-fx-text-fill: #1E90FF; -fx-background-color: rgba(0,0,0,0,1); -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 4 10; -fx-background-radius: 12; -fx-cursor: default;" text="FILM" />
     </HBox>
 
     <!-- Bottom container for buttons -->
- <HBox alignment="BOTTOM_RIGHT" pickOnBounds="false" spacing="10" style="-fx-padding: 8;">
-    <Label fx:id="starsLabel" maxWidth="Infinity" style="-fx-background-color: rgba(0,0,0,0);               -fx-text-fill: #1E90FF;               -fx-font-size: 12px;               -fx-font-weight: bold;               -fx-background-radius: 12;               -fx-padding: 4 8 4 8;" text="" wrapText="true" HBox.hgrow="ALWAYS" />
-       
-    <Button fx:id="addBtn" prefHeight="30" prefWidth="30" style="-fx-background-color: rgba(0,0,0,0.0); -fx-text-fill: #1E90FF; -fx-font-size: 22px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-border-color: #1E90FF; -fx-border-width: 2; -fx-border-radius: 25; -fx-cursor: hand;" text="+" />
-                
-    <Button fx:id="playBtn" prefHeight="30.5" prefWidth="30.0" style="-fx-background-color: rgba(0,0,0,0.0); -fx-text-fill: #1E90FF; -fx-font-size: 22px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-border-color: #1E90FF; -fx-border-width: 2; -fx-border-radius: 25; -fx-cursor: hand;" text="▶" />
-</HBox>
-<!-- Progress bar overlay -->
-<StackPane alignment="BOTTOM_LEFT" mouseTransparent="true">
-    <Rectangle fx:id="progressBg"
-               height="4"
-               width="180"
-               arcHeight="2"
-               arcWidth="2"
-               fill="#444444AA"/>
+    <HBox alignment="BOTTOM_RIGHT" pickOnBounds="false" spacing="10" style="-fx-padding: 8;">
+        <Label fx:id="starsLabel" maxWidth="Infinity"
+               style="-fx-background-color: rgba(0,0,0,0); -fx-text-fill: #1E90FF; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 4 8 4 8;" text="" wrapText="true" HBox.hgrow="ALWAYS" />
 
-    <Rectangle fx:id="progressFill"
-               height="4"
-               width="0"
-               arcHeight="2"
-               arcWidth="2"
-               fill="#1E90FF"/>
-</StackPane>
+        <Button fx:id="addBtn" prefHeight="30" prefWidth="30"
+                style="-fx-background-color: rgba(0,0,0,0.0); -fx-text-fill: #1E90FF; -fx-font-size: 22px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-border-color: #1E90FF; -fx-border-width: 2; -fx-border-radius: 25; -fx-cursor: hand;" text="+" />
+
+        <Button fx:id="playBtn" visible="false" managed="false" prefHeight="30.5" prefWidth="30.0"
+                style="-fx-background-color: rgba(0,0,0,0.0); -fx-text-fill: #1E90FF; -fx-font-size: 22px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-border-color: #1E90FF; -fx-border-width: 2; -fx-border-radius: 25; -fx-cursor: hand;" text="▶" />
+    </HBox>
+
+    <!-- Progress bar overlay -->
+    <StackPane alignment="BOTTOM_LEFT" mouseTransparent="true">
+        <Rectangle fx:id="progressBg"
+                   height="4"
+                   width="180"
+                   visible="false"
+                   arcHeight="2"
+                   arcWidth="2"
+                   fill="#444444AA"/>
+
+        <Rectangle fx:id="progressFill"
+                   visible="false" managed="false"
+                   height="4"
+                   width="0"
+                   arcHeight="2"
+                   arcWidth="2"
+                   fill="#1E90FF"/>
+    </StackPane>
 </StackPane>

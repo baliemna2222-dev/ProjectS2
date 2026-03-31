@@ -98,14 +98,42 @@ public class LecturePageController {
         populateStars(9.0);
      // Fi west el initialize() walla initFilm/initEpisode
         if (playButton != null) {
-            playButton.setOnAction(e -> {
-                // currentTrailerUrl walla videoUrl mta3 el film
-                if (currentTrailerUrl != null) {
-                    openVideoPlayer(ep.getVideoUrl(),ep.getTitle(),ep.getEpId());
-                } else {
-                    System.out.println("⚠️ Mafamech video url 7adher!");
-                }
-            });
+        	if (playButton != null) {
+        	    playButton.setOnAction(e -> {
+
+        	        if (currentItem == null) {
+        	            System.out.println("⚠️ No current item!");
+        	            return;
+        	        }
+
+        	        // 🎬 FILM
+        	        if ("film".equalsIgnoreCase(currentItem.getType())) {
+
+        	            if (currentTrailerUrl != null) {
+        	                openVideoPlayer(
+        	                    currentTrailerUrl,
+        	                    currentItem.getTitle(),
+        	                    null // 👈 important (film = no episodeId)
+        	                );
+        	            } else {
+        	                System.out.println("⚠️ Film video URL missing!");
+        	            }
+
+        	        // 📺 EPISODE
+        	        } else if ("serie".equalsIgnoreCase(currentItem.getType())) {
+
+        	            if (ep != null) {
+        	                openVideoPlayer(
+        	                    ep.getVideoUrl(),
+        	                    ep.getTitle(),
+        	                    ep.getEpId()
+        	                );
+        	            } else {
+        	                System.out.println("⚠️ Episode not loaded!");
+        	            }
+        	        }
+        	    });
+        	}
         }
         if (posterImage != null) addHoverEffect(posterImage);
         if (playButton != null) addHoverEffect(playButton);

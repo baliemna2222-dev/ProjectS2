@@ -191,8 +191,8 @@ public class CarouselController {
  // ======= INFINITE TOP RATED LOOP =======
     private TranslateTransition loopTransition;
     private boolean isHovered = false;
-    private static final double TOP_CARD_WIDTH = 300;   
-    private static final double TOP_CARD_HEIGHT = 200;  
+    private static final double TOP_CARD_WIDTH = 250;   
+    private static final double TOP_CARD_HEIGHT = 150;  
     private static final double TOP_CARD_SPACING = 60;
     private static final double LOOP_DURATION = 40; // seconds
 
@@ -241,14 +241,14 @@ public class CarouselController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Card.fxml"));
             cardNode = loader.load();
             JStream.controller.CardController controller = loader.getController();
-            controller.setItem(item);
+            controller.setItem2(item);
             cardNode.setUserData(item);
 
             // ===== Properly set preferred size if cardNode is a Region =====
             if (cardNode instanceof Region region) {
-                region.setPrefSize(TOP_CARD_WIDTH-100, TOP_CARD_HEIGHT);
-                region.setMinSize(Region.USE_PREF_SIZE-100, Region.USE_PREF_SIZE);
-                region.setMaxSize(Region.USE_PREF_SIZE-100, Region.USE_PREF_SIZE);
+                region.setPrefSize(TOP_CARD_WIDTH-80, TOP_CARD_HEIGHT+130);
+                region.setMinSize(Region.USE_PREF_SIZE-80, Region.USE_PREF_SIZE+130);
+                region.setMaxSize(Region.USE_PREF_SIZE-80, Region.USE_PREF_SIZE+130);
             }
 
             StackPane.setAlignment(cardNode, javafx.geometry.Pos.BOTTOM_RIGHT);

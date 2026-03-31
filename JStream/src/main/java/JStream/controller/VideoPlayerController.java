@@ -98,6 +98,12 @@ public class VideoPlayerController {
         btnNextEpisode.setVisible(false);
         btnNextEpisode.setManaged(false);
         setupButtonHover(btnNextEpisode);
+        // 🔥 Make video fill the whole container
+        mediaView.fitWidthProperty().bind(rootPane.widthProperty());
+        mediaView.fitHeightProperty().bind(rootPane.heightProperty());
+
+        // 🔥 Keep aspect ratio (important)
+        mediaView.setPreserveRatio(true);
     }
 
     // ── Public API ─────────────────────────────────────────────
