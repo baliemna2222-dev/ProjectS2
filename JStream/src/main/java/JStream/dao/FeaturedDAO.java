@@ -6,6 +6,7 @@ import JStream.entity.FeaturedItem;
 import JStream.entity.Film;
 import JStream.entity.Season;
 import JStream.entity.Serie;
+import JStream.utils.Database;
 
 import java.sql.*;
 import java.util.ArrayList;

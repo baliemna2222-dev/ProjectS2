@@ -141,13 +141,12 @@ public class EpisodeDAO {
  // ===== GET SERIE_ID FROM SEASON_ID =====
     public int getSerieIdBySeasonId(int seasonId) {
         String sql = "SELECT serie_id FROM season WHERE season_id = ?";
-        // ✅ Nouvelle connexion à chaque appel — évite le "connection closed"
-        try (Connection conn = DriverManager.getConnection(
-                    Database.URL, Database.USER, Database.PASSWORD);
+        try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, seasonId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt("serie_id");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("serie_id");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

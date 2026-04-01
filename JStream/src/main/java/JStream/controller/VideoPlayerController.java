@@ -1,10 +1,12 @@
 package JStream.controller;
 
 import JStream.entity.Episode;
+import JStream.entity.Season;
 import JStream.entity.Serie;
 import JStream.entity.Session;
 import JStream.service.EpisodeProgressService;
 import JStream.service.EpisodeService;
+import JStream.service.FeaturedService;
 import JStream.service.FilmProgressService;
 import JStream.service.SerieService;
 import javafx.animation.FadeTransition;
@@ -37,6 +39,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.sql.SQLException;
 
 public class VideoPlayerController {
 
@@ -84,13 +87,13 @@ public class VideoPlayerController {
     private static final int    BINGE_COUNTDOWN = 10;
     private static final double MED_W           = 960;
     private static final double MED_H           = 540;
-
+    
     // ───────────────────────────────────────────────────────────
     @FXML
     public void initialize() {
         filmProgressService    = new FilmProgressService();
         episodeProgressService = new EpisodeProgressService();
-
+       
         setupTimers();
         setupMouseAndKeyboardEvents();
         setupSliders();
@@ -345,50 +348,75 @@ public class VideoPlayerController {
     }
 private int serieid;
 private Serie serie;
+
 private void launchNextEpisode(Episode next) {
+    // 🔹 Stop UI / timers
     stopBingeTimer();
     hideBingeOverlay();
     hideNextEpisodeButton();
 
-    progressTimer.stop();
-    saveTimer.stop();
+    if (progressTimer != null) progressTimer.stop();
+    if (saveTimer != null) saveTimer.stop();
+
     videoReady = false;
 
-    if (mediaPlayer != null) { 
-        mediaPlayer.stop(); 
-        mediaPlayer.dispose(); 
-        mediaPlayer = null; 
+    // 🔹 Stop current media safely
+    if (mediaPlayer != null) {
+        mediaPlayer.stop();
+        mediaPlayer.dispose();
+        mediaPlayer = null;
     }
 
-    EpisodeService episodeservice = new EpisodeService();
-    SerieService serieservice = new SerieService();
-    this.serieid = episodeservice.getSerieIdBySeasonId(currentSeasonId);
-    this.serie = serieservice.getSerieById(serieid);
+    // 🔹 Services
+    
+    EpisodeService episodeService = new EpisodeService();
+    SerieService serieService = new SerieService();
 
-    this.filmId            = null;
-    this.episodeId         = next.getEpId();
-    this.currentNumEpisode = next.getNumEpisode();
-    this.pendingUrl        = next.getVideoUrl();
-    this.pendingTitle      = next.getTitle();
+    try {
+        // 🔹 Load serie & season
+        this.serieid = episodeService.getSerieIdBySeasonId(currentSeasonId);
+        this.serie   = serieService.getSerieById(serieid);
+       
 
-    if (parentController != null && serie != null) {
-        Platform.runLater(() -> {
-            parentController.updateUI(
-                next.getTitle(), 
-                next.getResume() != null ? next.getResume() : serie.getSynopsis(), 
-                next.getDuration() + " min", 
-                serie.getRating(), 
-                serie.getCasting(),
-                serie.getCovertUrl(), 
-                "S1 - E" + next.getNumEpisode(),
-                next.getVideoUrl(),
-                next.getEpId()
-            );
-        });
-    } else {
-        System.out.println("❌ serie NULL → updateUI ignoré. Fix getSerieIdBySeasonId d'abord.");
+        // 🔹 Update internal state
+        this.filmId            = null;
+        this.episodeId         = next.getEpId();
+        this.currentNumEpisode = next.getNumEpisode();
+        this.pendingUrl        = next.getVideoUrl();
+        this.pendingTitle      = next.getTitle();
+
+       
+        // 🔹 Update UI on JavaFX thread
+        if (parentController != null) {
+
+            Platform.runLater(() -> {
+                try {
+                    parentController.updateUI(
+                    	
+                        next.getTitle(),
+                        next.getResume() != null ? next.getResume() : serie.getSynopsis(),
+                        next.getDuration() + " min",
+                        serie.getRating(),
+                        serie.getCasting(),
+                         
+                         " - E" + next.getNumEpisode(), // ✅ dynamic
+                        next.getVideoUrl(),
+                        next.getEpId()
+                    );
+
+                    // ▶ Start playback AFTER UI update
+                    startPlayback();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+
+        } 
+
+    } catch (Exception e) {
+        e.printStackTrace();
     }
-    startPlayback();
 }
     // ── Private Helpers ────────────────────────────────────────
 

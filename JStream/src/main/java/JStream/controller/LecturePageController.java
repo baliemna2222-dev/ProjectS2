@@ -255,7 +255,7 @@ public class LecturePageController {
             	    film.getAge_rating(),
             	    film.getRating()
             	);
-            updateUI(film.getTitle(), film.getSynopsis(), film.getDuration() + " min", 
+            updateUI(film.getPoster_url(),film.getTitle(), film.getSynopsis(), film.getDuration() + " min", 
                      film.getRating(), film.getCasting(), film.getPoster_url(), null,null,0);
             if (scoreLabel != null) scoreLabel.setText(String.valueOf(film.getRating()));
             if (addToListButton != null) updateAddButton(addToListButton, currentItem);
@@ -264,6 +264,8 @@ public class LecturePageController {
     }
     private Serie serie ;
     private Episode ep ;
+    String couvert =null ;
+    String poster = null ;
     public void initEpisode(int serieId, int seasonNum, int episodeNum) {
         try {
              serie = new FeaturedService().getFullSerie(serieId);
@@ -271,22 +273,28 @@ public class LecturePageController {
             
             if (ep != null) {
                 // Nlawjou 3al Saison el s7i7a besh njibdou el Trailer mte3ha
+            	
                 if (serie.getSeasons() != null) {
+                	
+                	
                     for (Season s : serie.getSeasons()) {
                         if (s.getSeasonNum() == seasonNum) {
                             this.currentTrailerUrl = s.getTrailerUrl(); // Sajjel el URL
+                            poster=s.getPosterUrl();
+                            couvert=s.getImageUrl();
                             break; 
                         }
                     }
+                    
                     this.currentItem = new FeaturedItem(
                     		ep.getSeasonId(),
                     	    serie.getSerieId(),
                     	    serie.getTitle(),
                     	    serie.getSynopsis(),
                     	    this.currentTrailerUrl,
-                    	    serie.getCovertUrl(),
+                    	    couvert,
                     	    serie.getTitleUrl(),
-                    	    serie.getCovertUrl(),
+                    	    poster,
                     	    serie.getCategories() != null ?
                     	        serie.getCategories().stream()
                     	            .map(c -> c.getName())
@@ -298,9 +306,9 @@ public class LecturePageController {
                     	);
                 }
 
-                updateUI(ep.getTitle(), ep.getResume() != null ? ep.getResume() : serie.getSynopsis(), 
+                updateUI(poster,ep.getTitle(), ep.getResume() != null ? ep.getResume() : serie.getSynopsis(), 
                          ep.getDuration() + " min", serie.getRating(), serie.getCasting(), 
-                         serie.getCovertUrl(), "S" + seasonNum + " - E" + episodeNum,ep.getVideoUrl(),ep.getEpId());
+                          couvert,"S" + seasonNum + " - E" + episodeNum,ep.getVideoUrl(),ep.getEpId());
                 if (addToListButton != null) updateAddButton(addToListButton, currentItem);
                 
                 if (scoreLabel != null) scoreLabel.setText(String.valueOf(serie.getRating()));
@@ -309,8 +317,13 @@ public class LecturePageController {
             e.printStackTrace(); 
         }
     }
-
-    public void updateUI(String title, String desc, String duration, int rating, String cast, String imgPath, String epInfo,String video,int id) {
+    public void updateUI(String title, String resume, String duration,
+            int rating, String casting, 
+            String episodeLabel, String videoUrl, int epId) {
+    	updateUI(poster, title, resume, duration, rating, casting,
+    couvert, episodeLabel, videoUrl, epId);
+}
+    public void updateUI(String poster,String title, String desc, String duration, int rating, String cast, String imgPath, String epInfo,String video,int id) {
         titleLabel.setText(title);
         descriptionLabel.setText(desc);
         durationLabel.setText(duration);
@@ -323,10 +336,19 @@ public class LecturePageController {
 
         if (imgPath != null) {
             try {
-                Image img = new Image(getClass().getResourceAsStream(imgPath));
-                posterImage.setImage(img);
-                backgroundImage.setImage(img);
-            } catch (Exception e) {}
+                Image image = new Image(imgPath, true); // load from URL
+                backgroundImage.setImage(image);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (poster != null) {
+            try {
+                Image image = new Image(poster, true); // load from URL
+                posterImage.setImage(image);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         populateStars(rating);
         if (playButton != null) {
