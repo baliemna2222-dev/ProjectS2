@@ -11,10 +11,25 @@
            prefWidth="1010" prefHeight="800"
            style="-fx-background-color: radial-gradient(center 50% 50%, radius 100%, #08101a 0%, #02040a 100%);">
 
-    <ImageView fx:id="backgroundImage" fitWidth="1280" fitHeight="520" preserveRatio="false" opacity="0.15"/>
-    <Region prefWidth="1280" prefHeight="520" StackPane.alignment="TOP_LEFT"
-            style="-fx-background-color: linear-gradient(to bottom, rgba(2,4,10,0) 0%, #02040a 100%);"/>
+<ImageView fx:id="backgroundImage"
+           fitWidth="1280" fitHeight="600"
+           preserveRatio="false"
+           opacity="0.35"
+           StackPane.alignment="TOP_CENTER">
+    <effect>
+        <GaussianBlur radius="8"/>
+    </effect>
+</ImageView>
 
+<!-- Dégradé gauche → droite (effet cinéma) -->
+<Region prefWidth="1280" prefHeight="600"
+        StackPane.alignment="TOP_LEFT"
+        style="-fx-background-color: linear-gradient(to right, #02040a 15%, transparent 60%);"/>
+
+<!-- Dégradé haut → bas (fondu vers le contenu) -->
+<Region prefWidth="1280" prefHeight="600"
+        StackPane.alignment="TOP_LEFT"
+        style="-fx-background-color: linear-gradient(to bottom, rgba(2,4,10,0) 0%, rgba(2,4,10,0.6) 60%, #02040a 100%);"/>
     <ScrollPane fitToWidth="true" vbarPolicy="AS_NEEDED" hbarPolicy="NEVER"
                 style="-fx-background: transparent; -fx-background-color: transparent; -fx-background-insets: 0;">
 
@@ -121,7 +136,38 @@
                 <Label text="Cast &amp; Crew" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;"/>
                 <HBox fx:id="castBox" spacing="30" alignment="CENTER_LEFT"/>
             </VBox>
-
+<VBox spacing="30" style="-fx-padding: 40 60; -fx-background-color: transparent;">
+    <Separator opacity="0.1" prefWidth="200" style="-fx-background-color: #00d4ff;"/>
+    
+    <HBox spacing="50" alignment="TOP_LEFT">
+        <VBox spacing="20" HBox.hgrow="ALWAYS" prefWidth="800">
+            <Label text="User Reviews" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+            
+            <VBox fx:id="commentsContainer" spacing="15">
+                <Label text="No reviews yet. Be the first to watch and rate!" style="-fx-text-fill: #4e5670; -fx-font-style: italic;"/>
+            </VBox>
         </VBox>
+
+        <VBox spacing="20" prefWidth="400" style="-fx-background-color: rgba(255,255,255,0.03); -fx-padding: 25; -fx-background-radius: 15; -fx-border-color: rgba(0,212,255,0.1); -fx-border-radius: 15;">
+            <Label text="Write a Review" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+            
+            <VBox spacing="8">
+                <Label text="Your Rating:" style="-fx-text-fill: #7a80a0; -fx-font-size: 13px;"/>
+                <HBox fx:id="interactiveStarsBox" spacing="5">
+                    </HBox>
+            </VBox>
+
+            <TextArea fx:id="commentInput" prefHeight="120" promptText="What did you think about this title?" 
+                      wrapText="true" style="-fx-control-inner-background: #08101a; -fx-text-fill: white; -fx-prompt-text-fill: #4e5670; -fx-background-radius: 10; -fx-border-color: rgba(0,212,255,0.2); -fx-border-radius: 10;"/>
+            
+            <Button fx:id="btnSubmitComment" text="Post Review" prefWidth="400" prefHeight="40"
+                    style="-fx-background-color: #00d4ff; -fx-text-fill: #02040a; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;">
+                <effect>
+                    <DropShadow color="#00d4ff" radius="10" spread="0.1"/>
+                </effect>
+            </Button>
+        </VBox>
+    </HBox>
+</VBox>        </VBox>
     </ScrollPane>
 </StackPane>

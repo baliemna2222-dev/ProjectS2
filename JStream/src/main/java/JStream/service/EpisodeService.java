@@ -16,4 +16,8 @@ public class EpisodeService {
     public Episode getEpisodeById(int epId) {
         return episodeDAO.getEpisodeById(epId);
     }
+
+    public int getSerieIdBySeasonId(int seasonId) {
+        return episodeDAO.getSerieIdBySeasonId(seasonId);
+    }
 }

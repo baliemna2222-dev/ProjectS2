@@ -96,65 +96,48 @@ public class LecturePageController {
             fadeIn.play();
         }
         populateStars(9.0);
-     // Fi west el initialize() walla initFilm/initEpisode
-        if (playButton != null) {
-        	if (playButton != null) {
-        	    playButton.setOnAction(e -> {
-
-        	        if (currentItem == null) {
-        	            System.out.println("⚠️ No current item!");
-        	            return;
-        	        }
-
-        	        // 🎬 FILM
-        	        if ("film".equalsIgnoreCase(currentItem.getType())) {
-
-        	            if (currentTrailerUrl != null) {
-        	                openVideoPlayer(
-        	                    currentTrailerUrl,
-        	                    currentItem.getTitle(),
-        	                    null // 👈 important (film = no episodeId)
-        	                );
-        	            } else {
-        	                System.out.println("⚠️ Film video URL missing!");
-        	            }
-
-        	        // 📺 EPISODE
-        	        } else if ("serie".equalsIgnoreCase(currentItem.getType())) {
-
-        	            if (ep != null) {
-        	                openVideoPlayer(
-        	                    ep.getVideoUrl(),
-        	                    ep.getTitle(),
-        	                    ep.getEpId()
-        	                );
-        	            } else {
-        	                System.out.println("⚠️ Episode not loaded!");
-        	            }
-        	        }
-        	    });
-        	}
-        }
-        if (posterImage != null) addHoverEffect(posterImage);
-        if (playButton != null) addHoverEffect(playButton);
-        if (addToListButton != null) {
+  if (addToListButton != null) {
             
             addToListButton.setOnAction(e -> handleAddToList());
           
-        }
+        }        if (posterImage != null) addHoverEffect(posterImage);
+        if (playButton != null) addHoverEffect(playButton);
+       
         if (btnBack != null) {
             addButtonInteractions(btnBack);
+            
         }
+        
         if (btnMostWatched != null) {
-            addButtonInteractions(btnMostWatched); // Be-ch yekbar w yglowy kima tlabt
-            btnMostWatched.setOnAction(e -> navigateTo("/view/MostWatched.fxml"));
+            addButtonInteractions(btnMostWatched); 
+            btnMostWatched.setOnAction(e -> navigateTo("/view/fxml/MyHistory.fxml"));
         }
  
         if (btnMyList != null) {
             addButtonInteractions(btnMyList);
-            btnMyList.setOnAction(e -> navigateTo("/view/MyList.fxml"));
+            btnMyList.setOnAction(e -> navigateTo("/view/fxml/MyList.fxml"));
         }
         loadCast();
+    }
+  
+   
+    private void navigateTo(String fxmlPath) {
+        try {
+            URL fxmlLocation = getClass().getResource(fxmlPath);
+            if (fxmlLocation == null) {
+                System.err.println("FXML mal9itchou: " + fxmlPath);
+                return;
+            }
+            
+            FXMLLoader loader = new FXMLLoader(fxmlLocation);
+            Parent root = loader.load();
+            
+            Stage stage = (Stage) btnBack.getScene().getWindow();
+            stage.getScene().setRoot(root);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupTabLogic() {
@@ -273,8 +256,10 @@ public class LecturePageController {
             	    film.getRating()
             	);
             updateUI(film.getTitle(), film.getSynopsis(), film.getDuration() + " min", 
-                     film.getRating(), film.getCasting(), film.getPoster_url(), null);
+                     film.getRating(), film.getCasting(), film.getPoster_url(), null,null,0);
             if (scoreLabel != null) scoreLabel.setText(String.valueOf(film.getRating()));
+            if (addToListButton != null) updateAddButton(addToListButton, currentItem);
+            
         } catch (SQLException e) { e.printStackTrace(); }
     }
     private Serie serie ;
@@ -315,7 +300,8 @@ public class LecturePageController {
 
                 updateUI(ep.getTitle(), ep.getResume() != null ? ep.getResume() : serie.getSynopsis(), 
                          ep.getDuration() + " min", serie.getRating(), serie.getCasting(), 
-                         serie.getCovertUrl(), "S" + seasonNum + " - E" + episodeNum);
+                         serie.getCovertUrl(), "S" + seasonNum + " - E" + episodeNum,ep.getVideoUrl(),ep.getEpId());
+                if (addToListButton != null) updateAddButton(addToListButton, currentItem);
                 
                 if (scoreLabel != null) scoreLabel.setText(String.valueOf(serie.getRating()));
             }
@@ -324,7 +310,7 @@ public class LecturePageController {
         }
     }
 
-    private void updateUI(String title, String desc, String duration, int rating, String cast, String imgPath, String epInfo) {
+    public void updateUI(String title, String desc, String duration, int rating, String cast, String imgPath, String epInfo,String video,int id) {
         titleLabel.setText(title);
         descriptionLabel.setText(desc);
         durationLabel.setText(duration);
@@ -343,6 +329,43 @@ public class LecturePageController {
             } catch (Exception e) {}
         }
         populateStars(rating);
+        if (playButton != null) {
+        	if (playButton != null) {
+        	    playButton.setOnAction(e -> {
+
+        	        if (currentItem == null) {
+        	            System.out.println("⚠️ No current item!");
+        	            return;
+        	        }
+
+        	        // 🎬 FILM
+        	        if ("film".equalsIgnoreCase(currentItem.getType())) {
+
+        	            if (currentTrailerUrl != null) {
+        	                openVideoPlayer(
+        	                    currentTrailerUrl,
+        	                    currentItem.getTitle(),
+        	                    null // 👈 important (film = no episodeId)
+        	                );
+        	            } else {
+        	                System.out.println("⚠️ Film video URL missing!");
+        	            }
+
+        	        // 📺 EPISODE
+        	        } else if ("serie".equalsIgnoreCase(currentItem.getType())) {
+
+        	            if (video != null) {
+        	                openVideoPlayer(
+        	                    video,
+        	                    title,
+        	                    id
+        	                );
+        	            } else {
+        	                System.out.println("⚠️ Episode not loaded!");
+        	            }
+        	        }
+        	    });
+        	}}
     }
 
     private void populateStars(double rating) {
@@ -483,24 +506,7 @@ public class LecturePageController {
             btn.setScaleY(1.1);
         });
     }
-    private void navigateTo(String fxmlPath) {
-        try {
-            URL fxmlLocation = getClass().getResource(fxmlPath);
-            if (fxmlLocation == null) {
-                System.err.println("FXML mal9itchou: " + fxmlPath);
-                return;
-            }
-            
-            FXMLLoader loader = new FXMLLoader(fxmlLocation);
-            Parent root = loader.load();
-            
-            Stage stage = (Stage) btnBack.getScene().getWindow();
-            stage.getScene().setRoot(root);
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+   
     private void showTrailerPopup(String url) {
         try {
             URL videoUrl = getClass().getResource(url);
@@ -606,6 +612,7 @@ public class LecturePageController {
             ex.printStackTrace();
         }
     }
+    
     private void handleAddToList() {
         if (currentItem == null) return;
 
@@ -614,15 +621,50 @@ public class LecturePageController {
         int serieId = "serie".equalsIgnoreCase(currentItem.getType()) ? currentItem.getSerieId() : 0;
 
         boolean alreadyAdded = mylistService.isInList(userId, filmId, serieId);
+
         if (alreadyAdded) {
             mylistService.removeItem(userId, filmId, serieId);
         } else {
             mylistService.addItem(userId, filmId, serieId);
         }
 
-        MyListManager.getInstance().notifyItemUpdated(filmId, serieId);
-    }
+        // Update this controller's button immediately
+        updateAddButton(addToListButton, currentItem);
 
+        // Notify all other controllers to update
+        MyListManager.getInstance().notifyItemUpdated(filmId, serieId);
+    } private void updateAddButton(Button button, FeaturedItem item) {
+        int userId = Session.getUserId();
+        int filmId = 0;
+        int serieId = 0;
+
+        if ("film".equalsIgnoreCase(item.getType())) {
+            filmId = item.getId();
+        } else if ("serie".equalsIgnoreCase(item.getType())) {
+            serieId = item.getSerieId();
+        }
+
+        if (mylistService.isInList(userId, filmId, serieId)) {
+            button.setText("✔ added");
+            button.setStyle("-fx-background-color:#00aaff;-fx-text-fill:white; -fx-background-radius: 25; -fx-cursor: hand; -fx-border-color: rgba(255,255,255,0);");
+            
+            pumpButton(button); // optional animation
+        } else {
+            button.setText("+ My List");
+            button.setStyle("-fx-background-color: rgba(255,255,255,0.08); -fx-text-fill: white; -fx-background-radius: 25; -fx-cursor: hand; -fx-border-color: rgba(255,255,255,0);");
+            pumpButton(button);
+        }
+    }
+    private void pumpButton(Button button) {
+        ScaleTransition st = new ScaleTransition(Duration.millis(150), button);
+        st.setFromX(1.0);
+        st.setFromY(1.0);
+        st.setToX(1.2);
+        st.setToY(1.2);
+        st.setAutoReverse(true);
+        st.setCycleCount(2);
+        st.play();
+    }
   
     private void openVideoPlayer(String videoUrl, String title, Integer episodeId) {
 
@@ -643,7 +685,7 @@ public class LecturePageController {
 
             controller.setStage(videoStage);       
             controller.loadVideo(videoUrl, title); 
-
+            controller.setParentController(this);
             if (episodeId == null) {
                 // 🎬 FILM
                 controller.setContext(currentItem.getId(), null);
@@ -654,7 +696,7 @@ public class LecturePageController {
                 // 📺 EPISODE
                 controller.setContext(null, episodeId);
 
-                // ✅ VERY IMPORTANT (for next episode)
+                // ✅ VERY IMPORTANT (for next episode)fui
                 controller.setEpisodeContext(
                     ep.getSeasonId(),
                     ep.getNumEpisode()

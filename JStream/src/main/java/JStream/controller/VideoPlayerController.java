@@ -1,10 +1,12 @@
 package JStream.controller;
 
 import JStream.entity.Episode;
+import JStream.entity.Serie;
 import JStream.entity.Session;
 import JStream.service.EpisodeProgressService;
 import JStream.service.EpisodeService;
 import JStream.service.FilmProgressService;
+import JStream.service.SerieService;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.ScaleTransition;
@@ -335,30 +337,59 @@ public class VideoPlayerController {
     }
 
     // ── Launch Next Episode (même fenêtre, même controller) ───
+ // Top of VideoPlayerController
+    private LecturePageController parentController;
 
-    private void launchNextEpisode(Episode next) {
-        stopBingeTimer();
-        hideBingeOverlay();
-        hideNextEpisodeButton();
+    public void setParentController(LecturePageController controller) {
+        this.parentController = controller;
+    }
+private int serieid;
+private Serie serie;
+private void launchNextEpisode(Episode next) {
+    stopBingeTimer();
+    hideBingeOverlay();
+    hideNextEpisodeButton();
 
-        progressTimer.stop();
-        saveTimer.stop();
-        videoReady = false;
+    progressTimer.stop();
+    saveTimer.stop();
+    videoReady = false;
 
-        if (mediaPlayer != null) { mediaPlayer.stop(); mediaPlayer.dispose(); mediaPlayer = null; }
-
-        // Mettre à jour le contexte
-        this.filmId            = null;
-        this.episodeId         = next.getEpId();
-        this.currentNumEpisode = next.getNumEpisode();
-        // currentSeasonId reste inchangé (même saison)
-
-        this.pendingUrl   = next.getVideoUrl();
-        this.pendingTitle = next.getTitle();
-
-        startPlayback();
+    if (mediaPlayer != null) { 
+        mediaPlayer.stop(); 
+        mediaPlayer.dispose(); 
+        mediaPlayer = null; 
     }
 
+    EpisodeService episodeservice = new EpisodeService();
+    SerieService serieservice = new SerieService();
+    this.serieid = episodeservice.getSerieIdBySeasonId(currentSeasonId);
+    this.serie = serieservice.getSerieById(serieid);
+
+    this.filmId            = null;
+    this.episodeId         = next.getEpId();
+    this.currentNumEpisode = next.getNumEpisode();
+    this.pendingUrl        = next.getVideoUrl();
+    this.pendingTitle      = next.getTitle();
+
+    if (parentController != null && serie != null) {
+        Platform.runLater(() -> {
+            parentController.updateUI(
+                next.getTitle(), 
+                next.getResume() != null ? next.getResume() : serie.getSynopsis(), 
+                next.getDuration() + " min", 
+                serie.getRating(), 
+                serie.getCasting(),
+                serie.getCovertUrl(), 
+                "S1 - E" + next.getNumEpisode(),
+                next.getVideoUrl(),
+                next.getEpId()
+            );
+        });
+    } else {
+        System.out.println("❌ serie NULL → updateUI ignoré. Fix getSerieIdBySeasonId d'abord.");
+    }
+    startPlayback();
+}
     // ── Private Helpers ────────────────────────────────────────
 
     private void setupTimers() {

@@ -4,6 +4,7 @@ import JStream.entity.Episode;
 import JStream.utils.Database;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -136,6 +137,21 @@ public class EpisodeDAO {
             e.printStackTrace();
         }
         return null;
+    }
+ // ===== GET SERIE_ID FROM SEASON_ID =====
+    public int getSerieIdBySeasonId(int seasonId) {
+        String sql = "SELECT serie_id FROM season WHERE season_id = ?";
+        // ✅ Nouvelle connexion à chaque appel — évite le "connection closed"
+        try (Connection conn = DriverManager.getConnection(
+                    Database.URL, Database.USER, Database.PASSWORD);
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, seasonId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("serie_id");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
     }
     private Episode mapRow(ResultSet rs) throws SQLException {
         Episode ep = new Episode();
