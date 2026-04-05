@@ -305,14 +305,13 @@ public class CarouselController {
                     JStream.controller.CardController controller = loader.getController();
 
                     if (child.getUserData() instanceof FeaturedItem) {
-                        controller.setItem((FeaturedItem) child.getUserData());
+                        controller.setItem2((FeaturedItem) child.getUserData());
                         cardNode.setUserData(child.getUserData());
                     }
                     if (cardNode instanceof Region region) {
-                        region.setPrefSize(TOP_CARD_WIDTH-100, TOP_CARD_HEIGHT);
-                        region.setMinSize(Region.USE_PREF_SIZE-100, Region.USE_PREF_SIZE+80);
-                        region.setMaxSize(Region.USE_PREF_SIZE-100, Region.USE_PREF_SIZE+80);
-                    }
+                    	  region.setPrefSize(TOP_CARD_WIDTH-80, TOP_CARD_HEIGHT+130);
+                          region.setMinSize(Region.USE_PREF_SIZE-80, Region.USE_PREF_SIZE+130);
+                          region.setMaxSize(Region.USE_PREF_SIZE-80, Region.USE_PREF_SIZE+130);    }
                     // Correctly scale the card to fit inside the slot
                     double scaleWidth = 1;
                     double scaleHeight = 1;

@@ -78,7 +78,7 @@ public class CardController {
     private FeaturedService featuredService = new FeaturedService();
     private EpisodeProgressService episodeProgressService = new EpisodeProgressService();
 
-    FilmProgressService filmProgressService = new FilmProgressService();
+    FilmProgressService filmProgressService = new FilmProgressService(featuredService);
     public void setFeaturedController(FeaturedController controller) {
         this.featuredController = controller;
     }
@@ -288,7 +288,8 @@ public class CardController {
                 ImageView poster = new ImageView();
                 poster.setFitWidth(300);
                 poster.setFitHeight(450);
-                 poster.setImage(ImageUtil.load(film.getPoster_url()));
+                try { poster.setImage(new Image(film.getPoster_url())); } catch (Exception ex) {}
+
                 // Right info column
                 VBox right = new VBox(15);
                 right.setAlignment(Pos.TOP_LEFT);
@@ -299,8 +300,8 @@ public class CardController {
                 ImageView titleImage = new ImageView();
                 titleImage.setFitHeight(150);
                 titleImage.setPreserveRatio(true);
-               
-                titleImage.setImage(ImageUtil.load(film.getTitle_image_url()));
+                try { titleImage.setImage(new Image(film.getTitle_image_url())); } catch (Exception ex) {}
+
                 // Stars
                 HBox starsBox = new HBox(3);
                 int fullStars = film.getRating();
@@ -400,7 +401,8 @@ public class CardController {
                         }
                     });
                 }
-                // 🎯 Status label
+             // Status label
+             // 🎯 Status label
                 Label statusLabel = new Label();
                 statusLabel.setStyle(
                     "-fx-text-fill: white;" +
@@ -450,6 +452,7 @@ public class CardController {
                 // ✅ Add to UI
                 right.getChildren().add(statusLabel);
                 play.setOnAction(e -> {
+                	 popup.close(); 
                     goToLecturePageFilm(film.getFilm_id()); // start playback
                 });
                 root.getChildren().add(content);
@@ -607,7 +610,7 @@ public class CardController {
 	                return;
 	            }
 
-	            Stage popup = new Stage();
+	            final Stage popup = new Stage();
 	            popup.initOwner(rootPane.getScene().getWindow());
 	            popup.initModality(Modality.WINDOW_MODAL);
 	            popup.initStyle(StageStyle.TRANSPARENT);
@@ -637,7 +640,7 @@ public class CardController {
 	            final int[] currentIndex = {0};
 
 	            for (int i = 0; i < seasons.size(); i++) {
-	                StackPane card = createSeasonCard(serie, i); // <-- pass index now
+	                StackPane card = createSeasonCard(serie, i,popup); // <-- pass index now
 	                int index = i;
 
 	                card.setOnMouseClicked(e -> {
@@ -701,7 +704,7 @@ public class CardController {
 	            scrollPane.setPrefHeight(600); // taller
 	            scrollPane.setPrefWidth(1400);  // slightly narrower than full width
 	            scrollPane.setMaxWidth(1400);
-	            scrollPane.setMaxHeight(600);
+	            scrollPane.setMaxHeight(500);
 	            root.getChildren().add(close);
 
 	            // Center first slide
@@ -829,372 +832,484 @@ public class CardController {
 	        anim.play();
 	    }
 	    
-	    private StackPane createSeasonCard(Serie serie, int seasonIndex) {
+	    private StackPane createSeasonCard(Serie serie, int seasonIndex, Stage popup) {
 	        Season s = serie.getSeasons().get(seasonIndex);
+
 	        StackPane card = new StackPane();
-	        card.setPrefSize(700, 500);
+	        card.setPrefSize(740, 420);
 	        card.setStyle(
-	            "-fx-background-color: #111;" +
-	            "-fx-background-radius: 12;" +
-	            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 15,0.5,0,0);" +
-	            "-fx-border-width: 2;" +
-	            "-fx-border-radius: 12;"
+	            "-fx-background-color: #07090f;" +
+	            "-fx-background-radius: 18;" +
+	            "-fx-border-color: rgba(56,189,248,0.18);" +
+	            "-fx-border-width: 1.5;" +
+	            "-fx-border-radius: 18;" +
+	            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.85), 40, 0.6, 0, 8);"
 	        );
 
+	        Rectangle clip = new Rectangle(740, 420);
+	        clip.setArcWidth(36); clip.setArcHeight(36);
+	        card.setClip(clip);
+
 	        StackPane contentWrapper = new StackPane();
-	        contentWrapper.setPrefSize(700, 500);
+	        contentWrapper.setPrefSize(740, 420);
 	        card.getChildren().add(contentWrapper);
 
-	        // ================= MAIN SEASON VIEW =================
-	        HBox content = new HBox(20);
-	        content.setPadding(new Insets(15));
-	        content.setAlignment(Pos.CENTER);
-	        StackPane.setAlignment(content, Pos.CENTER);
-
+	        // ── POSTER ───────────────────────────────────────────────────
+	     // ── POSTER ───────────────────────────────────────────────────
 	        ImageView poster = new ImageView();
-	        poster.setFitWidth(250);
-	        poster.setFitHeight(350);
-	         poster.setImage(ImageUtil.load(s.getPosterUrl()));
+	        poster.setFitWidth(300);
+	        poster.setFitHeight(420);
+	        poster.setPreserveRatio(true);
+	        poster.setSmooth(true);
+	        poster.setCache(true);
 
-	        VBox infoBox = new VBox(10);
-	        infoBox.setAlignment(Pos.CENTER);
+	        try {
+	            poster.setImage(new Image(s.getPosterUrl(), true));
+	        } catch (Exception ignored) {}
 
-	        Label title = new Label("Season " + s.getSeasonNum() + ": " + s.getTitle());
-	        title.setStyle("-fx-text-fill:white;-fx-font-size:18;-fx-font-weight:bold;");
+	        // ✅ Wrap to control alignment + clipping
+	        StackPane posterWrapper = new StackPane(poster);
+	        posterWrapper.setPrefSize(300, 420);
+	        posterWrapper.setMaxSize(300, 420);
+	        posterWrapper.setAlignment(Pos.CENTER);
 
-	        Label synopsis = new Label(s.getSynopsis() != null ? s.getSynopsis() : "No synopsis available");
-	        synopsis.setWrapText(true);
-	        synopsis.setMaxWidth(350);
-	        synopsis.setStyle("-fx-text-fill:#ccc;-fx-font-size:16;");
+	        // ✅ Clip to force clean edges (fixes overflow / bad fit)
+	        Rectangle posterClip = new Rectangle(300, 420);
+	        posterClip.setArcWidth(20);
+	        posterClip.setArcHeight(20);
+	        posterWrapper.setClip(posterClip);
 
-	        Label status = new Label("Status: " + (s.getStatus() != null ? s.getStatus() : "Unknown") +
-	                " | Episodes: " + (s.getEpisodes() != null ? s.getEpisodes().size() : 0));
-	        status.setStyle("-fx-text-fill:#00aaff;");
+	        // OPTIONAL: slight zoom to avoid empty gaps
+	        poster.setScaleX(1.05);
+	        poster.setScaleY(1.05);
 
-	        // Stars
-	        HBox starsBox = new HBox(3);
+	        // Fade overlay (your code is good 👍)
+	        Region posterFade = new Region();
+	        posterFade.setPrefSize(300, 420);
+	        posterFade.setStyle(
+	            "-fx-background-color: linear-gradient(to right," +
+	            "  transparent 0%, rgba(7,9,15,0.55) 70%, rgba(7,9,15,1.0) 100%);"
+	        );
+
+	        // Final container
+	        StackPane posterPane = new StackPane(posterWrapper, posterFade);
+	        posterPane.setPrefSize(300, 420);
+	        posterPane.setMaxSize(300, 420);
+	        StackPane.setAlignment(posterPane, Pos.CENTER_LEFT);
+	        // ── INFO PANEL ───────────────────────────────────────────────
+	        VBox infoBox = new VBox(12);
+	        infoBox.setPadding(new Insets(28, 24, 24, 18));
+	        infoBox.setAlignment(Pos.TOP_LEFT);
+	        infoBox.setMaxWidth(420);
+	        infoBox.setPrefWidth(420);
+	        StackPane.setAlignment(infoBox, Pos.CENTER_RIGHT);
+
+	        Label badge = new Label("SEASON " + s.getSeasonNum());
+	        badge.setStyle(
+	            "-fx-background-color: rgba(56,189,248,0.12);" +
+	            "-fx-border-color: rgba(56,189,248,0.45);" +
+	            "-fx-border-width: 1; -fx-border-radius: 4; -fx-background-radius: 4;" +
+	            "-fx-text-fill: #38bdf8; -fx-font-size: 10px; -fx-font-weight: bold;" +
+	            "-fx-letter-spacing: 3; -fx-padding: 4 10;"
+	        );
+
+	        Label title = new Label(s.getTitle() != null ? s.getTitle() : "Untitled Season");
+	        title.setStyle(
+	            "-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;" +
+	            "-fx-wrap-text: true;"
+	        );
+	        title.setMaxWidth(380); title.setWrapText(true);
+
+	        HBox starsBox = new HBox(4);
+	        starsBox.setAlignment(Pos.CENTER_LEFT);
 	        for (int i = 0; i < 5; i++) {
 	            Label star = new Label("★");
-	            int rating = s.getRating();
-	            String color = i < rating ? "#00bfff" : "#888888"; 
-	            star.setStyle("-fx-font-size:18; -fx-text-fill: " + color + ";");
+	            star.setStyle("-fx-font-size: 15px; -fx-text-fill: " +
+	                (i < s.getRating() ? "#38bdf8;" : "rgba(255,255,255,0.15);"));
 	            starsBox.getChildren().add(star);
-	            
 	        }
 
-	        // Buttons for trailer and episodes
-	        Button trailerBtn = new Button("▶ Watch Trailer");
-	        Button episodesBtn = new Button("Episodes");
-	        trailerBtn.setFocusTraversable(false);
-	        episodesBtn.setFocusTraversable(false);
-	        styleModernButton(trailerBtn);
-	        styleModernButton(episodesBtn);
+	        String statusText = s.getStatus() != null ? s.getStatus() : "Unknown";
+	        boolean isOngoing = statusText.equalsIgnoreCase("Ongoing");
+	        int epCount = s.getEpisodes() != null ? s.getEpisodes().size() : 0;
+
+	        Label statusPill = new Label(statusText.toUpperCase());
+	        statusPill.setStyle(
+	            "-fx-background-color: " + (isOngoing ? "rgba(34,197,94,0.15)" : "rgba(148,163,184,0.12)") + ";" +
+	            "-fx-border-color: "     + (isOngoing ? "rgba(34,197,94,0.5)"  : "rgba(148,163,184,0.3)")  + ";" +
+	            "-fx-border-width: 1; -fx-border-radius: 20; -fx-background-radius: 20;" +
+	            "-fx-text-fill: "        + (isOngoing ? "#4ade80" : "#94a3b8") + ";" +
+	            "-fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 1.5; -fx-padding: 3 10;"
+	        );
+
+	        Label episodeCount = new Label(epCount + " Episodes");
+	        episodeCount.setStyle("-fx-text-fill: rgba(148,163,184,0.75); -fx-font-size: 13px;");
+
+	        Label synopsis = new Label(s.getSynopsis() != null ? s.getSynopsis() : "No synopsis available.");
+	        synopsis.setWrapText(true); synopsis.setMaxWidth(370);
+	        synopsis.setStyle(
+	            "-fx-text-fill: rgba(203,213,225,0.7); -fx-font-size: 12px; -fx-line-spacing: 3;"
+	        );
+
+	        Region divider = new Region();
+	        divider.setPrefHeight(1); divider.setMaxHeight(1);
+	        divider.setStyle(
+	            "-fx-background-color: linear-gradient(to right, transparent, rgba(56,189,248,0.4), transparent);"
+	        );
+
+	        Button trailerBtn = new Button("▶  Trailer");
+	        Button episodesBtn = new Button("≡  Episodes");
+	        styleCardButton(trailerBtn, false);
+	        styleCardButton(episodesBtn, true);
 	        addHoverAnimation(trailerBtn);
 	        addHoverAnimation(episodesBtn);
 
-	        HBox buttonsBox = new HBox(10, trailerBtn, episodesBtn);
-	        infoBox.getChildren().addAll(title, synopsis, status, starsBox, buttonsBox);
-	        content.getChildren().addAll(poster, infoBox);
+	        ScaleTransition epPulse = new ScaleTransition(Duration.millis(900), episodesBtn);
+	        epPulse.setFromX(1.0); epPulse.setFromY(1.0);
+	        epPulse.setToX(1.05);  epPulse.setToY(1.05);
+	        epPulse.setAutoReverse(true);
+	        epPulse.setCycleCount(Animation.INDEFINITE);
+	        epPulse.play();
 
-	        // ================= EPISODES VIEW =================
-	        VBox episodesView = new VBox(15);
-	        episodesView.setPadding(new Insets(15));
-
-	        Button backBtn = new Button("← Back");
-	        backBtn.setFocusTraversable(false);
-	        styleModernButton(backBtn);
-	        addHoverAnimation(backBtn);
-
-	        HBox episodesRow = new HBox(8);
-	        episodesRow.setPadding(new Insets(10, 0, 10, 0));
-
-	        // ================= EPISODE DETAILS =================
-	        VBox episodeDetails = new VBox(20);
-	        episodeDetails.setPadding(new Insets(15));
-	        episodeDetails.setAlignment(Pos.TOP_CENTER);
-
-	        VBox infoBoxs = new VBox(10);
-	        infoBoxs.setAlignment(Pos.TOP_LEFT);
-
-	        Label epTitle = new Label();
-	        epTitle.setStyle("-fx-text-fill:white;-fx-font-size:18;-fx-font-weight:bold;");
-	        Label epSynopsis = new Label();
-	        epSynopsis.setWrapText(true);
-	        epSynopsis.setMaxWidth(600);
-	        epSynopsis.setStyle("-fx-text-fill:#ccc;-fx-font-size:16;");
-	        Label epDuration = new Label();
-	        Label epRelease = new Label();
-
-	        Button backToEpisodes = new Button(" ← ");
-	        backToEpisodes.setFocusTraversable(false);
-	        styleModernButton(backToEpisodes);
-	        addHoverAnimation(backToEpisodes);
-
-	        infoBoxs.getChildren().addAll(backToEpisodes, epTitle, epSynopsis, epDuration, epRelease);
-
-	        // Poster with play button overlay
-	        ImageView cover = new ImageView();
-	        cover.setFitWidth(400);
-	        cover.setFitHeight(225);
-
-	        Button play = new Button("▶");
-	        play.setFocusTraversable(false);
-	        play.setPrefSize(60, 60);
-	        play.setStyle(
-	            "-fx-background-color: rgba(0,0,0,0.6);" +
-	            "-fx-background-radius: 30;" +
-	            "-fx-border-radius: 30;" +
-	            "-fx-border-color: #00aaff;" +
-	            "-fx-border-width: 2;" +
-	            "-fx-text-fill: #00aaff;" +
-	            "-fx-font-size: 28;" +
-	            "-fx-padding: 0;"
+	        infoBox.getChildren().addAll(
+	            badge, title, starsBox,
+	            new HBox(10, statusPill, episodeCount) {{ setAlignment(Pos.CENTER_LEFT); }},
+	            synopsis, divider,
+	            new HBox(12, trailerBtn, episodesBtn) {{ setAlignment(Pos.CENTER_LEFT); }}
 	        );
 
-	        StackPane coverStack = new StackPane(cover, play);
-	        coverStack.setAlignment(Pos.CENTER);
+	        // ── MAIN VIEW ────────────────────────────────────────────────
+	        HBox mainView = new HBox(posterPane, infoBox);
+	        mainView.setAlignment(Pos.CENTER_LEFT);
+	        mainView.setPrefSize(740, 420);
 
-	        // ---- Hover Animation for BOTH ----
-	        ScaleTransition hoverUp = new ScaleTransition(Duration.millis(150), coverStack);
-	        hoverUp.setToX(1.05);
-	        hoverUp.setToY(1.05);
+	        // ── EPISODES LIST VIEW ───────────────────────────────────────
+	        VBox episodesView = new VBox(0);
+	        episodesView.setPrefSize(740, 420);
+	        episodesView.setStyle("-fx-background-color: #07090f;");
 
-	        ScaleTransition hoverDown = new ScaleTransition(Duration.millis(150), coverStack);
-	        hoverDown.setToX(1.0);
-	        hoverDown.setToY(1.0);
+	        // Header
+	        Button backToMain = new Button("←");
+	        backToMain.setStyle(
+	            "-fx-background-color: rgba(56,189,248,0.1); -fx-background-radius: 50%;" +
+	            "-fx-border-color: rgba(56,189,248,0.35); -fx-border-radius: 50%; -fx-border-width: 1;" +
+	            "-fx-text-fill: #38bdf8; -fx-font-size: 18px; -fx-font-weight: bold;" +
+	            "-fx-padding: 4 10; -fx-cursor: hand;"
+	        );
+	        addHoverAnimation(backToMain);
 
-	        coverStack.setOnMouseEntered(e -> hoverUp.playFromStart());
-	        coverStack.setOnMouseExited(e -> hoverDown.playFromStart());
-	        episodeDetails.getChildren().addAll(infoBoxs, coverStack);
+	        Label epHeaderTitle = new Label("Season " + s.getSeasonNum() + " — Episodes");
+	        epHeaderTitle.setStyle(
+	            "-fx-text-fill: white; -fx-font-size: 17px; -fx-font-weight: bold;"
+	        );
+
+	        Label epHeaderCount = new Label(epCount + " episodes");
+	        epHeaderCount.setStyle("-fx-text-fill: #38bdf8; -fx-font-size: 12px;");
+
+	        Region epHeaderSpacer = new Region();
+	        HBox.setHgrow(epHeaderSpacer, Priority.ALWAYS);
+
+	        HBox epHeader = new HBox(12, backToMain, epHeaderTitle, epHeaderSpacer, epHeaderCount);
+	        epHeader.setAlignment(Pos.CENTER_LEFT);
+	        epHeader.setPadding(new Insets(16, 24, 12, 24));
+	        epHeader.setStyle(
+	            "-fx-background-color: linear-gradient(to bottom, #0d1117, transparent);" +
+	            "-fx-border-color: transparent transparent rgba(56,189,248,0.18) transparent;" +
+	            "-fx-border-width: 0 0 1 0;"
+	        );
+
+	        // Episode rows
+	        VBox episodesList = new VBox(6);
+	        episodesList.setPadding(new Insets(10, 16, 16, 16));
+
+	        ScrollPane episodesScroll = new ScrollPane(episodesList);
+	        episodesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+	        episodesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+	        episodesScroll.setFitToWidth(true);
+	        episodesScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-padding: 0;");
+	        VBox.setVgrow(episodesScroll, Priority.ALWAYS);
+	        episodesScroll.setOnScroll(e ->
+	            episodesScroll.setVvalue(episodesScroll.getVvalue() - e.getDeltaY() * 0.003));
+
+	        ScrollBar customScrollBar = new ScrollBar();
+	        customScrollBar.setOrientation(Orientation.VERTICAL);
+	        customScrollBar.setMin(0); customScrollBar.setMax(1);
+	        customScrollBar.setPrefWidth(5);
+	        customScrollBar.setStyle("-fx-background-color: transparent;");
+	        customScrollBar.valueProperty().bindBidirectional(episodesScroll.vvalueProperty());
+	        Platform.runLater(() -> {
+	            Node thumb = customScrollBar.lookup(".thumb");
+	            if (thumb != null) thumb.setStyle(
+	                "-fx-background-color: rgba(56,189,248,0.55); -fx-background-radius: 10;");
+	        });
+	        episodesScroll.viewportBoundsProperty().addListener((o, ov, nv) ->
+	            updateThumbSize(episodesScroll, customScrollBar));
 
 	        int userId = Session.getUserId();
 	        Map<Integer, WatchStatus> progressMap = episodeProgressService.loadUserProgress(userId);
 
-	        ScrollPane episodesScroll = new ScrollPane();
-	        episodesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-	        episodesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER); // hide default scrollbar
-	        episodesScroll.setFitToWidth(true);
-	        episodesScroll.setPrefHeight(400);
-	        episodesScroll.setStyle("-fx-background-color: #111; -fx-background-insets: 0; -fx-padding: 0;");
+	        // Build the shared episode detail pane
+	        StackPane episodeDetailPane = new StackPane();
+	        episodeDetailPane.setPrefSize(740, 420);
+	        episodeDetailPane.setStyle("-fx-background-color: #07090f;");
 
-	        VBox episodesList = new VBox(5);
-	        episodesList.setPadding(new Insets(5));
-	        episodesScroll.setContent(episodesList);
-
+	        // Build episode rows
 	        for (Episode ep : s.getEpisodes()) {
-	            HBox epRow = new HBox(10);
-	            epRow.setAlignment(Pos.CENTER_LEFT);
-	            epRow.setPadding(new Insets(10));
-	            epRow.setStyle(
-	                "-fx-background-color: #1b1b1b;" +
-	                "-fx-background-radius: 8;"
-	            );
-
-	            // Pump effect on hover
-	            ScaleTransition hoverUpRow = new ScaleTransition(Duration.millis(150), epRow);
-	            hoverUpRow.setToX(1.03);
-	            hoverUpRow.setToY(1.03);
-	            ScaleTransition hoverDownRow = new ScaleTransition(Duration.millis(150), epRow);
-	            hoverDownRow.setToX(1.0);
-	            hoverDownRow.setToY(1.0);
-	            epRow.setOnMouseEntered(e -> hoverUpRow.playFromStart());
-	            epRow.setOnMouseExited(e -> hoverDownRow.playFromStart());
-
-	            // Episode number
-	            Label epNum = new Label(String.valueOf(ep.getNumEpisode()));
-	            epNum.setPrefWidth(30);
-	            epNum.setStyle("-fx-text-fill:white;-fx-font-weight:bold;");
-
-	            // Episode title
-	            Label epName = new Label(ep.getTitle());
-	            epName.setStyle("-fx-text-fill:white;-fx-font-size:14;");
-
-	            // Episode rating stars
-	           
-
-	            HBox ratingBox = new HBox(2);
-	            for (int i = 0; i < 5; i++) {
-	            	    Label star = new Label("★");
-	            	    int rate = ep.getRating();
-	            	    String color = i < rate ? "#00bfff" : "#888888"; // DeepSkyBlue / Gray
-	            	 star.setStyle("-fx-font-size:18; -fx-text-fill: " + color + ";");
-	                ratingBox.getChildren().add(star);
-	            }
-
-	            // Spacer for status
-	            Region spacer = new Region();
-	            HBox.setHgrow(spacer, Priority.ALWAYS);
-
-	            // Status label
-	            WatchStatus statu = progressMap.getOrDefault(ep.getEpId(), WatchStatus.NOT_STARTED);
-	            Label epStatus = new Label();
-	            epStatus.setText(switch (statu) {
-	                case NOT_STARTED -> "Not Started";
-	                case IN_PROGRESS -> "In Progress";
-	                case COMPLETED -> "Watched";
-	            });
-	            epStatus.setStyle(
-	                "-fx-background-color: " + (statu == WatchStatus.NOT_STARTED ? "#555" : "#00aaff") + ";" +
-	                "-fx-text-fill: white;" +
-	                "-fx-font-weight: bold;" +
-	                "-fx-font-size: 12px;" +
-	                "-fx-background-radius: 8;" +
-	                "-fx-padding: 2 8;"
-	            );
-
-	            // Click episode
-	            epRow.setOnMouseClicked(ev -> {
-	                try { cover.setImage(ImageUtil.load(ep.getCovertUrl())); } catch (Exception ignored) {}
-
-	                epTitle.setText("Episode " + ep.getNumEpisode() + ": " + ep.getTitle());
-	                epSynopsis.setText(ep.getResume());
-	                int h = ep.getDuration() / 60;
-	                int m = ep.getDuration() % 60;
-	                epDuration.setText("Duration: " + (h > 0 ? h + "h " : "") + m + "m");
-	                epRelease.setText("Released: " +
-	                        (ep.getReleasedAt() != null ? ep.getReleasedAt().toLocalDateTime().toLocalDate() : "Unknown"));
-
-	                // Status tag in details
-	                Label statusTag = new Label(epStatus.getText());
-	                statusTag.setStyle(
-	                    "-fx-background-color: " + (epStatus.getText().equals("Not Started") ? "#555" : "#00aaff") + ";" +
-	                    "-fx-text-fill:white;-fx-font-weight:bold;" +
-	                    "-fx-font-size:12;" +
-	                    "-fx-background-radius:8;" +
-	                    "-fx-padding:2 6;"
-	                );
-
-	                HBox titleBox = new HBox(10, epTitle, statusTag);
-	                titleBox.setAlignment(Pos.CENTER_LEFT);
-	                HBox.setHgrow(statusTag, Priority.ALWAYS);
-
-	                infoBoxs.getChildren().setAll(backToEpisodes, titleBox, epSynopsis, epDuration, epRelease);
-	                contentWrapper.getChildren().setAll(episodeDetails);
-
-	                // Play button updates status dynamically
-	                play.setOnAction(e -> {
-	                    goToLecturePageEpisode(s.getSerieId(), s.getSeasonNum(), ep.getNumEpisode());
-	                    episodeProgressService.markInProgress(userId, ep.getEpId(), episodeProgressService.getEpisodeLastPosition(userId, ep.getEpId()));
-
-
-	                    epStatus.setText("In Progress");
-	                    epStatus.setStyle(
-	                        "-fx-background-color:#00aaff;" +
-	                        "-fx-text-fill:white;" +
-	                        "-fx-font-weight:bold;" +
-	                        "-fx-font-size:12;" +
-	                        "-fx-background-radius:8;" +
-	                        "-fx-padding:2 8;"
-	                    );
-	                });
-	            });
-
-	            epRow.getChildren().addAll(epNum, epName, ratingBox, spacer, epStatus);
-	            episodesList.getChildren().add(epRow);
+	            HBox row = buildEpisodeRow(ep, s, progressMap, contentWrapper, episodeDetailPane, episodesView, popup, userId);
+	            episodesList.getChildren().add(row);
 	        }
 
-	        
-	        episodesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-	        episodesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-	        episodesScroll.setFitToWidth(true);
-
-	        episodesScroll.setContent(episodesList);
-
-	        // Custom scrollbar
-	        ScrollBar customScrollBar = new ScrollBar();
-	        customScrollBar.setOrientation(Orientation.VERTICAL);
-	        customScrollBar.setMin(0);
-	        customScrollBar.setMax(1);
-	        customScrollBar.setPrefWidth(8); // thin modern bar
-	        // Sync
-	        customScrollBar.valueProperty().bindBidirectional(episodesScroll.vvalueProperty());
-	        customScrollBar.setStyle("""
-	        	    -fx-background-color: transparent;
-	        	""");
-
-	        	customScrollBar.lookupAll(".thumb").forEach(node -> {
-	        	    node.setStyle("""
-	        	        -fx-background-color: rgba(0,170,255,0.6);
-	        	        -fx-background-radius: 10;
-	        	    """);
-	        	});
-
-	        	customScrollBar.lookupAll(".track").forEach(node -> {
-	        	    node.setStyle("""
-	        	        -fx-background-color: rgba(255,255,255,0.05);
-	        	        -fx-background-radius: 10;
-	        	    """);
-	        	});
-	        	episodesScroll.viewportBoundsProperty().addListener((obs, oldVal, newVal) -> updateThumbSize(episodesScroll, customScrollBar));
-	        	episodesScroll.contentProperty().addListener((obs, oldVal, newVal) -> updateThumbSize(episodesScroll, customScrollBar));
-	        	episodesScroll.setOnScroll(e -> {
-	        	    double delta = e.getDeltaY() * 0.002;
-	        	    episodesScroll.setVvalue(episodesScroll.getVvalue() - delta);
-	        	});
-	        	Platform.runLater(() -> {
-	        	    Node thumb = customScrollBar.lookup(".thumb");
-	        	    Node track = customScrollBar.lookup(".track");
-
-	        	    if (thumb != null) {
-	        	        thumb.setStyle("""
-	        	            -fx-background-color: linear-gradient(to bottom, #00aaff, #008cff);
-	        	            -fx-background-radius: 10;
-	        	        """);
-	        	    }
-
-	        	    if (track != null) {
-	        	        track.setStyle("""
-	        	            -fx-background-color: rgba(255,255,255,0.05);
-	        	            -fx-background-radius: 10;
-	        	        """);
-	        	    }
-	        	});
-	        	customScrollBar.setStyle("""
-	        		    -fx-background-color: transparent; /* track background */
-	        		    -fx-padding: 0;
-	        		""");
-
-	        		// Thumb & track via CSS pseudoclass
-	        		customScrollBar.getStylesheets().add(getClass().getResource("/view/css/scrollbar.css").toExternalForm());
-	        	Platform.runLater(() -> {
-	        		updateThumbSize(episodesScroll, customScrollBar);
-	        	    autoHideScrollbar(episodesScroll, customScrollBar);
-	        	});
-	        	
-	        	// Layout
-	        HBox scrollContainer = new HBox(5, episodesScroll, customScrollBar);
+	        HBox scrollRow = new HBox(4, episodesScroll, customScrollBar);
 	        HBox.setHgrow(episodesScroll, Priority.ALWAYS);
-	        // Replace original content with scrollContainer
-	        contentWrapper.getChildren().setAll(scrollContainer);
-	        episodesView.getChildren().addAll(backBtn, scrollContainer);
-	        // ================= ACTIONS =================
-	        trailerBtn.setOnAction(e -> showTrailerPopup(serie, seasonIndex));
-	        episodesBtn.setOnAction(e -> contentWrapper.getChildren().setAll(episodesView));
-	        backBtn.setOnAction(e -> contentWrapper.getChildren().setAll(content));
-	        backToEpisodes.setOnAction(e -> contentWrapper.getChildren().setAll(episodesView));
+	        VBox.setVgrow(scrollRow, Priority.ALWAYS);
+	        episodesView.getChildren().addAll(epHeader, scrollRow);
 
-	        contentWrapper.getChildren().setAll(content);
+	        // ── WIRE ACTIONS ─────────────────────────────────────────────
+	        trailerBtn.setOnAction(e  -> showTrailerPopup(serie, seasonIndex));
+	        episodesBtn.setOnAction(e -> switchView(contentWrapper, episodesView));
+	        backToMain.setOnAction(e  -> switchView(contentWrapper, mainView));
+
+	        contentWrapper.getChildren().setAll(mainView);
 	        return card;
 	    }
-	    private void autoHideScrollbar(ScrollPane scrollPane, ScrollBar scrollBar) {
-	        Node content = scrollPane.getContent();
-	        if (content == null) return;
+	    // Single definition — 8 params including episodesView
+	    private HBox buildEpisodeRow(
+	            Episode ep, Season s,
+	            Map<Integer, WatchStatus> progressMap,
+	            StackPane contentWrapper,
+	            StackPane detailPane,
+	            VBox episodesView,
+	            Stage popup, int userId) {
 
-	        Runnable check = () -> {
-	            double contentHeight = content.getLayoutBounds().getHeight();
-	            double viewportHeight = scrollPane.getViewportBounds().getHeight();
+	        WatchStatus status = progressMap.getOrDefault(ep.getEpId(), WatchStatus.NOT_STARTED);
 
-	            boolean needScroll = contentHeight > viewportHeight + 1;
+	        HBox row = new HBox(14);
+	        row.setAlignment(Pos.CENTER_LEFT);
+	        row.setPadding(new Insets(12, 16, 12, 16));
 
-	            scrollBar.setVisible(needScroll);
-	            scrollBar.setManaged(needScroll);
-	        };
+	        String baseStyle =
+	            "-fx-background-color: rgba(15,20,32,0.6);" +
+	            "-fx-background-radius: 10;" +
+	            "-fx-border-color: rgba(56,189,248,0.07);" +
+	            "-fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;";
+	        String hoverStyle =
+	            "-fx-background-color: rgba(56,189,248,0.08);" +
+	            "-fx-background-radius: 10;" +
+	            "-fx-border-color: rgba(56,189,248,0.25);" +
+	            "-fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;";
+	        row.setStyle(baseStyle);
+	        row.setOnMouseEntered(e -> row.setStyle(hoverStyle));
+	        row.setOnMouseExited(e  -> row.setStyle(baseStyle));
 
-	        content.layoutBoundsProperty().addListener((obs, o, n) -> check.run());
-	        scrollPane.viewportBoundsProperty().addListener((obs, o, n) -> check.run());
+	        // Number circle
+	        Label numBadge = new Label(String.format("%02d", ep.getNumEpisode()));
+	        numBadge.setPrefSize(34, 34); numBadge.setMinSize(34, 34);
+	        numBadge.setAlignment(Pos.CENTER);
+	        numBadge.setStyle(
+	            "-fx-background-color: rgba(56,189,248,0.12); -fx-background-radius: 17;" +
+	            "-fx-border-color: rgba(56,189,248,0.3); -fx-border-radius: 17; -fx-border-width: 1;" +
+	            "-fx-text-fill: #38bdf8; -fx-font-size: 12px; -fx-font-weight: bold;"
+	        );
 
-	        Platform.runLater(check);
+	        // Title + stars
+	        VBox textCol = new VBox(4);
+	        HBox.setHgrow(textCol, Priority.ALWAYS);
+
+	        Label epTitleLbl = new Label(ep.getTitle());
+	        epTitleLbl.setStyle(
+	            "-fx-text-fill: rgba(226,232,240,0.95); -fx-font-size: 14px; -fx-font-weight: bold;"
+	        );
+
+	        HBox miniStars = new HBox(2);
+	        int rating = (int) Math.round(ep.getRating());
+	        for (int i = 0; i < 5; i++) {
+	            Label st = new Label("★");
+	            st.setStyle("-fx-font-size: 10px; -fx-text-fill: " +
+	                (i < rating ? "#38bdf8" : "rgba(255,255,255,0.12)") + ";");
+	            miniStars.getChildren().add(st);
+	        }
+	        textCol.getChildren().addAll(epTitleLbl, miniStars);
+
+	        // Duration
+	        int h = ep.getDuration() / 60, m = ep.getDuration() % 60;
+	        Label duration = new Label((h > 0 ? h + "h " : "") + m + "m");
+	        duration.setStyle("-fx-text-fill: rgba(148,163,184,0.6); -fx-font-size: 12px;");
+
+	        // Status pill
+	        String pillText   = switch (status) { case COMPLETED -> "✓ Watched"; case IN_PROGRESS -> "▶ In Progress"; default -> "Not Started"; };
+	        String pillBg     = switch (status) { case COMPLETED -> "rgba(34,197,94,0.15)";  case IN_PROGRESS -> "rgba(56,189,248,0.15)";  default -> "rgba(100,116,139,0.12)"; };
+	        String pillBorder = switch (status) { case COMPLETED -> "rgba(34,197,94,0.5)";   case IN_PROGRESS -> "rgba(56,189,248,0.45)";  default -> "rgba(100,116,139,0.25)"; };
+	        String pillFg     = switch (status) { case COMPLETED -> "#4ade80";                case IN_PROGRESS -> "#38bdf8";                default -> "#64748b"; };
+
+	        Label statusPill = new Label(pillText);
+	        statusPill.setStyle(
+	            "-fx-background-color: " + pillBg + "; -fx-border-color: " + pillBorder + ";" +
+	            "-fx-border-width: 1; -fx-border-radius: 20; -fx-background-radius: 20;" +
+	            "-fx-text-fill: " + pillFg + "; -fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 3 9;"
+	        );
+
+	        Label arrow = new Label("›");
+	        arrow.setStyle("-fx-text-fill: rgba(56,189,248,0.4); -fx-font-size: 20px;");
+
+	        row.getChildren().addAll(numBadge, textCol, duration, statusPill, arrow);
+
+	        // Click → populate detail + switch view
+	        row.setOnMouseClicked(ev -> {
+	            populateEpisodeDetail(detailPane, ep, s, contentWrapper, episodesView, popup, userId);
+	            switchView(contentWrapper, detailPane);
+	        });
+
+	        return row;
 	    }
+
+	    // ═══════════════════════ EPISODE DETAIL ═══════════════════════
+	    // Single definition — 7 params including contentWrapper + episodesView
+	    private void populateEpisodeDetail(
+	            StackPane detailPane, Episode ep, Season s,
+	            StackPane contentWrapper, VBox episodesView,
+	            Stage popup, int userId) {
+
+	        detailPane.getChildren().clear();
+
+	        // ── COVER ─────────────────────────────────────────────
+	        ImageView cover = new ImageView();
+	        cover.setFitWidth(740);
+	        cover.setFitHeight(280);
+	        cover.setPreserveRatio(false);
+
+	        try {
+	            cover.setImage(new Image(ep.getCovertUrl(), true));
+	        } catch (Exception ignored) {}
+
+	        Region coverGradient = new Region();
+	        coverGradient.setPrefSize(740, 280);
+	        coverGradient.setStyle(
+	            "-fx-background-color: linear-gradient(to bottom," +
+	            "rgba(7,9,15,0) 0%, rgba(7,9,15,0.6) 55%, rgba(7,9,15,1.0) 100%);"
+	        );
+
+	        StackPane coverPane = new StackPane(cover, coverGradient);
+	        coverPane.setMaxSize(740, 280);
+	        StackPane.setAlignment(coverPane, Pos.TOP_CENTER);
+
+	        // IMPORTANT: don't block clicks
+	        coverPane.setMouseTransparent(true);
+
+	        // ── PLAY BUTTON ───────────────────────────────────────
+	        Button play = new Button("▶");
+	        play.setPrefSize(64, 64);
+	        play.setStyle(
+	            "-fx-background-color: rgba(56,189,248,0.18); -fx-background-radius: 32;" +
+	            "-fx-border-color: #38bdf8; -fx-border-radius: 32; -fx-border-width: 2;" +
+	            "-fx-text-fill: white; -fx-font-size: 22px; -fx-cursor: hand;" +
+	            "-fx-effect: dropshadow(gaussian, rgba(56,189,248,0.55), 22, 0.4, 0, 0);"
+	        );
+
+	        // Pulse animation
+	        ScaleTransition pulse = new ScaleTransition(Duration.millis(900), play);
+	        pulse.setFromX(1.0);
+	        pulse.setFromY(1.0);
+	        pulse.setToX(1.12);
+	        pulse.setToY(1.12);
+	        pulse.setAutoReverse(true);
+	        pulse.setCycleCount(Animation.INDEFINITE);
+	        pulse.play();
+
+	        // Hover
+	        play.setOnMouseEntered(e -> {
+	            pulse.stop();
+	            play.setScaleX(1.18);
+	            play.setScaleY(1.18);
+	        });
+
+	        play.setOnMouseExited(e -> {
+	            play.setScaleX(1.0);
+	            play.setScaleY(1.0);
+	            pulse.play();
+	        });
+
+	        StackPane.setAlignment(play, Pos.CENTER);
+	        StackPane.setMargin(play, new Insets(0, 0, 160, 0));
+
+	        // ── INFO PANEL ────────────────────────────────────────
+	        VBox infoPanel = new VBox(8);
+	        infoPanel.setPadding(new Insets(0, 28, 20, 28));
+	        infoPanel.setAlignment(Pos.TOP_LEFT);
+	        StackPane.setAlignment(infoPanel, Pos.BOTTOM_CENTER);
+
+	        Button backBtn = new Button("← Episodes");
+	        backBtn.setStyle(
+	            "-fx-background-color: rgba(56,189,248,0.1);" +
+	            "-fx-border-color: rgba(56,189,248,0.35);" +
+	            "-fx-text-fill: #38bdf8;"
+	        );
+	        addHoverAnimation(backBtn);
+
+	        Label epNum = new Label("EPISODE " + ep.getNumEpisode());
+	        Label epTitle = new Label(ep.getTitle());
+
+	        int h = ep.getDuration() / 60;
+	        int m = ep.getDuration() % 60;
+
+	        Label metaLabel = new Label(h + "h " + m + "m");
+
+	        Label synopsis = new Label(
+	            ep.getResume() != null ? ep.getResume() : "No synopsis available."
+	        );
+	        synopsis.setWrapText(true);
+
+	        infoPanel.getChildren().addAll(backBtn, epNum, epTitle, metaLabel, synopsis);
+
+	        // ── ACTIONS ───────────────────────────────────────────
+	        play.setOnAction(e -> {
+	            System.out.println("PLAY CLICKED ✅");
+
+	            try {
+	                if (popup != null) popup.close();
+
+	                goToLecturePageEpisode(
+	                    s.getSerieId(),
+	                    s.getSeasonNum(),
+	                    ep.getEpId()
+	                );
+
+	                
+
+	            } catch (Exception ex) {
+	                ex.printStackTrace();
+	            }
+	        });
+
+	        backBtn.setOnAction(e -> switchView(contentWrapper, episodesView));
+
+	        // ── FINAL LAYOUT (FIXED ORDER) ─────────────────────────
+	        detailPane.getChildren().addAll(coverPane, infoPanel, play);
+
+	        // FORCE play button on top
+	        play.toFront();
+	    }
+
+	    // ═══════════════════════ VIEW SWITCHER ═══════════════════════
+	    private void switchView(StackPane wrapper, Node target) {
+	        if (!wrapper.getChildren().isEmpty()) {
+	            Node current = wrapper.getChildren().get(0);
+	            if (current == target) return;
+	            FadeTransition out = new FadeTransition(Duration.millis(160), current);
+	            out.setToValue(0);
+	            out.setOnFinished(e -> {
+	                wrapper.getChildren().setAll(target);
+	                target.setOpacity(0);
+	                FadeTransition in = new FadeTransition(Duration.millis(200), target);
+	                in.setToValue(1);
+	                in.play();
+	            });
+	            out.play();
+	        } else {
+	            wrapper.getChildren().setAll(target);
+	        }
+	    }
+
+	   
 	    private void updateThumbSize(ScrollPane scrollPane, ScrollBar scrollBar) {
 	    	Node content = scrollPane.getContent();
 	        if (content == null) return;
@@ -1225,22 +1340,23 @@ public class CardController {
 	            scrollBar.setVisibleAmount(ratio);
 	        });
 	    }
-	    private void styleModernButton(Button btn) {
-	        btn.setStyle(
-	            "-fx-background-color: #0f172a;" +          // dark navy
-	            "-fx-text-fill: #38bdf8;" +                 // neon blue
-	            "-fx-font-weight: bold;" +
-	            "-fx-background-radius: 8;" +
-	            "-fx-border-radius: 8;" +
-	            "-fx-border-color: #38bdf8;" +
-	            "-fx-border-width: 1.5;" +
-	            "-fx-padding: 6 14;" +
-	            "-fx-cursor: hand;"
-	        );
-
-
+	    private void styleCardButton(Button btn, boolean primary) {
+	        if (primary) {
+	            btn.setStyle(
+	                "-fx-background-color: #38bdf8; -fx-text-fill: #07090f;" +
+	                "-fx-font-weight: bold; -fx-font-size: 13px; -fx-background-radius: 8;" +
+	                "-fx-padding: 8 20; -fx-cursor: hand;" +
+	                "-fx-effect: dropshadow(gaussian, rgba(56,189,248,0.45), 16, 0.3, 0, 0);"
+	            );
+	        } else {
+	            btn.setStyle(
+	                "-fx-background-color: rgba(56,189,248,0.08); -fx-text-fill: #38bdf8;" +
+	                "-fx-font-size: 13px; -fx-background-radius: 8;" +
+	                "-fx-border-color: rgba(56,189,248,0.35); -fx-border-width: 1;" +
+	                "-fx-border-radius: 8; -fx-padding: 8 20; -fx-cursor: hand;"
+	            );
+	        }
 	    }
-	    
 
 	 	private void goToLecturePageFilm(int filmId) {
     	    try {
@@ -1428,5 +1544,107 @@ public class CardController {
 	    		private void hide(Node node) {
 	    		    node.setVisible(false);
 	    		    node.setManaged(false);
+	    		}
+	    		public void setItem_mylist(FeaturedItem item) {
+	    		    this.currentItem = item;
+
+	    		    poster.getParent().setOnMouseClicked(e -> {
+	    		        if (autoSlide != null) autoSlide.pause();
+
+	    		        String type = currentItem.getType().toLowerCase();
+	    		        if (type.equals("film")) {
+	    		            showFilmPopup(currentItem);
+	    		        } else if (type.equals("serie")) {
+	    		            showSeriePopup(currentItem);
+	    		        }
+	    		    });
+
+	    		    // ------------------ Poster ------------------
+	    		    poster.setImage(ImageUtil.load(item.getPosterUrl()));
+
+	    		    // ------------------ Type Badge ------------------
+	    		    if (item.getSerieId() != 0) {
+	    		        typeBadge.setText("SERIE");
+	    		    } else {
+	    		        typeBadge.setText("FILM");
+	    		    }
+
+	    		    // ------------------ PLAY BUTTON ------------------
+	    		    playBtn.setOnAction(e -> {
+	    		        try {
+	    		            String type = currentItem.getType().toLowerCase();
+
+	    		            if (type.equals("film")) {
+	    		                showFilmPopup(currentItem);
+
+	    		            } else if (type.equals("serie")) {
+
+	    		                Serie serie = featuredService.getFullSerie(currentItem.getSerieId());
+	    		                int userId = Session.getUserId();
+	    		                Map<Integer, WatchStatus> progressMap = episodeProgressService.loadUserProgress(userId);
+
+	    		                // 🔍 Find first NOT_STARTED episode
+	    		                Episode nextEpisode = null;
+	    		                int targetSeasonNum = 0;
+
+	    		                outer:
+	    		                for (Season s : serie.getSeasons()) {
+	    		                    for (Episode ep : s.getEpisodes()) {
+
+	    		                        WatchStatus status = progressMap.getOrDefault(
+	    		                            ep.getEpId(),
+	    		                            WatchStatus.NOT_STARTED
+	    		                        );
+
+	    		                        // ✅ Skip completed AND in-progress
+	    		                        if (status == WatchStatus.COMPLETED || status == WatchStatus.IN_PROGRESS) {
+	    		                            continue;
+	    		                        }
+
+	    		                        // ✅ First not-started episode found
+	    		                        nextEpisode = ep;
+	    		                        targetSeasonNum = s.getSeasonNum();
+	    		                        break outer;
+	    		                    }
+	    		                }
+
+	    		                Episode targetEpisode;
+
+	    		                if (nextEpisode != null) {
+	    		                    targetEpisode = nextEpisode;
+	    		                } else {
+	    		                    // 🔁 All episodes watched → restart from beginning
+	    		                    Season firstSeason = serie.getSeasons().get(0);
+	    		                    targetEpisode = firstSeason.getEpisodes().get(0);
+	    		                    targetSeasonNum = firstSeason.getSeasonNum();
+	    		                }
+
+	    		                // 🎬 Navigate — progress will be saved by LecturePageController
+	    		                goToLecturePageEpisode(
+	    		                    serie.getSerieId(),
+	    		                    targetSeasonNum,
+	    		                    targetEpisode.getEpId()
+	    		                );
+
+	    		                // ❌ REMOVED: markInProgress here — LecturePageController handles this
+	    		            }
+
+	    		        } catch (Exception ex) {
+	    		            ex.printStackTrace();
+	    		        }
+	    		    });
+
+	    		    // ------------------ OTHER BUTTONS ------------------
+	    		    addBtn.setOnAction(e -> handleAddToList());
+	    		    updateAddButton(addBtn, item);
+
+	    		    // ------------------ UI ------------------
+	    		    starsLabel.setText(getStars(item.getRating()));
+
+	    		    show(playBtn);
+	    		    show(addBtn);
+	    		    show(starsLabel);
+	    		    show(typeBadge);
+	    		    hide(progressFill);
 	    		}
 }

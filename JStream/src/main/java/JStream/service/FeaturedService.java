@@ -29,8 +29,8 @@ public class FeaturedService {
     private final FeaturedDAO dao;
 
     public FeaturedService() {
-        Connection conn = Database.getConnection();
-        dao = new FeaturedDAO(conn);
+        
+        dao = new FeaturedDAO();
     }
 
     // ----------------------- Latest searches in session ----------------

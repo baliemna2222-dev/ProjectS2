@@ -11,10 +11,13 @@ import JStream.entity.User;
 import JStream.service.UserService;
 import javafx.animation.FadeTransition;
 import javafx.animation.TranslateTransition;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -23,6 +26,8 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -61,7 +66,8 @@ public class Logincontroller implements Initializable {
     @FXML private ImageView logoImage;
     // Hyperlinks
     @FXML private Hyperlink goToSignUp, goToLogin, forgotPassword;
-
+ // Add this field at the top of LoginController
+    private String pendingEmail = null;
     private final UserService userService = new UserService();
 
     @Override
@@ -100,9 +106,29 @@ public class Logincontroller implements Initializable {
     @FXML
     private void handleBack(ActionEvent event) {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("/view/fxml/Raksha.fxml"));
-            Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Raksha.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            RakshaController controller = loader.getController();
+
+            stage.getScene().setRoot(root);
+            stage.setMaximized(true);
+
+            // ✅ Force layout pass THEN bind — without this Raksha doesn't know the real size
+            Platform.runLater(() -> {
+                root.applyCss();
+                root.layout();
+                controller.initLayoutBindings(stage);
+
+                // ✅ Second pass to catch any remaining layout issues
+                Platform.runLater(() -> {
+                    root.applyCss();
+                    root.layout();
+                    controller.initLayoutBindings(stage);
+                });
+            });
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -114,15 +140,19 @@ public class Logincontroller implements Initializable {
         String username = loginUsername.getText().trim();
         String password = loginPassword.getText();
 
-        if(username.isEmpty() || password.isEmpty()) {
-            loginError.setText("Please fill all fields"); 
+        System.out.println("🔐 Trying login: username=" + username + " password=" + password);
+
+        if (username.isEmpty() || password.isEmpty()) {
+            loginError.setText("Please fill all fields");
             loginError.setVisible(true);
             return;
         }
 
         User user = userService.login(username, password);
-        if(user != null) {
-        	Session.login(user.getId(), user.getUsername());
+        System.out.println("👤 User returned: " + (user != null ? user.getId() + " / " + user.getUsername() : "NULL"));
+
+        if (user != null) {
+            Session.login(user.getId(), user.getUsername());
             goToHomepage(event);
         } else {
             loginError.setText("Invalid username or password");
@@ -182,26 +212,72 @@ public class Logincontroller implements Initializable {
     @FXML private void handleSendCode() {
         clearForgotMessages();
         String email = verifywithEmail.getText().trim();
-        if(email.isEmpty()) { showError("Enter your email"); return; }
+        if (email.isEmpty()) { showError("Enter your email"); return; }
 
-        boolean sent = userService.sendVerificationCode(email);
-        if(!sent) { showError("Email not found"); return; }
+        sendCodeBtn.setDisable(true);
+        sendCodeBtn.setText("Sending...");
 
-        showSuccess("Verification code sent to your email");
+        Task<Boolean> sendTask = new Task<>() {
+            @Override
+            protected Boolean call() {
+                return userService.sendVerificationCode(email);
+            }
+        };
 
-        verifywithEmail.setVisible(false);
-        sendCodeBtn.setVisible(false);
-        verificationCode.setVisible(true);
-        verifyBtn.setVisible(true);
+        sendTask.setOnSucceeded(e -> {
+            boolean sent = sendTask.getValue();
+            sendCodeBtn.setDisable(false);
+            sendCodeBtn.setText("Send Code");
+
+            if (!sent) {
+                showError("Email not found or failed to send");
+                return;
+            }
+
+            // ✅ Save email before hiding the field
+            pendingEmail = email;
+
+            showSuccess("✅ Code sent to " + email);
+            verifywithEmail.setVisible(false);
+            sendCodeBtn.setVisible(false);
+            verificationCode.setVisible(true);
+            verifyBtn.setVisible(true);
+        });
+
+        sendTask.setOnFailed(e -> {
+            sendCodeBtn.setDisable(false);
+            sendCodeBtn.setText("Send Code");
+            showError("Failed to send email. Check your connection.");
+        });
+
+        new Thread(sendTask).start();
     }
-
     @FXML private void handleVerifyCode(ActionEvent event) {
         clearForgotMessages();
         String code = verificationCode.getText().trim();
-        if(code.isEmpty()) { showError("Enter verification code"); return; }
+        if (code.isEmpty()) { showError("Enter verification code"); return; }
 
-        if(userService.verifyCode(code)) goToHomepage(event);
-        else showError("Invalid or expired code");
+        if (userService.verifyCode(code)) {
+
+            if (pendingEmail == null) {
+                showError("Session expired, please try again");
+                showForgot();
+                return;
+            }
+
+            // ✅ Fetch user by email and log them in
+            User user = userService.getUserByEmail(pendingEmail);
+
+            if (user != null) {
+                Session.login(user.getId(), user.getUsername());
+                goToHomepage(event);
+            } else {
+                showError("User not found");
+            }
+
+        } else {
+            showError("Invalid or expired code");
+        }
     }
 
     @FXML private void backToLogin() { showLogin(); }
@@ -266,25 +342,41 @@ public class Logincontroller implements Initializable {
     // ========== HOME PAGE ==========
     @FXML
     private void goToHomepage(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/HomePage.fxml"));
-            Parent root = loader.load();
+        // Get the stage and current scene
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        Scene scene = stage.getScene();
+        Parent currentRoot = scene.getRoot();
 
-            // Get current stage
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            
-            // Replace the root of the current scene instead of creating a new scene
-            Scene scene = stage.getScene();
-            scene.setRoot(root);
+        // Show a spinner overlay while loading
+        ProgressIndicator spinner = new ProgressIndicator();
+        spinner.setMaxSize(100, 100);
 
-            // Fade animation
+        if (currentRoot instanceof Pane pane) {
+            pane.getChildren().add(spinner);
+            StackPane.setAlignment(spinner, Pos.CENTER);
+        }
+
+        // Load FXML in background thread
+        Task<Parent> loadTask = new Task<>() {
+            @Override
+            protected Parent call() throws Exception {
+                return FXMLLoader.load(getClass().getResource("/view/fxml/HomePage.fxml"));
+            }
+        };
+
+        loadTask.setOnSucceeded(e -> {
+            Parent root = loadTask.getValue();
+
+            // Swap root
+            stage.getScene().setRoot(root);
+
+            // Fade in
             FadeTransition ft = new FadeTransition(Duration.millis(500), root);
             ft.setFromValue(0);
             ft.setToValue(1);
             ft.play();
+        });
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new Thread(loadTask).start();
     }
 }

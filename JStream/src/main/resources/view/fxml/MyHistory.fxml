@@ -1,52 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.TilePane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.text.Font?>
 
-<VBox xmlns:fx="http://javafx.com/fxml"
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="JStream.controller.HistoryController"
       spacing="0"
       stylesheets="@/view/css/scrollbar.css"
       style="-fx-background-color: black;">
 
-    <!-- HEADER (fixed) -->
-   
-
-     <!-- ================= SCROLLABLE CONTENT ================= -->
+    
+    <!-- ================= SCROLLABLE CONTENT ================= -->
     <ScrollPane fx:id="mainScroll"
                 fitToWidth="true"
                 hbarPolicy="NEVER"
                 vbarPolicy="AS_NEEDED"
-                style="-fx-background: black; -fx-control-inner-background: #121212; -fx-background-insets: 0;">
-	<StackPane>
-        <VBox alignment="TOP_LEFT" spacing="40" style="-fx-padding: 150 20 20 20;">
-      
-            <!-- Title -->
-            <Label text="Watch History"
-                   style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
-            
-            <Pane prefHeight="3"
-                  style="-fx-background-color: linear-gradient(to right, transparent, #0a1f44, #1e3a8a, #0a1f44, transparent);
-                         -fx-background-radius: 2;
-                         -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);"/>
-            
-            <!-- Subtitle -->
-            <Label text="Continue where you left off"
-                   style="-fx-text-fill: #bbbbbb; -fx-font-size: 14px;" />
+                style="-fx-background: black; -fx-control-inner-background: #121212; -fx-background-insets: 0;"
+                VBox.vgrow="ALWAYS">
 
-            <!-- History Container -->
-            <HBox fx:id="historyContainer"
-                  spacing="15"
-                  style="-fx-padding: 10;"
-                  alignment="CENTER_LEFT" />
-
-            <!-- Footer -->
-            <fx:include source="Footer.fxml"/>
+        <content>
             
-        </VBox>
-        <fx:include source="Header.fxml"/>
-        </StackPane>
+        <VBox>
+            <!-- Header -->
+            <fx:include source="Header.fxml"/>
+            
+            <VBox alignment="TOP_LEFT" spacing="40" style="-fx-padding: 20;">
+
+                <!-- Title -->
+                <Label text="Watch History"
+                       style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+
+                <!-- Decorative Line -->
+                <Pane prefHeight="3"
+                      style="-fx-background-color: linear-gradient(to right, transparent, #0a1f44, #1e3a8a, #0a1f44, transparent);
+                             -fx-background-radius: 2;
+                             -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);" />
+
+                <!-- Subtitle -->
+                <Label text="Continue where you left off"
+                       style="-fx-text-fill: #bbbbbb; -fx-font-size: 14px;" />
+
+                <!-- History Container -->
+                <HBox fx:id="historyContainer"
+                      spacing="15"
+                      style="-fx-padding: 10;"
+                      alignment="CENTER_LEFT" />
+
+                <!-- Footer -->
+                <fx:include source="Footer.fxml"/>
+
+            </VBox>
+             </VBox>
+        </content>
     </ScrollPane>
-
 </VBox>

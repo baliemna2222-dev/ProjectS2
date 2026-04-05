@@ -1,5 +1,8 @@
 package JStream.dao;
 
+import JStream.entity.WatchStatus;
+import JStream.utils.Database;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,32 +10,26 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import JStream.entity.WatchStatus;
-
 public class EpisodeProgressDAO {
-
-    private final Connection connection;
-
-    public EpisodeProgressDAO(Connection connection) {
-        this.connection = connection;
-    }
 
     // ----------------- Load all episode progress for a user -----------------
     public Map<Integer, WatchStatus> getProgressForUser(int userId) {
         Map<Integer, WatchStatus> progressMap = new HashMap<>();
         String sql = "SELECT ep_id, status FROM episode_progress WHERE user_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, userId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                int epId = rs.getInt("ep_id");
-                String dbStatus = rs.getString("status");
-                WatchStatus status = WatchStatus.NOT_STARTED;
-                if (dbStatus != null) {
-                    status = WatchStatus.valueOf(dbStatus);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int epId = rs.getInt("ep_id");
+                    String dbStatus = rs.getString("status");
+                    WatchStatus status = (dbStatus != null) ? WatchStatus.valueOf(dbStatus) : WatchStatus.NOT_STARTED;
+                    progressMap.put(epId, status);
                 }
-                progressMap.put(epId, status);
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -44,12 +41,16 @@ public class EpisodeProgressDAO {
         String sql = "INSERT INTO episode_progress (user_id, ep_id, status, last_position) " +
                      "VALUES (?, ?, 'IN_PROGRESS', ?) " +
                      "ON DUPLICATE KEY UPDATE status='IN_PROGRESS', last_position=?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, userId);
             ps.setInt(2, epId);
             ps.setInt(3, lastPosition);
             ps.setInt(4, lastPosition);
             ps.executeUpdate();
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -57,57 +58,68 @@ public class EpisodeProgressDAO {
 
     // ----------------- Mark episode completed -----------------
     public void setCompleted(int userId, int epId, int lastPosition) {
-        // ⚠️ Nesta3mlou INSERT ... ON DUPLICATE KEY UPDATE be-sh dima yemshi 
-        // swa el record jdid walla 9dim
         String sql = "INSERT INTO episode_progress (user_id, ep_id, status, last_position) " +
                      "VALUES (?, ?, 'COMPLETED', ?) " +
                      "ON DUPLICATE KEY UPDATE status='COMPLETED', last_position=?";
-        
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, userId);
             ps.setInt(2, epId);
-            ps.setInt(3, lastPosition); // Insert value
-            ps.setInt(4, lastPosition); // Update value ken l9ah mawjoud
-            
-            int rowsAffected = ps.executeUpdate();
-            System.out.println("✅ DB: Episode " + epId + " marked as COMPLETED. Rows: " + rowsAffected);
+            ps.setInt(3, lastPosition);
+            ps.setInt(4, lastPosition);
+
+            ps.executeUpdate();
+            System.out.println("✅ Episode " + epId + " marked as COMPLETED for user " + userId);
+
         } catch (SQLException e) {
             System.err.println("❌ SQL Error in setCompleted: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
     // ----------------- Get status for a single episode -----------------
- 
     public WatchStatus getEpisodeStatus(int userId, int epId) {
-        String sql = "SELECT status FROM episode_progress WHERE user_id=? AND ep_id=?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) { // Auto-close
+        String sql = "SELECT status FROM episode_progress WHERE user_id = ? AND ep_id = ?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, userId);
             ps.setInt(2, epId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     String dbStatus = rs.getString("status");
                     return (dbStatus != null) ? WatchStatus.valueOf(dbStatus) : WatchStatus.NOT_STARTED;
                 }
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return WatchStatus.NOT_STARTED;
     }
-    
-    //-------------------------------
-    public int getLastPosition(int userId, int epId) throws SQLException {
-        // ⚠️ Kenet film_id, baddelneha ep_id
+
+    // ----------------- Get last watched position -----------------
+    public int getLastPosition(int userId, int epId) {
         String sql = "SELECT last_position FROM episode_progress WHERE user_id = ? AND ep_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, userId);
             ps.setInt(2, epId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("last_position");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("last_position");
             }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        return 0; 
+
+        return 0;
     }
-    
 }

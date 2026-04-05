@@ -13,80 +13,73 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.text.Font?>
 
-<StackPane xmlns="http://javafx.com/javafx/25"
+<StackPane xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="JStream.controller.MyListController"
            stylesheets="@/view/css/scrollbar.css"
            style="-fx-background-color: black;">
-    <!-- ================= HEADER ================= -->
-    
 
-    <!-- ================= SCROLLABLE CONTENT ================= -->
+    <!-- Scrollable content -->
     <ScrollPane fx:id="mainScroll"
                 fitToWidth="true"
                 hbarPolicy="NEVER"
                 vbarPolicy="AS_NEEDED"
                 style="-fx-background: black; -fx-control-inner-background: #121212; -fx-background-insets: 0;">
-	<StackPane>
-        <VBox alignment="TOP_LEFT" spacing="40" style="-fx-padding: 150 20 20 20;">
+        
+        <VBox>
+            <!-- Header -->
+            <fx:include source="Header.fxml"/>
+            
+            <!-- Main content -->
+            <VBox alignment="TOP_LEFT" spacing="40" style="-fx-padding: 100 20 20 20;">
+                <!-- Username Display -->
+                <HBox alignment="TOP_LEFT" spacing="10">
+                    <Label fx:id="usernameLabel" text="Welcome, User123 !"
+                           style="-fx-font-size: 40px; -fx-font-weight: bold; -fx-text-fill: white;">
+                        <font>
+                            <Font name="System Italic" size="20"/>
+                        </font>
+                    </Label>
+                </HBox>
 
-            <!-- Username Display -->
-            <HBox alignment="TOP_LEFT" spacing="10" >
-                <Label fx:id="usernameLabel" text="Welcome, User123 !"
-                       style="-fx-font-size: 40px; -fx-font-weight: bold; -fx-text-fill: white;">
-                    <font>
-                        <Font name="System Italic" size="20"/>
-                    </font>
-                </Label>
-            </HBox>
-			 <Pane prefHeight="3"
-                  style="-fx-background-color: linear-gradient(to right, transparent, #0a1f44, #1e3a8a, #0a1f44, transparent);
-                         -fx-background-radius: 2;
-                         -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);"/>
-			
-            <!-- My Films Section -->
-            <VBox alignment="TOP_LEFT" spacing="20">
-                <Label text="My Films"
-                       style="-fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: white;">
-                    <padding>
-                        <Insets bottom="10"/>
-                    </padding>
-                </Label>
-                <TilePane fx:id="filmContainer"
-                          hgap="20"
-                          vgap="20"
-                          prefColumns="4">
-                    <padding>
-                        <Insets left="20" right="10"/>
-                    </padding>
-                </TilePane>
+                    <Pane prefHeight="3"
+      style="
+        -fx-background-color: linear-gradient(to right, transparent, #0a1f44, #1e3a8a, #0a1f44, transparent);
+        -fx-background-radius: 2;
+        -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);
+      "/>
+               
+                <!-- My Films Section -->
+                <VBox alignment="TOP_LEFT" spacing="20">
+                    <Label text="My Films" style="-fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: white;">
+                        <padding><Insets bottom="10"/></padding>
+                    </Label>
+                    <TilePane fx:id="filmContainer" hgap="20" vgap="20" prefColumns="4">
+                        <padding><Insets left="20" right="10"/></padding>
+                    </TilePane>
+                </VBox>
+
+                <Pane prefHeight="3"
+      style="
+        -fx-background-color: linear-gradient(to right, transparent, #0a1f44, #1e3a8a, #0a1f44, transparent);
+        -fx-background-radius: 2;
+        -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);
+      "/>
+                <!-- My Series Section -->
+                <VBox alignment="TOP_LEFT" spacing="20">
+                    <Label text="My Series" style="-fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: white;">
+                        <padding><Insets bottom="10"/></padding>
+                    </Label>
+                    <TilePane fx:id="serieContainer" hgap="20" vgap="20" prefColumns="4">
+                        <padding><Insets left="20" right="10"/></padding>
+                    </TilePane>
+                </VBox>
+
             </VBox>
-			<Pane prefHeight="3"
-                  style="-fx-background-color: linear-gradient(to right, transparent, #0a1f44, #1e3a8a, #0a1f44, transparent);
-                         -fx-background-radius: 2;
-                         -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);"/>
-			
-            <!-- My Series Section -->
-            <VBox alignment="TOP_LEFT" spacing="20">
-                <Label text="My Series"
-                       style="-fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: white;">
-                    <padding>
-                        <Insets bottom="10"/>
-                    </padding>
-                </Label>
-                <TilePane fx:id="serieContainer"
-                          hgap="20"
-                          vgap="20"
-                          prefColumns="4">
-                    <padding>
-                        <Insets left="20" right="10"/>
-                    </padding>
-                </TilePane>
-            </VBox>
-	<fx:include source="Footer.fxml"/> 
+
+            <!-- Footer -->
+            <fx:include source="Footer.fxml"/>
         </VBox>
-        <fx:include source="Header.fxml"/>
-        </StackPane>
-    </ScrollPane>
 
+    </ScrollPane>
 </StackPane>

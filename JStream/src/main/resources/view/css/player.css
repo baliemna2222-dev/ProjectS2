@@ -1,27 +1,19 @@
-/*
- * player.css — JStream Video Player Stylesheet
- * Add to your scene:  scene.getStylesheets().add(getClass()
- *     .getResource("/JStream/css/player.css").toExternalForm());
- */
-
-/* ── Seek / Volume Slider ──────────────────────────────────────────────── */
 .jstream-slider .track {
-    -fx-background-color: rgba(255,255,255,0.22);
+    -fx-background-color: rgba(255, 255, 255, 0.22);
     -fx-background-radius: 3px;
     -fx-pref-height: 4px;
 }
 
 .jstream-slider .track:hover {
-    -fx-background-color: rgba(255,255,255,0.35);
+    -fx-background-color: rgba(255, 255, 255, 0.35);
 }
 
-/* Filled (left of thumb) portion */
-.jstream-slider > .track > .track-progress {
+/* Flattened track-progress selector */
+.track-progress {
     -fx-background-color: #00d4ff;
     -fx-background-radius: 3px;
 }
 
-/* Thumb */
 .jstream-slider .thumb {
     -fx-background-color: #ffffff;
     -fx-background-radius: 50%;
@@ -29,26 +21,23 @@
     -fx-pref-height: 14px;
     -fx-effect: dropshadow(gaussian, rgba(0,212,255,0.55), 6, 0, 0, 0);
     -fx-cursor: hand;
-    -fx-opacity: 0;               /* hidden until hover */
-    -fx-transition: -fx-opacity 150ms ease;
+    -fx-opacity: 0; /* hidden until hover */
 }
 
+/* Show thumb on hover */
 .jstream-slider:hover .thumb {
     -fx-opacity: 1;
 }
 
-/* Seek bar taller track on hover */
 .jstream-slider#seekBar:hover .track {
     -fx-pref-height: 5px;
 }
 
-/* ── Buttons (base reset) ──────────────────────────────────────────────── */
 .button {
-    -fx-focus-color:   transparent;
+    -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
 }
 
-/* ── Progress Indicator ────────────────────────────────────────────────── */
 .progress-indicator > .indicator {
     -fx-background-color: transparent;
 }

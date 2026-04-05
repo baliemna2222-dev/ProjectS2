@@ -4,7 +4,9 @@ import JStream.entity.FeaturedItem;
 import JStream.entity.FeaturedItemProgress;
 import JStream.entity.Session;
 import JStream.entity.WatchStatus;
+import JStream.service.EpisodeProgressService;
 import JStream.service.FeaturedService;
+import JStream.service.FilmProgressService;
 import JStream.service.HistoryService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -14,7 +16,10 @@ import javafx.scene.layout.StackPane;
 import java.util.List;
 
 public class HistoryController {
-
+	  private final FeaturedService        featuredService        = new FeaturedService();
+	    private final EpisodeProgressService episodeProgressService = new EpisodeProgressService();
+	    private final FilmProgressService    filmProgressService    = new FilmProgressService(featuredService);
+	   
     @FXML
     private HBox historyContainer;
     public void initialize() {
@@ -23,7 +28,7 @@ public class HistoryController {
 
     private void loadHistory() {
         try {
-            HistoryService h = new HistoryService();
+            HistoryService h = new HistoryService(filmProgressService,episodeProgressService,featuredService);
             int userId = Session.getUserId();
 
             List<FeaturedItemProgress> list = h.getItemsWithProgress(userId);

@@ -1,80 +1,116 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.Group?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.media.MediaView?>
 <?import javafx.scene.shape.Rectangle?>
 
-<StackPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="JStream.controller.RakshaController">
+<StackPane fx:id="rootPane" style="-fx-background-color: #0a0a0f;" stylesheets="@/view/css/scrollbar.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.RakshaController">
 
-    <ScrollPane fx:id="scrollPane"
-                fitToWidth="true"
-                fitToHeight="true"
-                hbarPolicy="NEVER"
-                vbarPolicy="AS_NEEDED"
-                pannable="false">
-		
+    <!-- FULL-PAGE SCROLL CONTAINER -->
+    <ScrollPane fx:id="scrollPane" fitToWidth="true" fitToHeight="false" hbarPolicy="NEVER" pannable="false" style="-fx-background: transparent;                        -fx-background-color: transparent;                        -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
+
         <content>
-        
-            <VBox style="-fx-background-color:black;">
-				
-                <!-- HERO SECTION -->
-                <HBox maxHeight="700" minHeight="700">
+            <VBox spacing="0" style="-fx-background-color: #0a0a0f;">
 
-                    <VBox prefHeight="200.0" prefWidth="600.0">
-                        <children>
+                <!-- ══════════════════════════════════
+                     HERO SECTION
+                ═════════════════════════════════════ -->
+                <StackPane fx:id="heroPane" maxHeight="700" minHeight="700" prefHeight="700" style="-fx-background-color: #0a0a0f;">
 
-                            <!-- LABEL -->
-                            <Label text="Your Next Adventure Awaits"
-                                   style="-fx-text-fill: white; -fx-font-size: 36px; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, white, 10, 0, 0, 0);">
-                                <padding>
-                                    <Insets left="100.0" top="250.0"/>
-                                </padding>
-                            </Label>
+                    <!-- VIDEO BACKGROUND — fills hero, bound in controller -->
+       <Pane fx:id="videoContainer" style="-fx-background-color: #0a0a0f;">
+    <MediaView fx:id="heroBackground" preserveRatio="false" />
+</Pane>
+                    <!-- GRADIENT OVERLAYS — painted in controller via LinearGradient -->
+                    <Pane fx:id="overlayBottom" mouseTransparent="true" />
+                    <Pane fx:id="overlayLeft" mouseTransparent="true" />
 
-                            <!-- START WATCHING BUTTON -->
-                            <Button fx:id="btnStartWatching"
-                                    text="Start Watching Now"
-                                    prefHeight="60" prefWidth="250"
-                                    onAction="#handleStartWatching"
-                                    style="-fx-background-color: #00bfff; -fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, #00bfff, 20, 0, 0, 0);">
-                                <VBox.margin>
-                                    <Insets left="200.0" top="100.0"/>
-                                </VBox.margin>
-                            </Button>
-<Region prefWidth="600"/>
-                        </children>
-                    </VBox>
+                    <!-- HERO CONTENT -->
+                    <HBox alignment="CENTER_LEFT">
 
-                    <!-- LEFT SPACING -->
-                    
+                        <VBox alignment="CENTER_LEFT" maxWidth="640" spacing="0">
+                            <HBox.margin>
+                                <Insets left="80" />
+                            </HBox.margin>
+                     <ImageView fx:id="logo" fitHeight="93.0" fitWidth="293.0" pickOnBounds="true" preserveRatio="true">
+                        <VBox.margin>
+                           <Insets bottom="50.0" />
+                        </VBox.margin>
+                     </ImageView>
 
-                    <!-- VIDEO STACK -->
-                    <StackPane fx:id="rootPane" maxHeight="700" maxWidth="900" HBox.hgrow="ALWAYS">
-                        <Group fx:id="videoGroup">
-                            <MediaView fx:id="heroBackground" preserveRatio="false"/>
-                        </Group>
-                        <Rectangle fx:id="overlay"
-                                   fill="linear-gradient(to right, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0) 100%)"
-                                   mouseTransparent="true"/>
-                    </StackPane>
+                            <!-- BADGE ROW -->
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Rectangle arcHeight="3" arcWidth="3" fill="#00bfff" height="20" width="3" />
+                                <Label style="-fx-text-fill: #00bfff;                                               -fx-font-size: 12px;                                               -fx-font-weight: bold;" text="NOW STREAMING" />
+                            </HBox>
 
-                </HBox>
+                            <Region prefHeight="18" />
+
+                            <!-- HEADLINE -->
+                            <Label style="-fx-text-fill: white;                                           -fx-font-size: 64px;                                           -fx-font-weight: bold;                                                                                   -fx-effect: dropshadow(gaussian, black, 20, 0, 0, 4);" text="Your Next" wrapText="true" />
+
+                            <Label style="-fx-text-fill: white;                                           -fx-font-size: 64px;                                           -fx-font-weight: bold;                                                                                    -fx-effect: dropshadow(gaussian, black, 28, 0, 0, 4);" text="Adventure" wrapText="true" />
+
+                            <Label style="-fx-text-fill: white;                                           -fx-font-size: 64px;                                           -fx-font-weight: bold;                                                                                   -fx-effect: dropshadow(gaussian, black, 20, 0, 0, 4);" text="Awaits" wrapText="true" />
+
+                            <Region prefHeight="20" />
+
+                            <!-- SUBTITLE -->
+                            <Label prefWidth="480" style="-fx-text-fill: #aaaaaa;                                           -fx-font-size: 16px;                                           -fx-font-family: 'Georgia';" text="Thousands of movies and series  — all in one place." wrapText="true" />
+
+                            <Region prefHeight="40" />
+
+                            <!-- CTA BUTTONS -->
+                            <HBox alignment="CENTER_LEFT" spacing="16">
+                                <Button onAction="#handleStartWatching" prefHeight="52" prefWidth="210" style="-fx-background-color: #00aaff; -fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, #00bfff, 18, 0.3, 0, 0);" text="▶  Start Watching" />
+
+                                <Button prefHeight="52" prefWidth="155" style="-fx-background-color: transparent;                                                -fx-text-fill: white;                                                -fx-font-size: 15px;                                                -fx-font-weight: bold;                                                -fx-background-radius: 6;                                                -fx-border-color: #555555;                                                -fx-border-radius: 6;                                                -fx-border-width: 1;                                                -fx-cursor: hand;" text="ℹ  Learn More" />
+                            </HBox>
+
+                            <Region prefHeight="40" />
+
+                            <!-- STATS ROW -->
+                            <HBox alignment="CENTER_LEFT" spacing="36">
+                                <VBox spacing="2">
+                                    <Label style="-fx-text-fill: white; -fx-font-size: 22px;                                                   -fx-font-weight: bold; -fx-font-family: 'Georgia';" text="10K+" />
+                                    <Label style="-fx-text-fill: #777777; -fx-font-size: 12px;" text="Titles" />
+                                </VBox>
+                                <Rectangle fill="#333333" height="36" width="1" />
+                                <VBox spacing="2">
+                                    <Label style="-fx-text-fill: white; -fx-font-size: 22px;                                                   -fx-font-weight: bold; -fx-font-family: 'Georgia';" text="4K UHD" />
+                                    <Label style="-fx-text-fill: #777777; -fx-font-size: 12px;" text="Quality" />
+                                </VBox>
+                                <Rectangle fill="#333333" height="36" width="1" />
+                                <VBox spacing="2">
+                                    <Label style="-fx-text-fill: white; -fx-font-size: 22px;                                                   -fx-font-weight: bold; -fx-font-family: 'Georgia';" text="Free" />
+                                    <Label style="-fx-text-fill: #777777; -fx-font-size: 12px;" text="To Start" />
+                                </VBox>
+                            </HBox>
+
+                        </VBox>
+
+                        <Region HBox.hgrow="ALWAYS" />
+                    </HBox>
+
+                </StackPane>
+
+                <!-- DIVIDER: use Region, not Rectangle — Rectangle has no maxWidth -->
+                <Region maxWidth="1.7976931348623157E308" prefHeight="1" style="-fx-background-color: #1e1e1e;" />
 
                 <!-- FOOTER -->
-                <fx:include source="Footer.fxml"/>
+                <fx:include source="Footer.fxml" />
 
             </VBox>
         </content>
-
     </ScrollPane>
 
 </StackPane>

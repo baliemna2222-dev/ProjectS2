@@ -11,8 +11,8 @@ public class application extends Application {
     public void start(Stage stage) throws Exception { 
 
 		FXMLLoader loader = new FXMLLoader();
-		loader.setLocation(getClass().getClassLoader().getResource("view/fxml/HomePage.fxml"));
-		Parent root = loader.load();
+		loader.setLocation(getClass().getClassLoader().getResource("view/fxml/Raksha.fxml"));
+		Parent root = loader.load();   
         Scene scene = new Scene(root);
 
         stage.setTitle("Login");

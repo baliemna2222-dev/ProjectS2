@@ -13,6 +13,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -28,7 +29,7 @@ public class MyListController implements Initializable {
     @FXML private TilePane filmContainer;     // TilePane for films
     @FXML private TilePane serieContainer;    // TilePane for series
     @FXML private Label usernameLabel;        // Label to show current username
-
+    @FXML private ScrollPane mainScroll;
     private MylistService mylistService;
 
     @Override
@@ -49,7 +50,7 @@ public class MyListController implements Initializable {
     private void loadMyList() {
         int userId = Session.getUserId();
         List<FeaturedItem> items = mylistService.getUserList(userId);
-        
+
         filmContainer.getChildren().clear();
         serieContainer.getChildren().clear();
 
@@ -58,18 +59,14 @@ public class MyListController implements Initializable {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Card.fxml"));
                 Node cardNode = loader.load();
 
-                // Get the card controller and set the item
                 CardController controller = loader.getController();
-                controller.setItem(item);
+                controller.setItem_mylist(item);
 
-                // Store item for reference if needed
                 cardNode.setUserData(item);
 
-                // Add hover effects programmatically
                 cardNode.setOnMouseEntered(this::handleCardHoverEnter);
                 cardNode.setOnMouseExited(this::handleCardHoverExit);
 
-                // Add to proper container
                 if ("film".equalsIgnoreCase(item.getType())) {
                     filmContainer.getChildren().add(cardNode);
                 } else {
@@ -79,6 +76,29 @@ public class MyListController implements Initializable {
                 e.printStackTrace();
             }
         }
+
+        // Show empty message if needed
+        if (filmContainer.getChildren().isEmpty()) {
+            Label empty = new Label("You haven’t added any films yet. Start exploring and add your favorites to watch later!");
+            empty.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
+            StackPane wrapper = new StackPane(empty);
+            wrapper.setPrefHeight(150);
+            wrapper.setAlignment(Pos.CENTER);
+            filmContainer.getChildren().add(wrapper);
+        }
+
+        if (serieContainer.getChildren().isEmpty()) {
+            Label empty = new Label("You haven’t added any series yet. Start exploring and add your favorites to watch later!");
+            empty.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
+            StackPane wrapper = new StackPane(empty);
+            wrapper.setPrefHeight(150);
+            wrapper.setAlignment(Pos.CENTER);
+            serieContainer.getChildren().add(wrapper);
+        }
+
+        // Force scroll to top
+        Platform.runLater(() -> mainScroll.setVvalue(0));
+    
         
         // Show message if no items
         if (filmContainer.getChildren().isEmpty()) {
@@ -130,6 +150,7 @@ public class MyListController implements Initializable {
             wrapper.setAlignment(Pos.CENTER);
             serieContainer.getChildren().add(wrapper);
         }
+        Platform.runLater(() -> mainScroll.setVvalue(0));
     }
     // Hover effects for all cards
     @FXML
