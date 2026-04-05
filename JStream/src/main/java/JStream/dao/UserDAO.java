@@ -52,12 +52,10 @@ public class UserDAO {
 
         return null;
     }
-    // ===== Login by username =====
     public User getUserByUsername(String username) {
         String sql = "SELECT * FROM users WHERE username=?";
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setString(1, username);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -69,7 +67,6 @@ public class UserDAO {
                     return user;
                 }
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -177,12 +174,12 @@ public class UserDAO {
     }
 
     // ===== Update password =====
-    public boolean updateUserPassword(int userId, String newPassword) {
+    public boolean updateUserPassword(int userId, String hashedPassword) {
         String sql = "UPDATE users SET password = ? WHERE user_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, newPassword); // hash before storing
+            stmt.setString(1, hashedPassword);
             stmt.setInt(2, userId);
             return stmt.executeUpdate() > 0;
 

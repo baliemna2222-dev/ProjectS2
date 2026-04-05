@@ -891,7 +891,7 @@ public class HeaderController {
 
          String newPassword = pfPassword.getText();
          if (!newPassword.isEmpty()) {
-             userService.updateUserPassword(Session.getUserId(), SecurityUtils.hashPassword(newPassword));
+             userService.updateUserPassword(Session.getUserId(), newPassword); // pass plain, hash inside method
              pfPassword.clear();
              saved = true;
          }

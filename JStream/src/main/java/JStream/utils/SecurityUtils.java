@@ -3,13 +3,16 @@ package JStream.utils;
 import org.mindrot.jbcrypt.BCrypt;
 
 public class SecurityUtils {
-
-    public static String hashPassword(String password) {
-        return BCrypt.hashpw(password, BCrypt.gensalt(12)); 
+	 // Hash password
+    public static String hashPassword(String plain) {
+        return BCrypt.hashpw(plain, BCrypt.gensalt(12));
     }
 
-    public static boolean checkPassword(String plainPassword, String hashedPassword) {
-        return BCrypt.checkpw(plainPassword, hashedPassword);
+    // Check raw password against hashed
+    public static boolean checkPassword(String raw, String hashed) {
+        if (raw == null || hashed == null) return false;
+        return BCrypt.checkpw(raw, hashed);
     }
+
 }
 
