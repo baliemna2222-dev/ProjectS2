@@ -62,7 +62,9 @@ public class UserService {
     public String getProfilePhoto(int userId) {
         return userDAO.getProfilePhotoPath(userId);
     }
-
+    public String getUsernameById(int userId) {
+        return new UserDAO().getUsernameById(userId);
+    }
     public String getEmail(int userId) {
         return userDAO.getEmail(userId);
     }

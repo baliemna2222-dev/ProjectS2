@@ -30,7 +30,8 @@ public class CommentService {
     }
 
     // ── Charger les commentaires d'une série ─────────────────────────────────
-    public List<Comment> getCommentsForSerie(int serieId) {
-        return commentDAO.getCommentsBySerie(serieId);
+    public List<Comment> getCommentsForEpisode(int serieId) {
+        return commentDAO.getCommentsByEpisode(serieId);
     }
+    
 }

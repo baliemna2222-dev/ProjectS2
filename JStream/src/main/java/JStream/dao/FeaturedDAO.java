@@ -680,7 +680,7 @@ public class FeaturedDAO {
 	                    rs.getInt("film_id"),
 	                    rs.getString("title"),
 	                    rs.getString("synopsis"),
-	                    rs.getString("trailor_url"),
+	                    rs.getString("trailer_url"),
 	                    rs.getString("image_url"),
 	                    rs.getString("title_image_url"),
 	                    rs.getString("poster_url"),
