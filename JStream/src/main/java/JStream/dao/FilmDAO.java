@@ -21,12 +21,12 @@ public class FilmDAO {
             ps.setString(1, film.getTitle());
             ps.setString(2, film.getSynopsis());
             ps.setString(3, film.getCasting());
-            ps.setString(4, film.getTrailer_url()); // <--- Jdid
+            ps.setString(4, film.getTrailer_url()); 
             ps.setString(5, film.getVideo_url());
             ps.setString(6, film.getImage_url());
             ps.setString(7, film.getTitle_image_url());
             ps.setString(8, film.getPoster_url());
-            ps.setString(9, film.getPosterV_url()); // <--- Jdid
+            ps.setString(9, film.getPosterV_url()); 
             ps.setObject(10, film.getRelease_date());
             ps.setDouble(11, film.getDuration());
             ps.setString(12, film.getAge_rating());
