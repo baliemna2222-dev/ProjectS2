@@ -26,6 +26,21 @@ public class UserDAO {
             return false;
         }
     }
+    public String getUsernameById(int userId) {
+        String sql = "SELECT username FROM users WHERE user_id = ?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getString("username");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "User #" + userId;
+    }
     public User getUserByEmail(String email) {
         String sql = "SELECT * FROM users WHERE email = ?";
 
@@ -105,6 +120,8 @@ public class UserDAO {
             e.printStackTrace();
             return false;
         }
+        
+        
     }
 
     // ===== Update username =====

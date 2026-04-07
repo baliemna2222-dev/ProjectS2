@@ -184,10 +184,8 @@ public class FilmDAO {
         film.setSynopsis(rs.getString("synopsis"));
         film.setCasting(rs.getString("casting"));
         
-        // --- Zidna el mapping jdid ---
         film.setTrailer_url(rs.getString("trailer_url")); 
         film.setPosterV_url(rs.getString("posterV_url"));
-        // -----------------------------
 
         film.setVideo_url(rs.getString("video_url"));
         film.setImage_url(rs.getString("image_url"));
