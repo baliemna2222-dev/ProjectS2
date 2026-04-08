@@ -20,7 +20,15 @@ public class FilmService {
         filmDAO.addFilm(film);
     }
 
+    public boolean updateFilm(Film film) {
+        return filmDAO.updateFilm(film);
+    }
+
     public void deleteFilm(int id) {
         filmDAO.deleteFilm(id);
+    }
+
+    public List<Film> searchFilms(String keyword) {
+        return filmDAO.searchFilms(keyword);
     }
 }

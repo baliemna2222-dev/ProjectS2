@@ -3,40 +3,159 @@
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.Insets?>
 
-<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+<HBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="JStream.controller.EpisodesAdminController"
-      stylesheets="@/view/css/style.css"
-      spacing="20"
-      style="-fx-padding: 30;">
-    <HBox spacing="20" alignment="CENTER_LEFT">
-        <Button text="Back" onAction="#retourSaisons" style="-fx-background-color: #444; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 10;"/>
-        <Label fx:id="seasonInfoLabel" text="Add Episode" style="-fx-text-fill: white; -fx-font-size: 26px; -fx-font-weight: bold;" />
-    </HBox>
+      spacing="0"
+      style="-fx-background-color: #03060f; -fx-font-family: 'Segoe UI', sans-serif;">
 
-    <HBox spacing="30" VBox.vgrow="ALWAYS">
-        <VBox spacing="15" style="-fx-background-color: rgba(255,255,255,0.08); -fx-padding: 22; -fx-background-radius: 14;" prefWidth="520">
-            <Label text="Add Episode" style="-fx-text-fill: #0ef; -fx-font-size: 16px; -fx-font-weight: bold;" />
-            <HBox spacing="10">
-                <TextField fx:id="seasonIdField" promptText="Season ID" HBox.hgrow="ALWAYS" style="-fx-background-color: #2c3e50; -fx-text-fill: white;" editable="false"/>
-                <TextField fx:id="numEpisodeField" promptText="Episode Number" HBox.hgrow="ALWAYS" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            </HBox>
-            <TextField fx:id="titleField" promptText="Episode Title" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            <HBox spacing="10">
-                <TextField fx:id="durationField" promptText="Duration (min)" HBox.hgrow="ALWAYS" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-                <TextField fx:id="ratingField" promptText="Rating (0-5)" HBox.hgrow="ALWAYS" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            </HBox>
-            <TextArea fx:id="resumeField" promptText="Summary" prefHeight="80" wrapText="true" style="-fx-control-inner-background: #2c3e50; -fx-text-fill: white;"/>
-            <TextField fx:id="videoUrlField" promptText="Video URL" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            <TextField fx:id="covertUrlField" promptText="Thumbnail URL" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            <DatePicker fx:id="releasedAtPicker" promptText="Air Date" prefWidth="600" style="-fx-control-inner-background: #2c3e50;"/>
-            <Button text="Add Episode" onAction="#handleAddEpisode" maxWidth="Infinity" style="-fx-background-color: #0ef; -fx-text-fill: black; -fx-font-weight: bold; -fx-cursor: hand;"/>
-        </VBox>
+    <!-- ══ LEFT SIDEBAR – FORM ══════════════════════════════════════════════ -->
+    <ScrollPane fitToWidth="true"
+                style="-fx-background: #080d1a; -fx-background-color: #080d1a;
+                       -fx-border-color: rgba(14,165,233,0.18); -fx-border-width: 0 1 0 0;"
+                prefWidth="360" minWidth="310">
 
-        <VBox spacing="15" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(255,255,255,0.08); -fx-padding: 22; -fx-background-radius: 14;">
-            <Label text="Existing Episodes" style="-fx-text-fill: #0ef; -fx-font-size: 16px; -fx-font-weight: bold;" />
-            <ScrollPane fitToWidth="true" style="-fx-background: transparent; -fx-background-color: transparent;" VBox.vgrow="ALWAYS">
-                <VBox fx:id="episodeListContainer" spacing="10" style="-fx-padding: 10;" />
-            </ScrollPane>
+        <VBox fx:id="formPanel" spacing="15"
+              style="-fx-padding: 24 22; -fx-background-color: #080d1a;">
+
+            <!-- Back button -->
+            <Button text="← Back to Seasons" onAction="#retourSaisons"
+                    style="-fx-background-color: rgba(14,165,233,0.10);
+                           -fx-text-fill: #38bdf8; -fx-font-size: 12px;
+                           -fx-padding: 7 14; -fx-background-radius: 20;
+                           -fx-cursor: hand; -fx-border-color: rgba(14,165,233,0.28);
+                           -fx-border-radius: 20;"/>
+
+            <!-- Breadcrumb -->
+            <Label fx:id="seasonInfoLabel" text="—  ›  Season —"
+                   style="-fx-text-fill: #38bdf8; -fx-font-size: 12px;"/>
+
+            <Label fx:id="formTitleLabel" text="✦ Add Episode"
+                   style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+            <!-- Validation banner -->
+            <Label fx:id="validationLabel" text="" wrapText="true"
+                   style="-fx-background-color: rgba(239,68,68,0.12);
+                          -fx-text-fill: #f87171; -fx-padding: 10 14;
+                          -fx-background-radius: 8; -fx-font-size: 12px;"/>
+
+            <Separator style="-fx-background-color: rgba(14,165,233,0.18);"/>
+            <Label text="EPISODE INFO" style="-fx-text-fill: #0ea5e9; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+
+            <!-- Hidden season ID -->
+            <TextField fx:id="seasonIdField" promptText="Season ID"
+                       editable="false"
+                       style="-fx-background-color: rgba(14,165,233,0.05);
+                              -fx-text-fill: #4b5563; -fx-prompt-text-fill: #374151;
+                              -fx-border-color: rgba(14,165,233,0.12);
+                              -fx-border-radius: 8; -fx-background-radius: 8;
+                              -fx-padding: 8 12; -fx-font-size: 11px;"/>
+
+            <HBox spacing="10">
+                <TextField fx:id="numEpisodeField" promptText="Ep # *" prefWidth="80"
+                           style="-fx-background-color: rgba(14,165,233,0.08);
+                                  -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                  -fx-border-color: rgba(14,165,233,0.25);
+                                  -fx-border-radius: 8; -fx-background-radius: 8;
+                                  -fx-padding: 10 12;"/>
+                <TextField fx:id="titleField" promptText="Episode title *" HBox.hgrow="ALWAYS"
+                           style="-fx-background-color: rgba(14,165,233,0.08);
+                                  -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                  -fx-border-color: rgba(14,165,233,0.25);
+                                  -fx-border-radius: 8; -fx-background-radius: 8;
+                                  -fx-padding: 10 12;"/>
+            </HBox>
+
+            <HBox spacing="10">
+                <TextField fx:id="durationField" promptText="Duration (min)" HBox.hgrow="ALWAYS"
+                           style="-fx-background-color: rgba(14,165,233,0.08);
+                                  -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                  -fx-border-color: rgba(14,165,233,0.25);
+                                  -fx-border-radius: 8; -fx-background-radius: 8;
+                                  -fx-padding: 10 12;"/>
+                <TextField fx:id="ratingField" promptText="Rating (1-5)" prefWidth="100"
+                           style="-fx-background-color: rgba(14,165,233,0.08);
+                                  -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                  -fx-border-color: rgba(14,165,233,0.25);
+                                  -fx-border-radius: 8; -fx-background-radius: 8;
+                                  -fx-padding: 10 12;"/>
+            </HBox>
+
+            <DatePicker fx:id="releasedAtPicker" promptText="Release date"
+                        maxWidth="1.7976931348623157E308"
+                        style="-fx-background-color: rgba(14,165,233,0.08);
+                               -fx-border-color: rgba(14,165,233,0.25);
+                               -fx-border-radius: 8; -fx-background-radius: 8;"/>
+
+            <TextArea fx:id="resumeField" promptText="Episode synopsis…"
+                      prefRowCount="3" wrapText="true"
+                      style="-fx-background-color: rgba(14,165,233,0.08);
+                             -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                             -fx-border-color: rgba(14,165,233,0.25);
+                             -fx-border-radius: 8; -fx-background-radius: 8;
+                             -fx-padding: 10 14;"/>
+
+            <Separator style="-fx-background-color: rgba(14,165,233,0.18);"/>
+            <Label text="MEDIA" style="-fx-text-fill: #0ea5e9; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+
+            <TextField fx:id="videoUrlField" promptText="Video URL *"
+                       style="-fx-background-color: rgba(14,165,233,0.08);
+                              -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                              -fx-border-color: rgba(14,165,233,0.25);
+                              -fx-border-radius: 8; -fx-background-radius: 8;
+                              -fx-padding: 10 14;"/>
+
+            <TextField fx:id="covertUrlField" promptText="Thumbnail / cover image URL"
+                       style="-fx-background-color: rgba(14,165,233,0.08);
+                              -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                              -fx-border-color: rgba(14,165,233,0.25);
+                              -fx-border-radius: 8; -fx-background-radius: 8;
+                              -fx-padding: 10 14;"/>
+
+            <Separator style="-fx-background-color: rgba(14,165,233,0.18);"/>
+
+            <Button fx:id="submitBtn" text="Add Episode"
+                    onAction="#handleAddEpisode"
+                    maxWidth="1.7976931348623157E308"
+                    style="-fx-background-color: linear-gradient(to right, #0284c7, #0ea5e9);
+                           -fx-text-fill: white; -fx-font-weight: bold;
+                           -fx-font-size: 14px; -fx-padding: 13 0;
+                           -fx-background-radius: 10; -fx-cursor: hand;"/>
+
+            <Button fx:id="cancelEditBtn" text="✕  Cancel Edit"
+                    onAction="#cancelEdit"
+                    maxWidth="1.7976931348623157E308"
+                    style="-fx-background-color: rgba(255,255,255,0.05);
+                           -fx-text-fill: #6b7280; -fx-font-size: 13px;
+                           -fx-padding: 10 0; -fx-background-radius: 10;
+                           -fx-cursor: hand;"/>
+
         </VBox>
-    </HBox>
-</VBox>
+    </ScrollPane>
+
+    <!-- ══ RIGHT PANEL – EPISODES LIST ══════════════════════════════════════ -->
+    <VBox HBox.hgrow="ALWAYS" spacing="0"
+          style="-fx-background-color: #03060f;">
+
+        <!-- Header -->
+        <HBox alignment="CENTER_LEFT" spacing="12"
+              style="-fx-padding: 24 28 16 28;
+                     -fx-border-color: rgba(14,165,233,0.12);
+                     -fx-border-width: 0 0 1 0;">
+            <VBox spacing="2">
+                <Label text="Episodes"
+                       style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;"/>
+                <Label fx:id="episodeCountLabel" text="0 episodes"
+                       style="-fx-text-fill: #4b5563; -fx-font-size: 12px;"/>
+            </VBox>
+        </HBox>
+
+        <!-- Episode list -->
+        <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                    style="-fx-background: transparent; -fx-background-color: transparent;">
+            <VBox fx:id="episodeListContainer" spacing="12"
+                  style="-fx-padding: 20 28; -fx-background-color: transparent;"/>
+        </ScrollPane>
+    </VBox>
+
+</HBox>

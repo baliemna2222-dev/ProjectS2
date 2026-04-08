@@ -14,7 +14,12 @@ public class EpisodeService {
         return episodeDAO.getNextEpisode(seasonId, currentNumEpisode);
     }
 
- 
+    public void updateEpisode(Episode ep){
+        episodeDAO.updateEpisode(ep);
+    }
+    public void deleteEpisode(int id){
+        episodeDAO.deleteEpisode(id);
+    }
     public Episode getEpisodeById(int epId) {
         return episodeDAO.getEpisodeById(epId);
     }

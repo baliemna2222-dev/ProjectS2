@@ -20,7 +20,9 @@ public class SerieService {
 	    public void addSerie(Serie serie){
 	        serieDAO.addSerie(serie);
 	    }
-
+	    public void updateSerie(Serie serie){
+	        serieDAO.updateSerie( serie);
+	    }
 	    public void deleteSerie(int id){
 	        serieDAO.deleteSerie(id);
 	    }

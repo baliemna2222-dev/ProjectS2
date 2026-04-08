@@ -3,45 +3,191 @@
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.Insets?>
 
-<VBox xmlns="http://javafx.com/javafx/21"
+<VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="JStream.controller.SeriesAdminController"
-      stylesheets="@/view/css/style.css"
-      spacing="20"
-      style="-fx-padding: 30;">
+      spacing="0"
+      style="-fx-background-color: #03060f; -fx-font-family: 'Segoe UI', sans-serif;">
 
-    <Label text="Series Management" style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+    <!-- ══ TOP NAV ══════════════════════════════════════════════════════════ -->
+    <HBox alignment="CENTER_LEFT" spacing="18"
+          style="-fx-background-color: linear-gradient(to bottom, #080d1a, #03060f);
+                 -fx-padding: 16 28;
+                 -fx-border-color: rgba(29,78,216,0.20);
+                 -fx-border-width: 0 0 1 0;">
 
-    <HBox spacing="20">
-        <VBox spacing="12" style="-fx-background-color: rgba(255,255,255,0.08); -fx-padding: 24; -fx-background-radius: 16;" prefWidth="360">
-            <Label text="Add Series" style="-fx-text-fill: #0ef; -fx-font-size: 16px; -fx-font-weight: bold;" />
-            
-            <TextField fx:id="titleField" promptText="Series Title" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            <TextField fx:id="ageRatingField" promptText="Minimum Age (e.g., 12+)" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            <TextArea fx:id="synopsisField" promptText="Synopsis" prefHeight="80" wrapText="true" style="-fx-control-inner-background: #2c3e50; -fx-text-fill: white;"/>
-            <TextField fx:id="castingField" promptText="Casting (e.g., Actor 1, Actor 2)" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            
-            <Separator />
-            <Label text="Images" style="-fx-text-fill: gray; -fx-font-size: 12px;" />
-            
-            <TextField fx:id="coverField" promptText="Main Cover URL (covert_url)" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            <TextField fx:id="titleUrlField" promptText="Title Logo URL (title_url)" style="-fx-background-color: #2c3e50; -fx-text-fill: white;"/>
-            
-            <Separator />
-            <Label text="Categories (Ctrl/Cmd for multiple selection)" style="-fx-text-fill: gray; -fx-font-size: 12px;" />
-            <ListView fx:id="categoryListView" prefHeight="100" style="-fx-background-color: rgba(255,255,255,0.05); -fx-border-color: rgba(255,255,255,0.12); -fx-border-radius: 10; -fx-background-radius: 10;"/>
+        <Label text="J S T R E A M"
+               style="-fx-text-fill: #3b82f6; -fx-font-size: 20px; -fx-font-weight: bold; -fx-letter-spacing: 4px;"/>
+        <Label text="/ Series"
+               style="-fx-text-fill: #374151; -fx-font-size: 15px;"/>
 
-            <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 12 0 0 0;">
-                <Button text="Add Series" onAction="#addSerie" style="-fx-background-color: #0ef; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: 12;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <!-- Search -->
+        <HBox alignment="CENTER_LEFT" spacing="8"
+              style="-fx-background-color: rgba(29,78,216,0.08);
+                     -fx-background-radius: 24;
+                     -fx-padding: 8 16;
+                     -fx-border-color: rgba(29,78,216,0.25);
+                     -fx-border-radius: 24;">
+            <Label text="🔍" style="-fx-text-fill: #6b7280;"/>
+            <TextField fx:id="searchField"
+                       promptText="Search series, genres…"
+                       prefWidth="220"
+                       style="-fx-background-color: transparent; -fx-text-fill: white;
+                              -fx-prompt-text-fill: #4b5563; -fx-border-width: 0;"/>
+        </HBox>
+
+        <!-- Count badge -->
+        <Label fx:id="serieCountLabel" text="0 series"
+               style="-fx-background-color: rgba(29,78,216,0.18);
+                      -fx-text-fill: #60a5fa;
+                      -fx-padding: 6 14; -fx-background-radius: 20;
+                      -fx-font-size: 12px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <!-- ══ BODY ═════════════════════════════════════════════════════════════ -->
+    <HBox VBox.vgrow="ALWAYS" spacing="0">
+
+        <!-- ── LEFT SIDEBAR – FORM ───────────────────────────────────────── -->
+        <ScrollPane fitToWidth="true"
+                    style="-fx-background: #080d1a; -fx-background-color: #080d1a;
+                           -fx-border-color: rgba(29,78,216,0.18); -fx-border-width: 0 1 0 0;"
+                    prefWidth="355" minWidth="310">
+
+            <VBox fx:id="formPanel" spacing="18"
+                  style="-fx-padding: 26 22; -fx-background-color: #080d1a;">
+
+                <!-- Form header -->
+                <Label fx:id="formTitle" text="✦ Add New Series"
+                       style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+                <!-- Validation banner -->
+                <Label fx:id="validationLabel" text=""
+                       wrapText="true"
+                       style="-fx-background-color: rgba(239,68,68,0.12);
+                              -fx-text-fill: #f87171;
+                              -fx-padding: 10 14; -fx-background-radius: 8;
+                              -fx-font-size: 12px;"/>
+
+                <Separator style="-fx-background-color: rgba(29,78,216,0.20);"/>
+
+                <!-- SECTION: INFO -->
+                <Label text="SERIES INFO" style="-fx-text-fill: #3b82f6; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+
+                <TextField fx:id="titleField" promptText="Series title *"
+                           style="-fx-background-color: rgba(29,78,216,0.08);
+                                  -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                  -fx-border-color: rgba(29,78,216,0.25);
+                                  -fx-border-radius: 8; -fx-background-radius: 8;
+                                  -fx-padding: 10 14;"/>
+
+                <TextField fx:id="ageRatingField" promptText="Age rating (e.g. 16+)"
+                           style="-fx-background-color: rgba(29,78,216,0.08);
+                                  -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                  -fx-border-color: rgba(29,78,216,0.25);
+                                  -fx-border-radius: 8; -fx-background-radius: 8;
+                                  -fx-padding: 10 14;"/>
+
+                <TextArea fx:id="synopsisField" promptText="Synopsis *"
+                          prefRowCount="3" wrapText="true"
+                          style="-fx-background-color: rgba(29,78,216,0.08);
+                                 -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                 -fx-border-color: rgba(29,78,216,0.25);
+                                 -fx-border-radius: 8; -fx-background-radius: 8;
+                                 -fx-padding: 10 14;"/>
+
+                <TextField fx:id="castingField" promptText="Casting (Actor A, Actor B…)"
+                           style="-fx-background-color: rgba(29,78,216,0.08);
+                                  -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                  -fx-border-color: rgba(29,78,216,0.25);
+                                  -fx-border-radius: 8; -fx-background-radius: 8;
+                                  -fx-padding: 10 14;"/>
+
+                <!-- SECTION: MEDIA -->
+                <Separator style="-fx-background-color: rgba(29,78,216,0.20);"/>
+                <Label text="MEDIA" style="-fx-text-fill: #3b82f6; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <TextField fx:id="coverField" promptText="Cover image *" HBox.hgrow="ALWAYS"
+                               style="-fx-background-color: rgba(29,78,216,0.08);
+                                      -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                      -fx-border-color: rgba(29,78,216,0.25);
+                                      -fx-border-radius: 8; -fx-background-radius: 8;
+                                      -fx-padding: 9 12;"/>
+                    <Button text="🖼" onAction="#chooseCoverFile"
+                            style="-fx-background-color: rgba(29,78,216,0.25);
+                                   -fx-text-fill: white; -fx-background-radius: 8;
+                                   -fx-cursor: hand; -fx-padding: 9 12;"/>
+                </HBox>
+
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <TextField fx:id="titleUrlField" promptText="Title logo image" HBox.hgrow="ALWAYS"
+                               style="-fx-background-color: rgba(29,78,216,0.08);
+                                      -fx-text-fill: white; -fx-prompt-text-fill: #4b5563;
+                                      -fx-border-color: rgba(29,78,216,0.25);
+                                      -fx-border-radius: 8; -fx-background-radius: 8;
+                                      -fx-padding: 9 12;"/>
+                    <Button text="🖼" onAction="#chooseTitleUrlFile"
+                            style="-fx-background-color: rgba(29,78,216,0.25);
+                                   -fx-text-fill: white; -fx-background-radius: 8;
+                                   -fx-cursor: hand; -fx-padding: 9 12;"/>
+                </HBox>
+
+                <!-- SECTION: CATEGORIES -->
+                <Separator style="-fx-background-color: rgba(29,78,216,0.20);"/>
+                <Label text="CATEGORIES" style="-fx-text-fill: #3b82f6; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+                <Label text="Hold Ctrl / ⌘ to select multiple *"
+                       style="-fx-text-fill: #4b5563; -fx-font-size: 11px;"/>
+
+                <ListView fx:id="categoryListView" prefHeight="100"
+                          style="-fx-background-color: rgba(29,78,216,0.06);
+                                 -fx-control-inner-background: rgba(29,78,216,0.06);
+                                 -fx-border-color: rgba(29,78,216,0.25);
+                                 -fx-border-radius: 8; -fx-background-radius: 8;
+                                 -fx-text-fill: white;"/>
+
+                <!-- ACTION BUTTONS -->
+                <Separator style="-fx-background-color: rgba(29,78,216,0.20);"/>
+
+                <Button fx:id="submitBtn" text="Add Series"
+                        onAction="#handleSubmit"
+                        maxWidth="1.7976931348623157E308"
+                        style="-fx-background-color: linear-gradient(to right, #1d4ed8, #0ea5e9);
+                               -fx-text-fill: white; -fx-font-weight: bold;
+                               -fx-font-size: 14px; -fx-padding: 13 0;
+                               -fx-background-radius: 10; -fx-cursor: hand;"/>
+
+                <Button fx:id="cancelEditBtn" text="✕  Cancel Edit"
+                        onAction="#cancelEdit"
+                        maxWidth="1.7976931348623157E308"
+                        style="-fx-background-color: rgba(255,255,255,0.06);
+                               -fx-text-fill: #6b7280; -fx-font-size: 13px;
+                               -fx-padding: 10 0; -fx-background-radius: 10;
+                               -fx-cursor: hand;"/>
+            </VBox>
+        </ScrollPane>
+
+        <!-- ── RIGHT PANEL – SERIES GRID ────────────────────────────────── -->
+        <VBox VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS"
+              style="-fx-background-color: #03060f;">
+
+            <HBox alignment="CENTER_LEFT" spacing="12"
+                  style="-fx-padding: 20 28 12 28;">
+                <Label text="All Series"
+                       style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="serieCountLabel" text="0 series"
+                       style="-fx-text-fill: #374151; -fx-font-size: 13px;"/>
             </HBox>
+
+            <ScrollPane fx:id="scrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                        style="-fx-background: transparent; -fx-background-color: transparent;">
+                <TilePane fx:id="seriesContainer"
+                          hgap="18" vgap="18" prefColumns="4"
+                          style="-fx-padding: 0 28 28 28; -fx-background-color: transparent;"/>
+            </ScrollPane>
         </VBox>
 
-        <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent;">
-            <TilePane fx:id="seriesContainer" hgap="15" vgap="15" prefColumns="4">
-                <padding>
-                    <Insets top="10" right="10" bottom="10" left="10"/>
-                </padding>
-            </TilePane>
-        </ScrollPane>
     </HBox>
 </VBox>
