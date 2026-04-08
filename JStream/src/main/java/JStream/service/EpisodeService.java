@@ -1,11 +1,13 @@
 package JStream.service;
 
+import java.util.List;
+
 import JStream.dao.EpisodeDAO;
 import JStream.entity.Episode;
 
 public class EpisodeService {
 
-    private final EpisodeDAO episodeDAO = new EpisodeDAO();
+    private  EpisodeDAO episodeDAO = new EpisodeDAO();
 
    
     public Episode getNextEpisode(int seasonId, int currentNumEpisode) {
@@ -19,5 +21,16 @@ public class EpisodeService {
 
     public int getSerieIdBySeasonId(int seasonId) {
         return episodeDAO.getSerieIdBySeasonId(seasonId);
+    }
+    public EpisodeService() {
+        this.episodeDAO = new EpisodeDAO();
+    }
+
+    public void addEpisode(Episode episode) {
+        episodeDAO.addEpisode(episode);
+    }
+
+    public List<Episode> getEpisodesBySeason(int seasonId) {
+        return episodeDAO.getEpisodesBySeason(seasonId);
     }
 }

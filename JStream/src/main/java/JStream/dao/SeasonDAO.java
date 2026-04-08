@@ -148,4 +148,31 @@ public class SeasonDAO {
         s.setRating(rs.getInt("rating"));
         return s;
     }
+    public void addSeason(Season season) {
+        String sql = "INSERT INTO season (serie_id, season_num, title, synopsis, trailer_url, poster_url, title_url, image_url, planned_episodes, status, rating) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, season.getSerieId());
+            stmt.setInt(2, season.getSeasonNum());
+            stmt.setString(3, season.getTitle());
+            stmt.setString(4, season.getSynopsis());
+            stmt.setString(5, season.getTrailerUrl());
+            stmt.setString(6, season.getPosterUrl());
+            stmt.setString(7, season.getTitleUrl());
+            stmt.setString(8, season.getImageUrl());
+            stmt.setInt(9, season.getPlannedEpisodes());
+            stmt.setString(10, season.getStatus());
+            stmt.setInt(11, season.getRating());
+
+            stmt.executeUpdate();
+            System.out.println("✅ Saison ajoutée avec succès !");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

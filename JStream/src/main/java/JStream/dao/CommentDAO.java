@@ -129,4 +129,23 @@ public class CommentDAO {
             rs.getTimestamp("updated_at")
         );
     }
+    // Get only reported comments (is_signal = 1)
+   
+
+    
+
+    // Ignore the report: reset is_signal to 0
+   /* public void pardonComment(int commentId) {
+        String sql = "UPDATE comments SET is_signal = 0 WHERE comment_id = ?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, commentId);
+            stmt.executeUpdate();
+            System.out.println("✅ Report for comment " + commentId + " cancelled.");
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }*/
 }

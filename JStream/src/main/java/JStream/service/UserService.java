@@ -19,7 +19,7 @@ public class UserService {
         if (username == null || username.trim().isEmpty()) return false;
         if (email == null || email.trim().isEmpty()) return false;
         if (password == null || password.isEmpty()) return false;
-
+        
         if (userDAO.usernameExists(username)) {
             System.out.println("❌ Username already exists");
             return false;
@@ -36,7 +36,7 @@ public class UserService {
         user.setUsername(username.trim());
         user.setEmail(email.trim());
         user.setPassword(hashedPassword);
-
+        user.setRole(JStream.entity.UserRole.USER);
         return userDAO.insertUser(user);
     }
 
@@ -109,4 +109,40 @@ public class UserService {
         if (email == null || email.trim().isEmpty()) return null;
         return userDAO.getUserByEmail(email.trim());
     }
+    public boolean createUser(String username, String email, String password, JStream.entity.UserRole role) {
+        if (userDAO.usernameExists(username)) return false;
+        if (userDAO.emailExists(email)) return false;
+
+        String hashedPassword = SecurityUtils.hashPassword(password);
+
+        User user = new User();
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setPassword(hashedPassword);
+        user.setRole(role != null ? role : JStream.entity.UserRole.USER);
+
+        return userDAO.insertUser(user);
+    }
+
+ // Récupérer un utilisateur par son username
+    public User getUserByUsername(String username) {
+        return userDAO.getUserByUsername(username);
+    }
+ // ================= ADMIN : GET ALL USERS =================
+    public java.util.List<User> getAllUsers() {
+        return userDAO.getAllUsers();
+    }
+
+    public void updateUserRole(User user) {
+        userDAO.updateUserRole(user);
+    }
+
+    public void deleteUser(int id) {
+        userDAO.deleteUser(id);
+    }
+
+  
+
+
+   
 }

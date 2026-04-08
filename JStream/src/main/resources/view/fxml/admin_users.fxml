@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="JStream.controller.UsersController"
+      stylesheets="@/view/css/style.css"
+      spacing="25"
+      style="-fx-padding: 30; -fx-background-color: transparent;">
+
+    <Label text="User Management"
+           style="-fx-text-fill: white; -fx-font-size: 26px; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0, 1, 1);" />
+
+    <VBox spacing="15" style="-fx-background-color: rgba(255,255,255,0.04); -fx-padding: 18; -fx-background-radius: 18;">
+        <Label text="Add User"
+               style="-fx-text-fill: #cbd5e1; -fx-font-size: 16px; -fx-font-weight: bold;" />
+        <HBox spacing="12" alignment="CENTER_LEFT">
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="Username" style="-fx-text-fill: #cbd5e1;" />
+                <TextField fx:id="newUsernameField" promptText="Username" />
+            </VBox>
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="Email" style="-fx-text-fill: #cbd5e1;" />
+                <TextField fx:id="newEmailField" promptText="Email" />
+            </VBox>
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="Password" style="-fx-text-fill: #cbd5e1;" />
+                <TextField fx:id="newPasswordField" promptText="Password" />
+            </VBox>
+            <VBox spacing="6">
+                <Label text="Role" style="-fx-text-fill: #cbd5e1;" />
+                <ComboBox fx:id="newRoleComboBox" prefWidth="140" />
+            </VBox>
+            <Button fx:id="addUserButton" text="Add" onAction="#handleAddUser" />
+        </HBox>
+        <Label fx:id="addUserMessage" text="" style="-fx-text-fill: #7dd3fc;" />
+    </VBox>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
+        <VBox fx:id="userListContainer" spacing="15" style="-fx-padding: 10;" />
+    </ScrollPane>
+
+</VBox>

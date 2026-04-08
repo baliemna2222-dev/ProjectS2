@@ -211,4 +211,102 @@ public class FilmDAO {
         film.setCategories(cats);
         return film;
     }
+   
+
+    private List<Category> getCategoriesForFilm(int filmId, Connection conn) {
+        List<Category> categories = new ArrayList<>();
+        String sql = "SELECT c.* FROM category c " +
+                     "JOIN film_category fc ON c.category_id = fc.category_id " +
+                     "WHERE fc.film_id = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, filmId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Category cat = new Category();
+                    cat.setCategory_id(rs.getInt("category_id"));
+                    cat.setName(rs.getString("name"));
+                    // cat.setDescription(rs.getString("description")); // Décommente si tu as une description
+                    categories.add(cat);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return categories;
+    }
+
+    public void addFilm(Film film) {
+        String insertFilmSql = "INSERT INTO film (title, synopsis, casting, video_url, image_url, title_image_url, poster_url, duration, age_rating, release_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String insertCategorySql = "INSERT INTO film_category (film_id, category_id) VALUES (?, ?)";
+
+        Connection conn = null;
+        try {
+            conn = Database.getConnection();
+            // Transaction : on bloque l'enregistrement automatique
+            conn.setAutoCommit(false); 
+
+            try (PreparedStatement stmtFilm = conn.prepareStatement(insertFilmSql, Statement.RETURN_GENERATED_KEYS)) {
+                stmtFilm.setString(1, film.getTitle());
+                stmtFilm.setString(2, film.getSynopsis());
+                stmtFilm.setString(3, film.getCasting());
+                stmtFilm.setString(4, film.getVideo_url());
+                stmtFilm.setString(5, film.getImage_url());
+                stmtFilm.setString(6, film.getTitle_image_url());
+                stmtFilm.setString(7, film.getPoster_url());
+                stmtFilm.setDouble(8, film.getDuration());
+                stmtFilm.setString(9, film.getAge_rating());
+                
+                if (film.getRelease_date() != null) {
+                    stmtFilm.setTimestamp(10, Timestamp.valueOf(film.getRelease_date()));
+                } else {
+                    stmtFilm.setNull(10, java.sql.Types.TIMESTAMP);
+                }
+
+                stmtFilm.executeUpdate();
+
+                // On récupère l'ID du film nouvellement créé
+                try (ResultSet generatedKeys = stmtFilm.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int newFilmId = generatedKeys.getInt(1);
+
+                        // On insère les catégories dans la table de liaison
+                        if (film.getCategories() != null && !film.getCategories().isEmpty()) {
+                            try (PreparedStatement stmtCategory = conn.prepareStatement(insertCategorySql)) {
+                                for (Category cat : film.getCategories()) {
+                                    stmtCategory.setInt(1, newFilmId);
+                                    stmtCategory.setInt(2, cat.getCategory_id());
+                                    stmtCategory.addBatch();
+                                }
+                                stmtCategory.executeBatch();
+                            }
+                        }
+                    }
+                }
+            }
+            // Si tout s'est bien passé, on valide !
+            conn.commit();
+
+        } catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.rollback(); // En cas d'erreur, on annule tout !
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+   
 }

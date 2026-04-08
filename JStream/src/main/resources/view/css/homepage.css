@@ -1,0 +1,85 @@
+.root {
+    -fx-background-color: #000000;
+    -fx-text-fill: #999999;
+}
+
+.label {
+    -fx-text-fill: #ffffff;
+}
+
+.button {
+    -fx-background-color: #e50918;
+    -fx-text-fill: #ffffff;
+    -fx-padding: 8 20 8 20;
+    -fx-font-size: 14pt;
+    -fx-background-radius: 5;
+}
+
+.button:hover {
+    -fx-opacity: 0.9;
+}
+
+.h1, .h2, .h3, .h4 {
+    -fx-text-fill: #ffffff;
+}
+
+.anchor-pane.showcase {
+    -fx-background-image: url("img/background.jpg");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: cover;
+    -fx-background-position: center;
+}
+
+.overlay {
+    -fx-background-color: rgba(0,0,0,0.2);
+}
+
+.showcase-top img {
+    -fx-fit-width: 170;
+}
+
+.tabs {
+    -fx-background-color: #141414;
+    -fx-padding: 10 0 0 0;
+    -fx-border-color: #3d3d3d;
+    -fx-border-width: 0 0 3 0;
+}
+
+.tab-content {
+    -fx-padding: 20;
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+}
+
+/* Tables */
+.table-view {
+    -fx-background-color: #000000;
+    -fx-text-fill: #999999;
+    -fx-border-color: transparent;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #222222;
+}
+
+.table-view .cell {
+    -fx-text-fill: #999999;
+}
+
+.table-view .cell:hover {
+    -fx-text-fill: #ffffff;
+}
+
+.footer {
+    -fx-text-fill: #999999;
+}
+
+.footer a {
+    -fx-text-fill: #999999;
+}
+
+.footer a:hover {
+    -fx-text-fill: #ffffff;
+}
+
+/* Responsive tweaks - JavaFX doesn’t handle media queries, so use bindings in controller */

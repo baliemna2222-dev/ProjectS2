@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="JStream.controller.AdminHomeController"
+            prefWidth="1100" prefHeight="700"
+            stylesheets="@/view/css/style.css" >
+
+    <left>
+        <VBox spacing="20"
+              prefWidth="240"
+              style="-fx-background-color: #111827; -fx-padding: 30 20 30 20;">
+            <effect>
+                <DropShadow color="#000000b3" radius="15" offsetX="5" offsetY="0"/>
+            </effect>
+
+            <HBox alignment="CENTER_LEFT" spacing="8">
+                <ImageView fitWidth="35" fitHeight="35" preserveRatio="true">
+                    <image>
+                        <Image url="@../../assets/images/logo/Raksha.png" />
+                    </image>
+                </ImageView>
+                <Label text="Raksha Admin"
+                       style="-fx-text-fill: #0ef; -fx-font-size: 22px; -fx-font-weight: bold;" />
+            </HBox>
+            <Label text="Administration" style="-fx-text-fill: #9ca3af; -fx-font-size: 13px; -fx-padding: 0 0 20 0;" />
+            
+            <Button fx:id="dashboardBtn" text="Dashboard" prefWidth="200" onAction="#openDashboard" styleClass="nav-button"/>
+            <Button fx:id="filmsBtn" text="Films Management" prefWidth="200" onAction="#openFilmsView" styleClass="nav-button"/>
+            <Button fx:id="seriesBtn" text="Series" prefWidth="200" onAction="#openSeriesView" styleClass="nav-button"/>
+            <Button fx:id="categoriesBtn" text="Categories" prefWidth="200" onAction="#openCategoriesView" styleClass="nav-button"/>
+
+            <Button fx:id="usersBtn" text="Users" prefWidth="200" onAction="#openUsersView" styleClass="nav-button" />
+
+            <Button fx:id="commentsBtn" text="Comments" prefWidth="200" onAction="#openCommentsView" styleClass="nav-button"/>
+
+<Region VBox.vgrow="ALWAYS" />
+            <Region VBox.vgrow="ALWAYS" />
+
+            <Button fx:id="logoutBtn" text="Logout" prefWidth="200" onAction="#logout"
+                    style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 10;" />
+        </VBox>
+    </left>
+
+    <center>
+        <StackPane fx:id="contentArea" style="-fx-background-color: transparent;"/>
+    </center>
+</BorderPane>

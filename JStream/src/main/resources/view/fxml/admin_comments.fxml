@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.effect.DropShadow?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="JStream.controller.AdminCommentsController"
+      stylesheets="@/view/css/style.css"
+      spacing="25"
+      style="-fx-padding: 30;">
+
+    <Label text="Reported Comments 🚨"
+           style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 5, 0, 2, 2);"/>
+
+    <ScrollPane fitToWidth="true" 
+                style="-fx-background-color: transparent; -fx-background: transparent; -fx-control-inner-background: transparent;"
+                VBox.vgrow="ALWAYS">
+        
+        <VBox fx:id="commentsContainer" spacing="20" style="-fx-background-color: transparent;">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+        </VBox>
+        
+    </ScrollPane>
+
+</VBox>

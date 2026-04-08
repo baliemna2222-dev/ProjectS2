@@ -33,5 +33,9 @@ public class CommentService {
     public List<Comment> getCommentsForEpisode(int serieId) {
         return commentDAO.getCommentsByEpisode(serieId);
     }
-    
+   
+  /*  public void pardonComment(int commentId) {
+        commentDAO.pardonComment(commentId);
+    }
+    */
 }

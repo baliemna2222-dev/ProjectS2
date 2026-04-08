@@ -222,4 +222,83 @@ public class SerieDAO {
         serie.setCategories(cats);
         return serie;
     }
+    
+
+    private List<Category> getCategoriesForSerie(int serieId, Connection conn) {
+        List<Category> categories = new ArrayList<>();
+        String sql = "SELECT c.* FROM category c " +
+                     "JOIN serie_category sc ON c.category_id = sc.category_id " +
+                     "WHERE sc.serie_id = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, serieId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Category cat = new Category();
+                    cat.setCategory_id(rs.getInt("category_id"));
+                    cat.setName(rs.getString("name"));
+                    categories.add(cat);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return categories;
+    }
+
+    public void addSerie(Serie serie) {
+        String insertSerieSql = "INSERT INTO serie (title, title_url, synopsis, casting, covert_url, age_rating) VALUES (?, ?, ?, ?, ?, ?)";
+        String insertCategorySql = "INSERT INTO serie_category (serie_id, category_id) VALUES (?, ?)";
+
+        Connection conn = null;
+        try {
+            conn = Database.getConnection();
+            conn.setAutoCommit(false); // Transaction
+
+            try (PreparedStatement stmtSerie = conn.prepareStatement(insertSerieSql, Statement.RETURN_GENERATED_KEYS)) {
+                stmtSerie.setString(1, serie.getTitle());
+                stmtSerie.setString(2, serie.getTitleUrl());
+                stmtSerie.setString(3, serie.getSynopsis());
+                stmtSerie.setString(4, serie.getCasting());
+                stmtSerie.setString(5, serie.getCovertUrl());
+                stmtSerie.setString(6, serie.getAge_rating());
+
+                stmtSerie.executeUpdate();
+
+                try (ResultSet generatedKeys = stmtSerie.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int newSerieId = generatedKeys.getInt(1);
+
+                        // Insertion des catégories
+                        if (serie.getCategories() != null && !serie.getCategories().isEmpty()) {
+                            try (PreparedStatement stmtCategory = conn.prepareStatement(insertCategorySql)) {
+                                for (Category cat : serie.getCategories()) {
+                                    stmtCategory.setInt(1, newSerieId);
+                                    stmtCategory.setInt(2, cat.getCategory_id());
+                                    stmtCategory.addBatch();
+                                }
+                                stmtCategory.executeBatch();
+                            }
+                        }
+                    }
+                }
+            }
+            conn.commit();
+
+        } catch (Exception e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            }
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+        }
+    }
+
+  
 }

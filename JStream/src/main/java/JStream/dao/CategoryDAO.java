@@ -121,4 +121,24 @@ public class CategoryDAO {
             rs.getTimestamp("created_at")
         );
     }
+  
+    public void addCategory(Category category){
+
+        String sql = "INSERT INTO category(name,description) VALUES(?,?)";
+
+        try(Connection conn = Database.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)){
+
+            stmt.setString(1, category.getName());
+            stmt.setString(2, category.getDescription());
+
+            stmt.executeUpdate();
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+  
+   
 }

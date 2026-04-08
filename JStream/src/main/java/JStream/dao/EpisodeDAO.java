@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -167,4 +168,35 @@ public class EpisodeDAO {
         ep.setReleasedAt(rs.getTimestamp("released_at"));
         return ep;
     }
+    public void addEpisode(Episode episode) {
+        String sql = "INSERT INTO episode (season_id, num_episode, title, duration, resume, video_url, covert_url, rating, released_at) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, episode.getSeasonId());
+            stmt.setInt(2, episode.getNumEpisode());
+            stmt.setString(3, episode.getTitle());
+            stmt.setInt(4, episode.getDuration());
+            stmt.setString(5, episode.getResume());
+            stmt.setString(6, episode.getVideoUrl());
+            stmt.setString(7, episode.getCovertUrl());
+            stmt.setInt(8, episode.getRating());
+            
+            if (episode.getReleasedAt() != null) {
+                stmt.setTimestamp(9, episode.getReleasedAt());
+            } else {
+                stmt.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
+            }
+
+            stmt.executeUpdate();
+            System.out.println("✅ Épisode ajouté avec succès !");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+   
 }
