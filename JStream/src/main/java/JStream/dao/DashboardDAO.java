@@ -21,7 +21,7 @@ public class DashboardDAO {
     }
 
     public int countComments() {
-        return count("comment");
+        return count("comments");
     }
 
     public int countWatchHistory() {

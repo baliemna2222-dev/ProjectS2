@@ -13,7 +13,7 @@ public class FilmDAO {
     // ===== INSERT (Zidna trailer_url w posterV_url) =====
     public boolean insertFilm(Film film) {
         String sql = "INSERT INTO film (title, synopsis, casting, trailer_url, video_url, image_url, " +
-                     "title_image_url, poster_url, posterV_url, release_date, duration, age_rating, rating) " +
+                     "title_image_url, poster_url, poster_v_url, release_date, duration, age_rating, rating) " +
                      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -185,7 +185,7 @@ public class FilmDAO {
         film.setCasting(rs.getString("casting"));
         
         film.setTrailer_url(rs.getString("trailer_url")); 
-        film.setPosterV_url(rs.getString("posterV_url"));
+        film.setPosterV_url(rs.getString("poster_v_url"));
 
         film.setVideo_url(rs.getString("video_url"));
         film.setImage_url(rs.getString("image_url"));
