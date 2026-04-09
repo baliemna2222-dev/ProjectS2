@@ -23,7 +23,9 @@ public class CommentService {
     public boolean flagComment(int commentId) {
         return commentDAO.flagComment(commentId);
     }
-
+    public List<Comment> getSignaledComments() {
+        return commentDAO.getSignaledComments();
+    }
     // ── Charger les commentaires d'un film ───────────────────────────────────
     public List<Comment> getCommentsForFilm(int filmId) {
         return commentDAO.getCommentsByFilm(filmId);
@@ -34,8 +36,8 @@ public class CommentService {
         return commentDAO.getCommentsByEpisode(serieId);
     }
    
-  /*  public void pardonComment(int commentId) {
+    public void pardonComment(int commentId) {
         commentDAO.pardonComment(commentId);
     }
-    */
+   
 }

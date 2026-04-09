@@ -53,7 +53,7 @@ public class CommentDAO {
 
     // ===== FLAG =====
     public boolean flagComment(int commentId) {
-        String sql = "UPDATE comments SET flagged=TRUE WHERE comment_id=?";
+        String sql = "UPDATE comments SET flagged=1 WHERE comment_id=?";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -69,7 +69,7 @@ public class CommentDAO {
     // ===== GET COMMENTS FOR A FILM =====
     public List<Comment> getCommentsByFilm(int filmId) {
         List<Comment> list = new ArrayList<>();
-        String sql = "SELECT * FROM comments WHERE film_id=? AND ep_id=0 AND flagged=FALSE ORDER BY created_at DESC";
+        String sql = "SELECT * FROM comments WHERE film_id=? AND ep_id=0 AND flagged=0 ORDER BY created_at DESC";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -86,7 +86,7 @@ public class CommentDAO {
     // ===== GET COMMENTS FOR AN EPISODE =====
     public List<Comment> getCommentsByEpisode(int epId) {
         List<Comment> list = new ArrayList<>();
-        String sql = "SELECT * FROM comments WHERE ep_id=? AND flagged=FALSE ORDER BY created_at DESC";
+        String sql = "SELECT * FROM comments WHERE ep_id=? AND flagged=0 ORDER BY created_at DESC";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -103,7 +103,7 @@ public class CommentDAO {
     // ===== GET ALL FLAGGED (admin moderation) =====
     public List<Comment> getFlaggedComments() {
         List<Comment> list = new ArrayList<>();
-        String sql = "SELECT * FROM comments WHERE flagged=TRUE ORDER BY created_at DESC";
+        String sql = "SELECT * FROM comments WHERE flagged=1 ORDER BY created_at DESC";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -131,12 +131,26 @@ public class CommentDAO {
     }
     // Get only reported comments (is_signal = 1)
    
+ // ===== GET ALL FLAGGED WITH USER INFO (admin moderation) =====
+    public List<Comment> getSignaledComments() {
+        List<Comment> list = new ArrayList<>();
+        String sql = "SELECT * FROM comments WHERE flagged = 1 ORDER BY created_at DESC";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) list.add(mapRow(rs));
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
     
 
     // Ignore the report: reset is_signal to 0
-   /* public void pardonComment(int commentId) {
-        String sql = "UPDATE comments SET is_signal = 0 WHERE comment_id = ?";
+    public void pardonComment(int commentId) {
+        String sql = "UPDATE comments SET flagged = 0 WHERE comment_id = ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
@@ -147,5 +161,5 @@ public class CommentDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }*/
+    }
 }

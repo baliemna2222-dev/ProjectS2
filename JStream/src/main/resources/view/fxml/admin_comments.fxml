@@ -3,28 +3,51 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.effect.DropShadow?>
 
 <VBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="JStream.controller.AdminCommentsController"
       stylesheets="@/view/css/style.css"
-      spacing="25"
-      style="-fx-padding: 30;">
+      spacing="0"
+      style="-fx-background-color: #0d1117; -fx-min-height: 600px;">
 
-    <Label text="Reported Comments 🚨"
-           style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 5, 0, 2, 2);"/>
+    <!-- ── Top header bar ──────────────────────────────────────────────── -->
+    <HBox alignment="CENTER_LEFT" spacing="16"
+          style="-fx-padding: 28 30 20 30;
+                 -fx-background-color: linear-gradient(to right, #161d2b, #0d1117);
+                 -fx-border-color: transparent transparent #ffffff0d transparent;
+                 -fx-border-width: 0 0 1 0;">
 
-    <ScrollPane fitToWidth="true" 
-                style="-fx-background-color: transparent; -fx-background: transparent; -fx-control-inner-background: transparent;"
-                VBox.vgrow="ALWAYS">
-        
-        <VBox fx:id="commentsContainer" spacing="20" style="-fx-background-color: transparent;">
-            <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
-            </padding>
+        <Label text="🚨"
+               style="-fx-font-size: 28px;"/>
+
+        <VBox spacing="2">
+            <Label text="Comment Moderation"
+                   style="-fx-text-fill: white;
+                          -fx-font-size: 26px;
+                          -fx-font-weight: bold;"/>
+            <Label fx:id="countLabel"
+                   text="Loading..."
+                   style="-fx-text-fill: #ff416c;
+                          -fx-font-size: 13px;
+                          -fx-font-weight: bold;"/>
         </VBox>
-        
+
+    </HBox>
+
+    <!-- ── Scrollable cards area ────────────────────────────────────────── -->
+    <ScrollPane fitToWidth="true"
+                VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent;
+                       -fx-background: transparent;
+                       -fx-control-inner-background: transparent;
+                       -fx-border-color: transparent;">
+
+        <VBox fx:id="commentsContainer"
+              spacing="16"
+              style="-fx-background-color: transparent; -fx-padding: 20 30 30 30;">
+        </VBox>
+
     </ScrollPane>
 
 </VBox>
