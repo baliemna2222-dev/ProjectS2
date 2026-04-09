@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import JStream.entity.Session;
 import JStream.entity.User;
+import JStream.entity.UserRole;
 import JStream.service.UserService;
 import javafx.animation.FadeTransition;
 import javafx.animation.TranslateTransition;
@@ -149,11 +150,11 @@ public class Logincontroller implements Initializable {
         }
 
         User user = userService.login(username, password);
-        System.out.println("👤 User returned: " + (user != null ? user.getId() + " / " + user.getUsername() : "NULL"));
+        System.out.println("👤 User returned: " + (user != null ? user.getId() + " / " + user.getUsername() + " / " + user.getRole() : "NULL"));
 
         if (user != null) {
-            Session.login(user.getId(), user.getUsername());
-            goToHomepage(event);
+            Session.login(user.getId(), user.getUsername(), user.getRole());
+            goToHomepage(event, user);
         } else {
             loginError.setText("Invalid username or password");
             loginError.setVisible(true);
@@ -183,10 +184,14 @@ public class Logincontroller implements Initializable {
         boolean success = userService.register(username, email, password);
         
         if(success) {
-        	User user = userService.login(username, password);
-        	 Session.login(user.getId(), user.getUsername());
-        	 goToHomepage(event);
-            
+            User user = userService.login(username, password);
+            if (user != null) {
+                Session.login(user.getId(), user.getUsername(), user.getRole());
+                goToHomepage(event, user);
+            } else {
+                signupError.setText("Registration succeeded but login failed.");
+                signupError.setVisible(true);
+            }
         } else {
             // Provide clear feedback on what failed
             if(userService.usernameExists(username)) {
@@ -269,8 +274,8 @@ public class Logincontroller implements Initializable {
             User user = userService.getUserByEmail(pendingEmail);
 
             if (user != null) {
-                Session.login(user.getId(), user.getUsername());
-                goToHomepage(event);
+                Session.login(user.getId(), user.getUsername(), user.getRole());
+                goToHomepage(event, user);
             } else {
                 showError("User not found");
             }
@@ -341,11 +346,19 @@ public class Logincontroller implements Initializable {
 
     // ========== HOME PAGE ==========
     @FXML
-    private void goToHomepage(ActionEvent event) {
+    private void goToHomepage(ActionEvent event, User user) {
         // Get the stage and current scene
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         Scene scene = stage.getScene();
         Parent currentRoot = scene.getRoot();
+
+        // Determine target FXML based on role
+        final String targetFxml;
+        if (user != null && user.getRole() == UserRole.ADMIN) {
+            targetFxml = "/view/fxml/admin_home.fxml";
+        } else {
+            targetFxml = "/view/fxml/HomePage.fxml";
+        }
 
         // Show a spinner overlay while loading
         ProgressIndicator spinner = new ProgressIndicator();
@@ -360,7 +373,7 @@ public class Logincontroller implements Initializable {
         Task<Parent> loadTask = new Task<>() {
             @Override
             protected Parent call() throws Exception {
-                return FXMLLoader.load(getClass().getResource("/view/fxml/HomePage.fxml"));
+                return FXMLLoader.load(getClass().getResource(targetFxml));
             }
         };
 
@@ -375,6 +388,13 @@ public class Logincontroller implements Initializable {
             ft.setFromValue(0);
             ft.setToValue(1);
             ft.play();
+        });
+
+        loadTask.setOnFailed(e -> {
+            if (loginError != null) {
+                loginError.setText("Unable to load the next screen. Please try again.");
+                loginError.setVisible(true);
+            }
         });
 
         new Thread(loadTask).start();

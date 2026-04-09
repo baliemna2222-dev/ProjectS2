@@ -1,16 +1,24 @@
 package JStream.entity;
 
+import JStream.entity.UserRole;
+
 public class Session {
     private static int currentUserId = 1;
     private static String currentUsername = "test";
+    private static UserRole currentUserRole = UserRole.USER;
 
     // New field for profile image path
     private static String profileImagePath = "/assets/images/profile.png"; // default image
 
     // Call this when login succeeds
-    public static void login(int userId, String username) {
+    public static void login(int userId, String username, UserRole role) {
         currentUserId = userId;
         currentUsername = username;
+        currentUserRole = role != null ? role : UserRole.USER;
+    }
+
+    public static void login(int userId, String username) {
+        login(userId, username, UserRole.USER);
     }
 
     // Getters
