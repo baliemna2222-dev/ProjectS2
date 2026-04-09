@@ -49,34 +49,42 @@ public class FilmDAO {
 
     // ===== UPDATE (Zidna el jdod) =====
     public boolean updateFilm(Film film) {
-        String sql = "UPDATE film SET title=?, synopsis=?, casting=?, trailer_url=?, video_url=?, image_url=?, " +
-                     "title_image_url=?, poster_url=?, posterV_url=?, release_date=?, duration=?, age_rating=?, rating=? " +
+        String sql = "UPDATE film SET title=?, synopsis=?, casting=?, video_url=?, image_url=?, " +
+                     "title_image_url=?, poster_url=?, release_date=?, duration=?, age_rating=?, rating=? " +
                      "WHERE film_id=?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = Database.getConnection()) {
+            conn.setAutoCommit(false);
 
-            ps.setString(1,  film.getTitle());
-            ps.setString(2,  film.getSynopsis());
-            ps.setString(3,  film.getCasting());
-            ps.setString(4,  film.getTrailer_url());
-            ps.setString(5,  film.getVideo_url());
-            ps.setString(6,  film.getImage_url());
-            ps.setString(7,  film.getTitle_image_url());
-            ps.setString(8,  film.getPoster_url());
-            ps.setString(9,  film.getPosterV_url());
-            ps.setObject(10, film.getRelease_date());
-            ps.setDouble(11, film.getDuration());
-            ps.setString(12, film.getAge_rating());
-            ps.setInt(13,    film.getRating());
-            ps.setInt(14,    film.getFilm_id());
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1,  film.getTitle());
+                ps.setString(2,  film.getSynopsis());
+                ps.setString(3,  film.getCasting());
+                ps.setString(4,  film.getVideo_url());
+                ps.setString(5,  film.getImage_url());
+                ps.setString(6,  film.getTitle_image_url());
+                ps.setString(7,  film.getPoster_url());
+                ps.setObject(8, film.getRelease_date());
+                ps.setDouble(9, film.getDuration());
+                ps.setString(10, film.getAge_rating());
+                ps.setInt(11,    film.getRating());
+                ps.setInt(12,    film.getFilm_id());
 
-            boolean updated = ps.executeUpdate() > 0;
-            if (updated && film.getCategories() != null) {
-                deleteFilmCategories(conn, film.getFilm_id());
-                insertFilmCategories(conn, film.getFilm_id(), film.getCategories());
+                boolean updated = ps.executeUpdate() > 0;
+                if (updated && film.getCategories() != null) {
+                    deleteFilmCategories(conn, film.getFilm_id());
+                    insertFilmCategories(conn, film.getFilm_id(), film.getCategories());
+                }
+
+                conn.commit();
+                return updated;
+
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+                return false;
+            } finally {
+                conn.setAutoCommit(true);
             }
-            return updated;
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -99,7 +107,7 @@ public class FilmDAO {
     // ===== GET ALL (Badelna f-el mapRow) =====
     public List<Film> getAllFilms() {
         List<Film> list = new ArrayList<>();
-        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+        String sql = "SELECT f.*, GROUP_CONCAT(CONCAT(c.category_id,'::',c.name) SEPARATOR ',') AS categories " +
                      "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
@@ -116,7 +124,7 @@ public class FilmDAO {
 
     // ===== GET BY ID =====
     public Film getFilmById(int filmId) {
-        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+        String sql = "SELECT f.*, GROUP_CONCAT(CONCAT(c.category_id,'::',c.name) SEPARATOR ',') AS categories " +
                      "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
@@ -135,7 +143,7 @@ public class FilmDAO {
     // ===== SEARCH (title, category name, or year) =====
     public List<Film> searchFilms(String keyword) {
         List<Film> list = new ArrayList<>();
-        String sql = "SELECT DISTINCT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+        String sql = "SELECT DISTINCT f.*, GROUP_CONCAT(CONCAT(c.category_id,'::',c.name) SEPARATOR ',') AS categories " +
                      "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
@@ -202,10 +210,14 @@ public class FilmDAO {
         List<Category> cats = new ArrayList<>();
         String catStr = rs.getString("categories");
         if (catStr != null && !catStr.isEmpty()) {
-            for (String name : catStr.split(",")) {
-                Category c = new Category();
-                c.setName(name.trim());
-                cats.add(c);
+            for (String entry : catStr.split(",")) {
+                String[] parts = entry.trim().split("::");
+                if (parts.length == 2) {
+                    Category c = new Category();
+                    c.setCategory_id(Integer.parseInt(parts[0]));
+                    c.setName(parts[1]);
+                    cats.add(c);
+                }
             }
         }
         film.setCategories(cats);

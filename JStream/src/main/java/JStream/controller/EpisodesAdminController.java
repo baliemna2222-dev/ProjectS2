@@ -113,18 +113,22 @@ public class EpisodesAdminController {
     private void cancelEdit() { setAddMode(); }
 
     private void doAddEpisode() {
+        clearValidation();
         Episode ep = buildEpisodeFromForm();
         episodeService.addEpisode(ep);
         clearFields();
         loadEpisodes();
         setAddMode();
+        showToast("Episode added successfully ✓");
     }
 
     private void doUpdateEpisode() {
+        clearValidation();
         populateEpisodeFromForm(editingEpisode);
         episodeService.updateEpisode(editingEpisode);
         loadEpisodes();
         setAddMode();
+        showToast("Episode updated successfully ✓");
     }
 
     // ── Load episodes ─────────────────────────────────────────────────────────
@@ -330,4 +334,8 @@ public class EpisodesAdminController {
     }
 
     private String nvl(String s) { return s == null ? "" : s; }
+
+    private void showToast(String msg) {
+        System.out.println("[JStream] " + msg);
+    }
 }

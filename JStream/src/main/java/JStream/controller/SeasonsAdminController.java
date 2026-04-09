@@ -103,18 +103,22 @@ public class SeasonsAdminController {
     private void cancelEdit() { setAddMode(); }
 
     private void doAddSeason() {
+        clearValidation();
         Season s = buildSeasonFromForm();
         seasonService.addSeason(s);
         clearFields();
         chargerSaisons();
         setAddMode();
+        showToast("Season added successfully ✓");
     }
 
     private void doUpdateSeason() {
+        clearValidation();
         populateSeasonFromForm(editingSeason);
         seasonService.updateSeason(editingSeason);
         chargerSaisons();
         setAddMode();
+        showToast("Season updated successfully ✓");
     }
 
     // ── Load seasons ──────────────────────────────────────────────────────────
@@ -345,4 +349,8 @@ public class SeasonsAdminController {
     }
 
     private String nvl(String s) { return s == null ? "" : s; }
+
+    private void showToast(String msg) {
+        System.out.println("[JStream] " + msg);
+    }
 }

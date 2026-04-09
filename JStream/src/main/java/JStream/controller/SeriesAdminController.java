@@ -140,6 +140,7 @@ public class SeriesAdminController {
         loadSeries(serieService.getAllSeries());
         clearFields();
         setAddMode();
+        showToast("Series added successfully ✓");
     }
 
     private void doUpdateSerie() {
@@ -147,6 +148,7 @@ public class SeriesAdminController {
         serieService.updateSerie(editingSerie);
         loadSeries(serieService.getAllSeries());
         setAddMode();
+        showToast("Series updated successfully ✓");
     }
 
     // ── File choosers ─────────────────────────────────────────────────────────
@@ -401,4 +403,8 @@ public class SeriesAdminController {
     }
 
     private String nvl(String s) { return s == null ? "" : s; }
+
+    private void showToast(String msg) {
+        System.out.println("[JStream] " + msg);
+    }
 }

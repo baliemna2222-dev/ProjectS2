@@ -48,6 +48,7 @@ public class FilmAdminController {
     @FXML private Button         submitBtn;
     @FXML private Button         cancelEditBtn;
     @FXML private Label          filmCountLabel;
+    @FXML private Label          validationLabel;
     @FXML private VBox           formPanel;
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -137,6 +138,7 @@ public class FilmAdminController {
     // ── FXML Actions ──────────────────────────────────────────────────────────
     @FXML
     private void handleSubmit() {
+        if (!validateForm()) return;
         if (editingFilm == null) addFilm();
         else                     updateFilm();
     }
@@ -148,6 +150,7 @@ public class FilmAdminController {
 
     @FXML
     private void addFilm() {
+        clearValidation();
         Film film = buildFilmFromForm();
         filmService.addFilm(film);
         showToast("Film added successfully ✓");
@@ -157,6 +160,7 @@ public class FilmAdminController {
     }
 
     private void updateFilm() {
+        clearValidation();
         populateFilmFromForm(editingFilm);
         filmService.updateFilm(editingFilm);
         showToast("Film updated successfully ✓");
@@ -369,6 +373,37 @@ public class FilmAdminController {
         Film film = new Film();
         populateFilmFromForm(film);
         return film;
+    }
+
+    private boolean validateForm() {
+        clearValidation();
+        List<String> errors = new ArrayList<>();
+
+        if (titleField.getText().isBlank())    errors.add("Title is required");
+        if (synopsisArea.getText().isBlank())  errors.add("Synopsis is required");
+        if (coverField.getText().isBlank())    errors.add("Cover image is required");
+        if (categoryListView.getSelectionModel().getSelectedItems().isEmpty())
+            errors.add("At least one category must be selected");
+
+        if (!errors.isEmpty()) {
+            showValidation("⚠  " + String.join("  ·  ", errors));
+
+            TranslateTransition shake = new TranslateTransition(Duration.millis(60), formPanel);
+            shake.setFromX(-6); shake.setToX(6); shake.setCycleCount(4); shake.setAutoReverse(true);
+            shake.play();
+            return false;
+        }
+        return true;
+    }
+
+    private void showValidation(String msg) {
+        validationLabel.setText(msg);
+        validationLabel.setVisible(true);
+    }
+
+    private void clearValidation() {
+        validationLabel.setText("");
+        validationLabel.setVisible(false);
     }
 
     private void populateFilmFromForm(Film film) {

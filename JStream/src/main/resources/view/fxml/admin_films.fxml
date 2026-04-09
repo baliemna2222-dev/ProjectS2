@@ -88,6 +88,14 @@
                                   -fx-font-weight: bold;"/>
                 </HBox>
 
+                <!-- Validation banner -->
+                <Label fx:id="validationLabel" text=""
+                       wrapText="true"
+                       style="-fx-background-color: rgba(239,68,68,0.12);
+                              -fx-text-fill: #f87171;
+                              -fx-padding: 10 14; -fx-background-radius: 8;
+                              -fx-font-size: 12px;"/>
+
                 <Separator style="-fx-background-color: rgba(255,255,255,0.08);"/>
 
                 <!-- ── CORE INFO ── -->
