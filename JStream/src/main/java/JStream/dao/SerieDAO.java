@@ -107,7 +107,7 @@ public class SerieDAO {
     // ===== GET ALL =====
     public List<Serie> getAllSeries() {
         List<Serie> list = new ArrayList<>();
-        String sql = "SELECT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+        String sql = "SELECT s.*, GROUP_CONCAT(CONCAT(c.category_id,'::',c.name) SEPARATOR ',') AS categories " +
                 "FROM serie s " +
                 "LEFT JOIN serie_category sc ON s.serie_id = sc.serie_id " +
                 "LEFT JOIN category c ON sc.category_id = c.category_id " +
@@ -127,7 +127,7 @@ public class SerieDAO {
 
     // ===== GET BY ID =====
     public Serie getSerieById(int serieId) {
-        String sql = "SELECT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+        String sql = "SELECT s.*, GROUP_CONCAT(CONCAT(c.category_id,'::',c.name) SEPARATOR ',') AS categories " +
                 "FROM serie s " +
                 "LEFT JOIN serie_category sc ON s.serie_id = sc.serie_id " +
                 "LEFT JOIN category c ON sc.category_id = c.category_id " +
@@ -150,7 +150,7 @@ public class SerieDAO {
     // ===== SEARCH =====
     public List<Serie> searchSeries(String keyword) {
         List<Serie> list = new ArrayList<>();
-        String sql = "SELECT DISTINCT s.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+        String sql = "SELECT DISTINCT s.*, GROUP_CONCAT(CONCAT(c.category_id,'::',c.name) SEPARATOR ',') AS categories " +
                 "FROM serie s " +
                 "LEFT JOIN serie_category sc ON s.serie_id = sc.serie_id " +
                 "LEFT JOIN category c ON sc.category_id = c.category_id " +
@@ -212,11 +212,15 @@ public class SerieDAO {
 
         List<Category> cats = new ArrayList<>();
         String catStr = rs.getString("categories");
-        if (catStr != null) {
-            for (String name : catStr.split(",")) {
-                Category c = new Category();
-                c.setName(name.trim());
-                cats.add(c);
+        if (catStr != null && !catStr.isEmpty()) {
+            for (String entry : catStr.split(",")) {
+                String[] parts = entry.trim().split("::");
+                if (parts.length == 2) {
+                    Category c = new Category();
+                    c.setCategory_id(Integer.parseInt(parts[0]));
+                    c.setName(parts[1]);
+                    cats.add(c);
+                }
             }
         }
         serie.setCategories(cats);

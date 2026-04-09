@@ -8,18 +8,20 @@ import javafx.stage.Stage;
 
 public class application extends Application {
 	@Override
-    public void start(Stage stage) throws Exception { 
+    public void start(Stage stage) {
+		try {
+			FXMLLoader loader = new FXMLLoader();
+			loader.setLocation(getClass().getClassLoader().getResource("view/fxml/Login.fxml"));
+			Parent root = loader.load();   
+	        Scene scene = new Scene(root);
 
-		FXMLLoader loader = new FXMLLoader();
-		loader.setLocation(getClass().getClassLoader().getResource("view/fxml/admin_home.fxml"));
-		Parent root = loader.load();   
-        Scene scene = new Scene(root);
-
-        stage.setTitle("Login");
-        stage.setScene(scene);
-        stage.setMaximized(true);
-        stage.show();
-
+	        stage.setTitle("Login");
+	        stage.setScene(scene);
+	        stage.setMaximized(true);
+	        stage.show();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
     }
 
     public static void main(String[] args) {

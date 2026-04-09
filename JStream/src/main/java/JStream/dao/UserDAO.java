@@ -14,13 +14,14 @@ public class UserDAO {
 
     // ===== Sign Up =====
     public boolean insertUser(User user) {
-        String sql = "INSERT INTO users(username, email, password) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO users(username, email, password, role) VALUES (?, ?, ?, ?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getEmail());
             stmt.setString(3, user.getPassword()); // already hashed
+            stmt.setString(4, user.getRole() != null ? user.getRole().name() : "USER");
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -28,6 +29,21 @@ public class UserDAO {
             return false;
         }
     }
+    private User loadUserFromResultSet(ResultSet rs) throws SQLException {
+        User user = new User();
+        user.setId(rs.getInt("user_id"));
+        user.setUsername(rs.getString("username"));
+        user.setEmail(rs.getString("email"));
+        user.setPassword(rs.getString("password"));
+        String roleStr = rs.getString("role");
+        if (roleStr != null && roleStr.equalsIgnoreCase("ADMIN")) {
+            user.setRole(JStream.entity.UserRole.ADMIN);
+        } else {
+            user.setRole(JStream.entity.UserRole.USER);
+        }
+        return user;
+    }
+
     public String getUsernameById(int userId) {
         String sql = "SELECT username FROM users WHERE user_id = ?";
         try (Connection conn = Database.getConnection();
@@ -50,16 +66,10 @@ public class UserDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, email);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-                User user = new User();
-                user.setId(rs.getInt("user_id"));
-                user.setUsername(rs.getString("username"));
-                user.setEmail(rs.getString("email"));
-                user.setPassword(rs.getString("password"));
-                // add any other fields your User entity has
-                return user;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return loadUserFromResultSet(rs);
+                }
             }
 
         } catch (SQLException e) {
@@ -76,12 +86,7 @@ public class UserDAO {
             stmt.setString(1, username);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    User user = new User();
-                    user.setId(rs.getInt("user_id"));
-                    user.setUsername(rs.getString("username"));
-                    user.setEmail(rs.getString("email"));
-                    user.setPassword(rs.getString("password")); // hashed password
-                    return user;
+                    return loadUserFromResultSet(rs);
                 }
             }
         } catch (SQLException e) {

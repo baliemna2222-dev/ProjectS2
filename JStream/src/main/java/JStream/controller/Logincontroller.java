@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import JStream.entity.Session;
 import JStream.entity.User;
+import JStream.entity.UserRole;
 import JStream.service.UserService;
 import javafx.animation.FadeTransition;
 import javafx.animation.TranslateTransition;
@@ -26,7 +27,6 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -43,13 +43,11 @@ public class Logincontroller implements Initializable {
     @FXML private Pane dotsPane;
     @FXML private VBox loginForm, signupForm, forgotForm;
 
-    // Login
     @FXML private TextField loginUsername;
     @FXML private PasswordField loginPassword;
     @FXML private Button loginBtn;
     @FXML private Label loginError;
 
-    // Signup
     @FXML private TextField signupUsername;
     @FXML private TextField signupEmail;
     @FXML private PasswordField signupPassword;
@@ -57,22 +55,18 @@ public class Logincontroller implements Initializable {
     @FXML private Button signupBtn;
     @FXML private Label signupError;
 
-    // Forgot Password
     @FXML private TextField verifywithEmail;
     @FXML private TextField verificationCode;
     @FXML private Button sendCodeBtn;
     @FXML private Button verifyBtn;
     @FXML private Label messageLabel;
     @FXML private ImageView logoImage;
-    // Hyperlinks
     @FXML private Hyperlink goToSignUp, goToLogin, forgotPassword;
- // Add this field at the top of LoginController
     private String pendingEmail = null;
     private final UserService userService = new UserService();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Floating rectangles animation
     	  logoImage.setImage(new Image(getClass().getResource("/assets/images/logo/Raksha.png").toExternalForm()));
     
         Random random = new Random();
@@ -90,16 +84,13 @@ public class Logincontroller implements Initializable {
             dotsPane.getChildren().add(rect);
         }
 
-        // Form switches
         goToSignUp.setOnAction(e -> showSignup());
         goToLogin.setOnAction(e -> showLogin());
         forgotPassword.setOnAction(e -> showForgot());
 
-        // Disable signup button until checkbox checked
         signupBtn.setDisable(true);
         signupAgreeTerms.selectedProperty().addListener((obs, oldV, newV) -> signupBtn.setDisable(!newV));
 
-        // Initially hide forgot password fields
         verificationCode.setVisible(false);
         verifyBtn.setVisible(false);
     }
@@ -115,20 +106,17 @@ public class Logincontroller implements Initializable {
             stage.getScene().setRoot(root);
             stage.setMaximized(true);
 
-            // ✅ Force layout pass THEN bind — without this Raksha doesn't know the real size
             Platform.runLater(() -> {
                 root.applyCss();
                 root.layout();
                 controller.initLayoutBindings(stage);
 
-                // ✅ Second pass to catch any remaining layout issues
                 Platform.runLater(() -> {
                     root.applyCss();
                     root.layout();
                     controller.initLayoutBindings(stage);
                 });
             });
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -149,18 +137,17 @@ public class Logincontroller implements Initializable {
         }
 
         User user = userService.login(username, password);
-        System.out.println("👤 User returned: " + (user != null ? user.getId() + " / " + user.getUsername() : "NULL"));
+        System.out.println("👤 User returned: " + (user != null ? user.getId() + " / " + user.getUsername() + " / " + user.getRole() : "NULL"));
 
         if (user != null) {
-            Session.login(user.getId(), user.getUsername());
-            goToHomepage(event);
+            Session.login(user.getId(), user.getUsername(), user.getRole());
+            goToHomepage(event, user);
         } else {
             loginError.setText("Invalid username or password");
             loginError.setVisible(true);
         }
     }
 
-    // ========== SIGNUP ==========
     @FXML private void handleSignup(ActionEvent event) {
         clearSignupMessages();
 
@@ -183,10 +170,14 @@ public class Logincontroller implements Initializable {
         boolean success = userService.register(username, email, password);
         
         if(success) {
-        	User user = userService.login(username, password);
-        	 Session.login(user.getId(), user.getUsername());
-        	 goToHomepage(event);
-            
+            User user = userService.login(username, password);
+            if (user != null) {
+                Session.login(user.getId(), user.getUsername(), user.getRole());
+                goToHomepage(event, user);
+            } else {
+                signupError.setText("Registration succeeded but login failed.");
+                signupError.setVisible(true);
+            }
         } else {
             // Provide clear feedback on what failed
             if(userService.usernameExists(username)) {
@@ -201,12 +192,10 @@ public class Logincontroller implements Initializable {
     }
 
     private boolean isValidEmail(String email) {
-        // Basic email regex
         String regex = "^[\\w.-]+@[\\w.-]+\\.\\w{2,}$";
         return Pattern.matches(regex, email);
     }
 
-    // ========== FORGOT PASSWORD ==========
     @FXML private void handleForgotPassword() { showForgot(); }
 
     @FXML private void handleSendCode() {
@@ -269,8 +258,8 @@ public class Logincontroller implements Initializable {
             User user = userService.getUserByEmail(pendingEmail);
 
             if (user != null) {
-                Session.login(user.getId(), user.getUsername());
-                goToHomepage(event);
+                Session.login(user.getId(), user.getUsername(), user.getRole());
+                goToHomepage(event, user);
             } else {
                 showError("User not found");
             }
@@ -282,7 +271,6 @@ public class Logincontroller implements Initializable {
 
     @FXML private void backToLogin() { showLogin(); }
 
-    // ========== MESSAGES ==========
     private void clearLoginMessages() { loginError.setVisible(false); messageLabel.setVisible(false);}
     private void clearSignupMessages() { signupError.setVisible(false); messageLabel.setVisible(false);}
     private void clearForgotMessages() { messageLabel.setVisible(false); }
@@ -341,11 +329,19 @@ public class Logincontroller implements Initializable {
 
     // ========== HOME PAGE ==========
     @FXML
-    private void goToHomepage(ActionEvent event) {
+    private void goToHomepage(ActionEvent event, User user) {
         // Get the stage and current scene
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         Scene scene = stage.getScene();
         Parent currentRoot = scene.getRoot();
+
+        // Determine target FXML based on role
+        final String targetFxml;
+        if (user != null && user.getRole() == UserRole.ADMIN) {
+            targetFxml = "/view/fxml/admin_home.fxml";
+        } else {
+            targetFxml = "/view/fxml/HomePage.fxml";
+        }
 
         // Show a spinner overlay while loading
         ProgressIndicator spinner = new ProgressIndicator();
@@ -359,8 +355,13 @@ public class Logincontroller implements Initializable {
         // Load FXML in background thread
         Task<Parent> loadTask = new Task<>() {
             @Override
-            protected Parent call() throws Exception {
-                return FXMLLoader.load(getClass().getResource("/view/fxml/HomePage.fxml"));
+            protected Parent call() {
+                try {
+                    return FXMLLoader.load(getClass().getResource(targetFxml));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
             }
         };
 
@@ -375,6 +376,13 @@ public class Logincontroller implements Initializable {
             ft.setFromValue(0);
             ft.setToValue(1);
             ft.play();
+        });
+
+        loadTask.setOnFailed(e -> {
+            if (loginError != null) {
+                loginError.setText("Unable to load the next screen. Please try again.");
+                loginError.setVisible(true);
+            }
         });
 
         new Thread(loadTask).start();

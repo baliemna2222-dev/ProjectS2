@@ -1,29 +1,32 @@
 package JStream.entity;
 
+import JStream.entity.UserRole;
+
 public class Session {
     private static int currentUserId = 1;
     private static String currentUsername = "test";
+    private static UserRole currentUserRole = UserRole.USER;
 
-    // New field for profile image path
-    private static String profileImagePath = "/assets/images/profile.png"; // default image
+    private static String profileImagePath = "/assets/images/profile.png";
 
-    // Call this when login succeeds
-    public static void login(int userId, String username) {
+    public static void login(int userId, String username, UserRole role) {
         currentUserId = userId;
         currentUsername = username;
+        currentUserRole = role != null ? role : UserRole.USER;
     }
 
-    // Getters
+    public static void login(int userId, String username) {
+        login(userId, username, UserRole.USER);
+    }
+
     public static int getUserId() { return currentUserId; }
     public static String getUsername() { return currentUsername; }
 
-    // Profile image getter & setter
     public static String getProfileImagePath() { return profileImagePath; }
     public static void setProfileImagePath(String path) {
         profileImagePath = path;
     }
 
-    // Logout
     public static void logout() {
         currentUserId = 0;
         currentUsername = null;
