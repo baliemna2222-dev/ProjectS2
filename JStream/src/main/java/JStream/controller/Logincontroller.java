@@ -27,7 +27,6 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -44,13 +43,11 @@ public class Logincontroller implements Initializable {
     @FXML private Pane dotsPane;
     @FXML private VBox loginForm, signupForm, forgotForm;
 
-    // Login
     @FXML private TextField loginUsername;
     @FXML private PasswordField loginPassword;
     @FXML private Button loginBtn;
     @FXML private Label loginError;
 
-    // Signup
     @FXML private TextField signupUsername;
     @FXML private TextField signupEmail;
     @FXML private PasswordField signupPassword;
@@ -58,22 +55,18 @@ public class Logincontroller implements Initializable {
     @FXML private Button signupBtn;
     @FXML private Label signupError;
 
-    // Forgot Password
     @FXML private TextField verifywithEmail;
     @FXML private TextField verificationCode;
     @FXML private Button sendCodeBtn;
     @FXML private Button verifyBtn;
     @FXML private Label messageLabel;
     @FXML private ImageView logoImage;
-    // Hyperlinks
     @FXML private Hyperlink goToSignUp, goToLogin, forgotPassword;
- // Add this field at the top of LoginController
     private String pendingEmail = null;
     private final UserService userService = new UserService();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Floating rectangles animation
     	  logoImage.setImage(new Image(getClass().getResource("/assets/images/logo/Raksha.png").toExternalForm()));
     
         Random random = new Random();
@@ -91,16 +84,13 @@ public class Logincontroller implements Initializable {
             dotsPane.getChildren().add(rect);
         }
 
-        // Form switches
         goToSignUp.setOnAction(e -> showSignup());
         goToLogin.setOnAction(e -> showLogin());
         forgotPassword.setOnAction(e -> showForgot());
 
-        // Disable signup button until checkbox checked
         signupBtn.setDisable(true);
         signupAgreeTerms.selectedProperty().addListener((obs, oldV, newV) -> signupBtn.setDisable(!newV));
 
-        // Initially hide forgot password fields
         verificationCode.setVisible(false);
         verifyBtn.setVisible(false);
     }
@@ -116,20 +106,17 @@ public class Logincontroller implements Initializable {
             stage.getScene().setRoot(root);
             stage.setMaximized(true);
 
-            // ✅ Force layout pass THEN bind — without this Raksha doesn't know the real size
             Platform.runLater(() -> {
                 root.applyCss();
                 root.layout();
                 controller.initLayoutBindings(stage);
 
-                // ✅ Second pass to catch any remaining layout issues
                 Platform.runLater(() -> {
                     root.applyCss();
                     root.layout();
                     controller.initLayoutBindings(stage);
                 });
             });
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -161,7 +148,6 @@ public class Logincontroller implements Initializable {
         }
     }
 
-    // ========== SIGNUP ==========
     @FXML private void handleSignup(ActionEvent event) {
         clearSignupMessages();
 
@@ -206,12 +192,10 @@ public class Logincontroller implements Initializable {
     }
 
     private boolean isValidEmail(String email) {
-        // Basic email regex
         String regex = "^[\\w.-]+@[\\w.-]+\\.\\w{2,}$";
         return Pattern.matches(regex, email);
     }
 
-    // ========== FORGOT PASSWORD ==========
     @FXML private void handleForgotPassword() { showForgot(); }
 
     @FXML private void handleSendCode() {
@@ -287,7 +271,6 @@ public class Logincontroller implements Initializable {
 
     @FXML private void backToLogin() { showLogin(); }
 
-    // ========== MESSAGES ==========
     private void clearLoginMessages() { loginError.setVisible(false); messageLabel.setVisible(false);}
     private void clearSignupMessages() { signupError.setVisible(false); messageLabel.setVisible(false);}
     private void clearForgotMessages() { messageLabel.setVisible(false); }
@@ -372,8 +355,13 @@ public class Logincontroller implements Initializable {
         // Load FXML in background thread
         Task<Parent> loadTask = new Task<>() {
             @Override
-            protected Parent call() throws Exception {
-                return FXMLLoader.load(getClass().getResource(targetFxml));
+            protected Parent call() {
+                try {
+                    return FXMLLoader.load(getClass().getResource(targetFxml));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
             }
         };
 
