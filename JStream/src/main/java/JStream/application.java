@@ -11,7 +11,7 @@ public class application extends Application {
     public void start(Stage stage) {
 		try {
 			FXMLLoader loader = new FXMLLoader();
-			loader.setLocation(getClass().getClassLoader().getResource("view/fxml/Login.fxml"));
+			loader.setLocation(getClass().getClassLoader().getResource("view/fxml/admin_home.fxml"));
 			Parent root = loader.load();   
 	        Scene scene = new Scene(root);
 

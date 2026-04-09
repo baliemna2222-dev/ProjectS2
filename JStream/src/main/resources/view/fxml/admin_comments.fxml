@@ -34,7 +34,7 @@
         </VBox>
 
     </HBox>
-
+ 
     <!-- ── Scrollable cards area ────────────────────────────────────────── -->
     <ScrollPane fitToWidth="true"
                 VBox.vgrow="ALWAYS"

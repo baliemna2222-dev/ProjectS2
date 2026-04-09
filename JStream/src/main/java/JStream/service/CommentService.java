@@ -17,7 +17,7 @@ public class CommentService {
     // ── Supprimer ────────────────────────────────────────────────────────────
     public boolean deleteComment(int commentId) {
         return commentDAO.deleteComment(commentId);
-    }
+    } 
 
     // ── Signaler ─────────────────────────────────────────────────────────────
     public boolean flagComment(int commentId) {

@@ -4,7 +4,9 @@ import java.io.IOException;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 
@@ -61,18 +63,25 @@ public class AdminHomeController {
         activateButton(commentsBtn);
     }
 
-    @FXML
+    @FXML 
     private void logout() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Login.fxml"));
-            Parent root = loader.load();
-            javafx.stage.Stage stage = (javafx.stage.Stage) logoutBtn.getScene().getWindow();
-            stage.setScene(new javafx.scene.Scene(root));
-            stage.setTitle("Login");
-            stage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    	  try {
+              FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Login.fxml"));
+              Parent root = loader.load();
+
+              javafx.stage.Stage stage = (javafx.stage.Stage) logoutBtn.getScene().getWindow();
+              
+              // ✅ Reuse existing scene instead of creating a new one
+              stage.getScene().setRoot(root);
+              stage.setMaximized(true);
+
+              // ✅ Bind login root to stage size
+              ((Region) root).prefWidthProperty().bind(stage.widthProperty());
+              ((Region) root).prefHeightProperty().bind(stage.heightProperty());
+
+          } catch (IOException e) {
+              e.printStackTrace();
+          }
     }
 
     private void activateButton(Button target) {

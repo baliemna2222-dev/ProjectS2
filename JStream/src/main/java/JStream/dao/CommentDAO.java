@@ -133,7 +133,7 @@ public class CommentDAO {
    
  // ===== GET ALL FLAGGED WITH USER INFO (admin moderation) =====
     public List<Comment> getSignaledComments() {
-        List<Comment> list = new ArrayList<>();
+        List<Comment> list = new ArrayList<>(); 
         String sql = "SELECT * FROM comments WHERE flagged = 1 ORDER BY created_at DESC";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
