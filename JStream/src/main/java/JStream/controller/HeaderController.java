@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +15,8 @@ import JStream.entity.FeaturedItem;
 import JStream.entity.FeaturedItemProgress;
 import JStream.entity.Film;
 import JStream.entity.MyListManager;
+import JStream.entity.NewEpisodeInfo;
+import JStream.entity.Notification;
 import JStream.entity.Season;
 import JStream.entity.Serie;
 import JStream.entity.Session;
@@ -22,6 +26,7 @@ import JStream.service.EpisodeProgressService;
 import JStream.service.FeaturedService;
 import JStream.service.FilmProgressService;
 import JStream.service.MylistService;
+import JStream.service.NotificationService;
 import JStream.service.UserService;
 import JStream.utils.ImageUtil;
 import JStream.utils.SecurityUtils;
@@ -35,6 +40,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -44,9 +50,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
+import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.web.WebView;
 import javafx.stage.*;
 import javafx.util.Duration;
 
@@ -57,8 +65,12 @@ public class HeaderController {
     @FXML private ImageView logoImage;
 
     // Nav buttons & underlines
-    @FXML private Button btnHome, btnMovies, btnSeries, btnMyList;
-    @FXML private Rectangle lineHome, lineMovies, lineSeries, lineMyList;
+    @FXML private Button btnHome, btnMovies, btnSeries, btnMyList, btnHistory;
+    @FXML private Rectangle lineHome, lineMovies, lineSeries, lineMyList, lineHistory;
+    @FXML private HBox buttonsBox;
+
+    // Hamburger
+    @FXML private Button btnHamburger;
 
     // Search
     @FXML private StackPane searchStack;
@@ -68,6 +80,7 @@ public class HeaderController {
     // Bell
     @FXML private StackPane bellContainer;
     @FXML private ImageView bellIcon;
+    @FXML private Circle notificationCircle;
 
     // Profile
     @FXML private Button profile;
@@ -76,23 +89,30 @@ public class HeaderController {
     private Button    activeButton;
     private Rectangle activeLine;
     private Timeline  autoSlide;
-
-    private boolean ignoreTextChange = false;
-    private boolean searchOpened     = false;
-    private boolean isNotificationVisible = false;
+    private AudioClip bellSound;
+    private boolean ignoreTextChange      = false;
+    private boolean hamburgerMenuOpen     = false;
+    private static final double COLLAPSE_WIDTH = 900;
 
     private Circle notificationDot;
     private Popup  profilePopup;
+    private Popup  notificationPopup;
+    private VBox   notificationListBox;
+    private Label  notifBadgeLabel;
+    private int    unreadCount = 0;
+
     private final Popup  suggestionsPopup   = new Popup();
     private final VBox   suggestionsContent = new VBox();
 
-    private static String lastActive = "HOME";
+    // Track current page for restoration
+    private static String lastActiveFxml = "/view/fxml/HomePage.fxml";
 
     // ── SERVICES ─────────────────────────────────────────────────────────────
     private final FeaturedService        featuredService        = new FeaturedService();
     private final EpisodeProgressService episodeProgressService = new EpisodeProgressService();
     private final FilmProgressService    filmProgressService    = new FilmProgressService(featuredService);
     private final UserService            userService            = new UserService();
+    private final NotificationService    notificationService    = new NotificationService();
 
     // ─────────────────────────────────────────────────────────────────────────
     // INITIALIZE
@@ -102,22 +122,257 @@ public class HeaderController {
         logoImage.setImage(new Image(getClass().getResourceAsStream("/assets/images/logo/Raksha.png")));
 
         loadUserProfile();
-        setupProfilePopup();          // build popup once
-        setupProfileButtonAction();   // wire the header button
+        setupProfilePopup();
+        setupProfileButtonAction();
         setupBellNotification();
         setupSearchBar();
         setupSearchSuggestions();
         setupNavButtons();
+        setupHamburgerMenu();
+        setupResponsiveLayout();
 
-        // Restore last active tab
+        // Restore last active tab based on fxml path
+        Platform.runLater(() -> restoreActiveTab(lastActiveFxml));
+
+        // Load notifications after UI is ready
+        Platform.runLater(this::loadNotifications);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // RESPONSIVE LAYOUT
+    // ─────────────────────────────────────────────────────────────────────────
+    private void setupResponsiveLayout() {
         Platform.runLater(() -> {
-            switch (lastActive) {
-                case "Movies"  -> activate(btnMovies, lineMovies);
-                case "Series"  -> activate(btnSeries, lineSeries);
-                case "My List" -> activate(btnMyList, lineMyList);
-                default        -> activate(btnHome,   lineHome);
+            Scene scene = rootPane.getScene();
+            if (scene != null) {
+                scene.widthProperty().addListener((obs, oldVal, newVal) -> {
+                    updateResponsiveLayout(newVal.doubleValue());
+                });
+                updateResponsiveLayout(scene.getWidth());
+            } else {
+                rootPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                    if (newScene != null) {
+                        newScene.widthProperty().addListener((o, ov, nv) -> updateResponsiveLayout(nv.doubleValue()));
+                        updateResponsiveLayout(newScene.getWidth());
+                    }
+                });
             }
         });
+    }
+
+    private void updateResponsiveLayout(double width) {
+        boolean collapsed = width < COLLAPSE_WIDTH;
+        buttonsBox.setVisible(!collapsed);
+        buttonsBox.setManaged(!collapsed);
+        if (btnHamburger != null) {
+            btnHamburger.setVisible(collapsed);
+            btnHamburger.setManaged(collapsed);
+            // ✅ Push hamburger to the far right
+            if (collapsed) {
+                HBox.setHgrow(btnHamburger, Priority.ALWAYS);
+                btnHamburger.setMaxWidth(Double.MAX_VALUE);
+                btnHamburger.setAlignment(Pos.CENTER_RIGHT);
+                btnHamburger.setStyle(
+                    "-fx-background-color: transparent; -fx-text-fill: white;" +
+                    "-fx-font-size: 22; -fx-cursor: hand; -fx-padding: 4 10;" +
+                    "-fx-alignment: CENTER_RIGHT;"
+                );
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // HAMBURGER MENU
+    // ─────────────────────────────────────────────────────────────────────────
+    private Popup hamburgerPopup;
+    private void setupHamburgerMenu() {
+        if (btnHamburger == null) return;
+        btnHamburger.setText("☰");
+        btnHamburger.setStyle(
+            "-fx-background-color: transparent; -fx-text-fill: white;" +
+            "-fx-font-size: 22; -fx-cursor: hand; -fx-padding: 4 10;"
+        );
+        btnHamburger.setVisible(false);
+        btnHamburger.setManaged(false);
+
+        // ── Overlay (dark transparent background) ────────────────────────────
+        StackPane overlay = new StackPane();
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+        overlay.setVisible(false);
+        overlay.setPickOnBounds(true);
+
+        // ── Drawer panel (20% width, slides from right) ───────────────────────
+        VBox drawer = new VBox(0);
+        drawer.setStyle(
+            "-fx-background-color: #0d1117;" +
+            "-fx-border-color: #21262d;" +
+            "-fx-border-width: 0 0 0 1;"
+        );
+        drawer.setAlignment(Pos.TOP_LEFT);
+
+        // Drawer header
+        HBox drawerHeader = new HBox();
+        drawerHeader.setPadding(new Insets(20, 16, 16, 20));
+        drawerHeader.setAlignment(Pos.CENTER_LEFT);
+        drawerHeader.setStyle("-fx-background-color: #161b22;");
+
+        Label drawerTitle = new Label("Menu");
+        drawerTitle.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");
+
+        Region drawerSpacer = new Region();
+        HBox.setHgrow(drawerSpacer, Priority.ALWAYS);
+
+        Button closeDrawer = new Button("✕");
+        closeDrawer.setStyle(
+            "-fx-background-color: #21262d; -fx-text-fill: #8b949e; -fx-font-size: 12;" +
+            "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
+            "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
+        );
+        closeDrawer.setOnMouseEntered(e -> closeDrawer.setStyle(
+            "-fx-background-color: #30363d; -fx-text-fill: white; -fx-font-size: 12;" +
+            "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
+            "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
+        ));
+        closeDrawer.setOnMouseExited(e -> closeDrawer.setStyle(
+            "-fx-background-color: #21262d; -fx-text-fill: #8b949e; -fx-font-size: 12;" +
+            "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
+            "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
+        ));
+        drawerHeader.getChildren().addAll(drawerTitle, drawerSpacer, closeDrawer);
+
+        Region headerDivider = new Region();
+        headerDivider.setPrefHeight(1);
+        headerDivider.setStyle("-fx-background-color: #21262d;");
+
+        // Nav items
+        String[][] items = {
+            {"🏠", "Home",    "/view/fxml/HomePage.fxml"},
+            {"🎬", "Movies",  "/view/fxml/FilmView.fxml"},
+            {"📺", "Series",  "/view/fxml/SeriesView.fxml"},
+            {"📋", "My List", "/view/fxml/MyList.fxml"},
+            {"⌛", "History", "/view/fxml/MyHistory.fxml"},
+        };
+
+        VBox navItems = new VBox(4);
+        navItems.setPadding(new Insets(12, 8, 12, 8));
+
+        for (String[] item : items) {
+            HBox row = new HBox(14);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setPadding(new Insets(12, 16, 12, 16));
+            row.setStyle("-fx-background-color: transparent; -fx-background-radius: 10; -fx-cursor: hand;");
+
+            Label icon = new Label(item[0]);
+            icon.setStyle("-fx-font-size: 18; -fx-text-fill: #8b949e;");
+            icon.setMinWidth(28);
+
+            Label lbl = new Label(item[1]);
+            lbl.setStyle("-fx-text-fill: #c9d1d9; -fx-font-size: 15;");
+
+            boolean isActive = lastActiveFxml.equals(item[2]);
+            if (isActive) {
+                lbl.setStyle("-fx-text-fill: white; -fx-font-size: 15; -fx-font-weight: bold;");
+                icon.setStyle("-fx-font-size: 18; -fx-text-fill: #008cff;");
+                row.setStyle(
+                    "-fx-background-color: rgba(0,140,255,0.12); -fx-background-radius: 10;" +
+                    "-fx-border-color: rgba(0,140,255,0.25); -fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;"
+                );
+            }
+
+            // Active indicator bar
+            Region activeBar = new Region();
+            activeBar.setPrefWidth(3);
+            activeBar.setPrefHeight(24);
+            activeBar.setStyle("-fx-background-color: #008cff; -fx-background-radius: 2;");
+            activeBar.setVisible(isActive);
+
+            row.getChildren().addAll(activeBar, icon, lbl);
+
+            String fxmlPath = item[2];
+            row.setOnMouseEntered(e -> {
+                if (!lastActiveFxml.equals(fxmlPath))
+                    row.setStyle("-fx-background-color: #161b22; -fx-background-radius: 10; -fx-cursor: hand;");
+            });
+            row.setOnMouseExited(e -> {
+                boolean active = lastActiveFxml.equals(fxmlPath);
+                row.setStyle(active
+                    ? "-fx-background-color: rgba(0,140,255,0.12); -fx-background-radius: 10; -fx-border-color: rgba(0,140,255,0.25); -fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;"
+                    : "-fx-background-color: transparent; -fx-background-radius: 10; -fx-cursor: hand;"
+                );
+            });
+            row.setOnMouseClicked(e -> {
+                closeDrawerAnim(overlay, drawer);
+                navigateTo(fxmlPath);
+            });
+            navItems.getChildren().add(row);
+        }
+
+        drawer.getChildren().addAll(drawerHeader, headerDivider, navItems);
+
+        // ── Layout: overlay + drawer aligned to RIGHT ─────────────────────────
+        StackPane.setAlignment(drawer, Pos.CENTER_RIGHT);
+        overlay.getChildren().add(drawer);
+
+        // Close on overlay click
+        overlay.setOnMouseClicked(e -> {
+            if (e.getTarget() == overlay) closeDrawerAnim(overlay, drawer);
+        });
+        closeDrawer.setOnAction(e -> closeDrawerAnim(overlay, drawer));
+
+        // ── Attach to scene ───────────────────────────────────────────────────
+        btnHamburger.setOnAction(e -> {
+            Scene scene = btnHamburger.getScene();
+            if (scene == null) return;
+
+            Parent sceneRoot = scene.getRoot();
+            if (!(sceneRoot instanceof StackPane)) {
+                // Wrap existing root in a StackPane
+                StackPane wrapper = new StackPane();
+                wrapper.getChildren().add(sceneRoot);
+                scene.setRoot(wrapper);
+                sceneRoot = wrapper;
+            }
+
+            StackPane rootStack = (StackPane) sceneRoot;
+
+            // Bind drawer width to 20% of scene
+            drawer.prefWidthProperty().bind(scene.widthProperty().multiply(0.20));
+            drawer.maxWidthProperty().bind(scene.widthProperty().multiply(0.20));
+            drawer.prefHeightProperty().bind(scene.heightProperty());
+            overlay.prefWidthProperty().bind(scene.widthProperty());
+            overlay.prefHeightProperty().bind(scene.heightProperty());
+
+            if (!rootStack.getChildren().contains(overlay)) {
+                rootStack.getChildren().add(overlay);
+            }
+
+            // Slide in from right
+            overlay.setVisible(true);
+            overlay.setOpacity(0);
+            drawer.setTranslateX(drawer.getPrefWidth() > 0 ? drawer.getPrefWidth() : 300);
+
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(250), overlay);
+            fadeIn.setToValue(1);
+            fadeIn.play();
+
+            TranslateTransition slideIn = new TranslateTransition(Duration.millis(300), drawer);
+            slideIn.setToX(0);
+            slideIn.setInterpolator(Interpolator.EASE_OUT);
+            slideIn.play();
+        });
+    }
+
+    private void closeDrawerAnim(StackPane overlay, VBox drawer) {
+        TranslateTransition slideOut = new TranslateTransition(Duration.millis(280), drawer);
+        slideOut.setToX(drawer.getWidth());
+        slideOut.setInterpolator(Interpolator.EASE_IN);
+
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(280), overlay);
+        fadeOut.setToValue(0);
+
+        ParallelTransition pt = new ParallelTransition(slideOut, fadeOut);
+        pt.setOnFinished(e -> overlay.setVisible(false));
+        pt.play();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -140,7 +395,7 @@ public class HeaderController {
         addHoverAnimation(btnResearch);
         addHoverAnimation(profile);
     }
-
+    
     @FXML
     public void toggleSearch(ActionEvent event) {
         if (searchInput.getPrefWidth() == 0) {
@@ -191,7 +446,6 @@ public class HeaderController {
         suggestionsPopup.getContent().add(scroll);
         suggestionsPopup.setAutoHide(true);
 
-        // Single unified text listener
         searchInput.textProperty().addListener((obs, oldVal, newVal) -> {
             if (ignoreTextChange) return;
             if (newVal.isEmpty()) showLatestSearches();
@@ -243,12 +497,9 @@ public class HeaderController {
     private void showLatestSearches() {
         suggestionsContent.getChildren().clear();
         List<String> latest = featuredService.getLatestSearches();
-
         if (latest.isEmpty()) { suggestionsPopup.hide(); return; }
-
         for (String title : latest)
             suggestionsContent.getChildren().add(createSuggestionBox(title, null, false));
-
         Platform.runLater(() -> {
             suggestionsContent.applyCss();
             suggestionsContent.layout();
@@ -262,11 +513,9 @@ public class HeaderController {
         Bounds bounds = searchInput.localToScreen(searchInput.getBoundsInLocal());
         suggestionsContent.applyCss();
         suggestionsContent.layout();
-
         double height = Math.min(suggestionsContent.getHeight(), 250);
         suggestionsPopup.setWidth(searchInput.getWidth());
         suggestionsPopup.setHeight(height);
-
         if (!suggestionsPopup.isShowing()) {
             suggestionsPopup.show(searchInput, bounds.getMinX(), bounds.getMaxY() + 5);
         } else {
@@ -281,7 +530,6 @@ public class HeaderController {
         box.setAlignment(Pos.CENTER_LEFT);
         box.setStyle("-fx-background-color: transparent; -fx-padding: 8; -fx-background-radius: 6;");
 
-        // Poster image (only for search results)
         if (posterUrl != null) {
             ImageView poster = new ImageView();
             poster.setFitWidth(35);
@@ -291,45 +539,36 @@ public class HeaderController {
             box.getChildren().add(poster);
         }
 
-        // Title label with tooltip
         Label lbl = new Label(title);
         lbl.setStyle("-fx-text-fill: white; -fx-font-size: 14;");
         lbl.setMaxWidth(180);
         lbl.setEllipsisString("...");
         lbl.setWrapText(false);
-
         Tooltip tooltip = new Tooltip(title);
         tooltip.setStyle("-fx-background-color: #1e293b; -fx-text-fill: white; -fx-font-size: 13;");
         Tooltip.install(lbl, tooltip);
-
         box.getChildren().add(lbl);
 
-        // Spacer to push buttons to the right
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         box.getChildren().add(spacer);
 
         if (isSearchResult) {
-            // Add/remove button for search results
             Button addBtn = new Button();
             addBtn.setStyle("-fx-background-color: transparent; -fx-font-size: 14; -fx-font-weight: bold;");
             addBtn.setPadding(new Insets(2, 5, 2, 5));
             addBtn.setMinWidth(25);
             addBtn.setMaxWidth(25);
-
             try {
                 MylistService mylistService = new MylistService();
                 FeaturedItem item = featuredService.getFeaturedByTitle(title);
-
                 if (item != null) {
                     updateAddButton(addBtn, item);
-
                     MyListManager.getInstance().addListener((filmId, serieId) -> Platform.runLater(() -> {
                         int cFilmId  = "film".equalsIgnoreCase(item.getType())  ? item.getId()      : 0;
                         int cSerieId = "serie".equalsIgnoreCase(item.getType()) ? item.getSerieId() : 0;
                         if (cFilmId == filmId && cSerieId == serieId) updateAddButton(addBtn, item);
                     }));
-
                     addBtn.setOnAction(e -> {
                         boolean inList = mylistService.isInList(Session.getUserId(), item.getId(), item.getSerieId());
                         if (inList) mylistService.removeItem(Session.getUserId(), item.getId(), item.getSerieId());
@@ -339,11 +578,8 @@ public class HeaderController {
                     });
                 }
             } catch (Exception ex) { ex.printStackTrace(); }
-
             box.getChildren().add(addBtn);
-
         } else {
-            // Remove button for latest searches
             Button removeBtn = new Button("✕");
             removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #888; -fx-font-size: 12;");
             removeBtn.setOnMouseEntered(e -> removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #00bfff; -fx-font-size: 12;"));
@@ -352,35 +588,29 @@ public class HeaderController {
             box.getChildren().add(removeBtn);
         }
 
-        // Hover effect
         box.setOnMouseEntered(e -> box.setStyle("-fx-background-color: #1e293b; -fx-padding: 8; -fx-background-radius: 6;"));
         box.setOnMouseExited (e -> box.setStyle("-fx-background-color: transparent; -fx-padding: 8; -fx-background-radius: 6;"));
 
-        // Click: fetch FeaturedItem and show details, works for both search results and latest searches
         box.setOnMouseClicked(e -> {
             ignoreTextChange = true;
             searchInput.setText(title);
             ignoreTextChange = false;
-
             try {
                 FeaturedItem item = featuredService.getFeaturedByTitle(title);
                 if (item != null) {
-                    // Add to latest searches
                     featuredService.addToLatestSearch(title);
-
-                    // Show popup depending on type
                     switch (item.getType().toLowerCase()) {
                         case "film"  -> showFilmPopup(item);
                         case "serie" -> showSeriePopup(item);
                     }
                 }
             } catch (Exception ex) { ex.printStackTrace(); }
-
             suggestionsPopup.hide();
         });
 
         return box;
     }
+
     private void updateAddButton(Button addBtn, FeaturedItem item) {
         if (addBtn == null || item == null) return;
         try {
@@ -399,73 +629,408 @@ public class HeaderController {
     private void setupBellNotification() {
         bellIcon.setImage(new Image(getClass().getResourceAsStream("/assets/images/bellwhiter.png")));
 
-        notificationDot = new Circle(4, Color.DODGERBLUE);
-        notificationDot.setTranslateX(10);
-        notificationDot.setTranslateY(-12);
-        notificationDot.setScaleX(0);
-        notificationDot.setScaleY(0);
-        bellContainer.getChildren().add(notificationDot);
-        bellContainer.setOnMouseEntered(e -> showNotificationDot());
-    }
-
-    private void showNotificationDot() {
-        if (!isNotificationVisible) {
-            isNotificationVisible = true;
-            notificationDot.setVisible(true);
-            ScaleTransition bounce = new ScaleTransition(Duration.millis(500), notificationDot);
-            bounce.setFromX(0); bounce.setFromY(0);
-            bounce.setToX(1);   bounce.setToY(1);
-            bounce.setInterpolator(Interpolator.EASE_OUT);
-            bounce.play();
+        // Load bell sound
+        try {
+            bellSound = new AudioClip(
+                getClass().getResource("/assets/sounds/notification.mp3").toString()
+            );
+            bellSound.setVolume(0.6);
+        } catch (Exception e) {
+            System.err.println("Bell sound not found: " + e.getMessage());
         }
+
+        if (notificationCircle != null) {
+            notificationCircle.setVisible(false);
+        }
+
+        buildNotificationPopup();
+
+        // ✅ No sound on click — just open the panel
+        bellContainer.setOnMouseClicked(e -> {
+            if (notificationPopup.isShowing()) {
+                notificationPopup.hide();
+            } else {
+                checkNewEpisodeNotifications(Session.getUserId());
+                unreadCount = notificationService.getUnreadCount(Session.getUserId());
+                updateBadge();
+                refreshNotificationPanel();
+                Bounds b = bellContainer.localToScreen(bellContainer.getBoundsInLocal());
+                notificationPopup.show(bellContainer, b.getMaxX() - 340, b.getMaxY() + 10);
+            }
+        });
+
+        bellContainer.setCursor(javafx.scene.Cursor.HAND);
+
+        // ✅ Start a background timer that checks every 60 seconds for new episodes
+        Timeline periodicCheck = new Timeline(
+            new KeyFrame(Duration.seconds(10), e -> {
+                checkNewEpisodeNotifications(Session.getUserId());
+            })
+        );
+        periodicCheck.setCycleCount(Animation.INDEFINITE);
+        periodicCheck.play();
     }
+ // ─────────────────────────────────────────────────────────────────────────
+ // BELL SOUND & ANIMATION
+ // ─────────────────────────────────────────────────────────────────────────
+ private void playBellSound() {
+     try {
+         if (bellSound != null) bellSound.play();
+     } catch (Exception ignored) {}
+ }
+
+ private void shakeBell() {
+     new Timeline(
+         new KeyFrame(Duration.ZERO,            new KeyValue(bellIcon.rotateProperty(),   0)),
+         new KeyFrame(Duration.millis(100),     new KeyValue(bellIcon.rotateProperty(), -10)),
+         new KeyFrame(Duration.millis(200),     new KeyValue(bellIcon.rotateProperty(),  10)),
+         new KeyFrame(Duration.millis(300),     new KeyValue(bellIcon.rotateProperty(), -15)),
+         new KeyFrame(Duration.millis(400),     new KeyValue(bellIcon.rotateProperty(),  15)),
+         new KeyFrame(Duration.millis(500),     new KeyValue(bellIcon.rotateProperty(), -20)),
+         new KeyFrame(Duration.millis(600),     new KeyValue(bellIcon.rotateProperty(),  20)),
+         new KeyFrame(Duration.millis(700),     new KeyValue(bellIcon.rotateProperty(), -15)),
+         new KeyFrame(Duration.millis(800),     new KeyValue(bellIcon.rotateProperty(),  15)),
+         new KeyFrame(Duration.millis(900),     new KeyValue(bellIcon.rotateProperty(), -10)),
+         new KeyFrame(Duration.millis(1000),    new KeyValue(bellIcon.rotateProperty(),   0))
+     ).play();
+ }
+ private void buildNotificationPopup() {
+	    notificationPopup = new Popup();
+	    notificationPopup.setAutoHide(true);
+
+	    VBox root = new VBox(0);
+	    root.setPrefWidth(340);
+	    root.setMaxHeight(420);
+	    root.setStyle(
+	        "-fx-background-color: #0d1117;" +
+	        "-fx-border-color: #21262d;" +
+	        "-fx-border-width: 1;" +
+	        "-fx-border-radius: 12;" +
+	        "-fx-background-radius: 12;" +
+	        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 24, 0.4, 0, 6);"
+	    );
+
+	    // ---------------- HEADER ----------------
+	    HBox header = new HBox();
+	    header.setPadding(new Insets(14, 16, 12, 16));
+	    header.setAlignment(Pos.CENTER_LEFT);
+	    header.setStyle("-fx-background-color: #161b22; -fx-background-radius: 12 12 0 0;");
+
+	    Label titleLbl = new Label("Notifications");
+	    titleLbl.setStyle("-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;");
+
+	    notifBadgeLabel = new Label("");
+	    notifBadgeLabel.setStyle(
+	        "-fx-background-color: #008cff; -fx-text-fill: white; -fx-font-size: 10;" +
+	        "-fx-font-weight: bold; -fx-padding: 2 7; -fx-background-radius: 20;"
+	    );
+	    notifBadgeLabel.setVisible(false);
+
+	    Region headerSpacer = new Region();
+	    HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+
+	    // ✔ Mark all read
+	    Button markAllRead = new Button("Mark all read");
+	    markAllRead.setStyle(
+	        "-fx-background-color: transparent; -fx-text-fill: #008cff; -fx-font-size: 11; -fx-cursor: hand;"
+	    );
+	    markAllRead.setOnAction(e -> {
+	        notificationService.markAllRead(Session.getUserId());
+	        unreadCount = 0;
+	        updateBadge();
+	        refreshNotificationPanel();
+	    });
+
+	    // 🗑 Clear all
+	    Button deleteAllBtn = new Button("Clear all");
+	    deleteAllBtn.setStyle(
+	        "-fx-background-color: transparent; -fx-text-fill: #ff4d4f; -fx-font-size: 11; -fx-cursor: hand;"
+	    );
+	    deleteAllBtn.setOnAction(e -> {
+	        notificationService.deleteAll(Session.getUserId());
+	        unreadCount = 0;
+	        updateBadge();
+	        refreshNotificationPanel();
+	    });
+
+	    header.getChildren().addAll(
+	        titleLbl,
+	        new HBox(6, notifBadgeLabel),
+	        headerSpacer,
+	        markAllRead,
+	        deleteAllBtn
+	    );
+
+	    // ---------------- LIST ----------------
+	    notificationListBox = new VBox(0);
+	    notificationListBox.setStyle("-fx-background-color: #0d1117;");
+
+	    ScrollPane scroll = new ScrollPane(notificationListBox);
+	    scroll.setFitToWidth(true);
+	    scroll.setMaxHeight(350);
+	    scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+	    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+	    scroll.setStyle("-fx-background: #0d1117; -fx-background-color: #0d1117;");
+
+	    try {
+	        scroll.getStylesheets().add(getClass().getResource("/view/css/scrollbar.css").toExternalForm());
+	    } catch (Exception ignored) {}
+
+	    root.getChildren().addAll(header, scroll);
+	    notificationPopup.getContent().add(root);
+	}
+
+	private void loadNotifications() {
+	    int userId = Session.getUserId();
+
+	    if (notificationService.isFirstLogin(userId)) {
+	        notificationService.addNotification(userId,
+	            "👋 Welcome to Raksha!",
+	            "Your account is set up. Start exploring movies and series.",
+	            "WELCOME"
+	        );
+	        notificationService.markFirstLoginDone(userId);
+
+	        Platform.runLater(() -> {
+	            playBellSound();
+	            shakeBell();
+	        });
+	    }
+
+	    checkNewEpisodeNotifications(userId);
+
+	    unreadCount = notificationService.getUnreadCount(userId);
+	    updateBadge();
+	}
+
+	private void checkNewEpisodeNotifications(int userId) {
+	    try {
+	        List<NewEpisodeInfo> newEps = notificationService.getNewEpisodesForUser(userId);
+
+	        if (!newEps.isEmpty()) {
+	            for (NewEpisodeInfo info : newEps) {
+	                notificationService.addNotification(userId,
+	                    "🎬 New episode: " + info.getSerieTitle(),
+	                    "Season " + info.getSeasonNum() + ", Episode " + info.getEpNum() +
+	                    " — \"" + info.getEpTitle() + "\" is now available!",
+	                    "NEW_EPISODE"
+	                );
+	            }
+
+	            Platform.runLater(() -> {
+	                playBellSound();
+	                shakeBell();
+	                unreadCount = notificationService.getUnreadCount(userId);
+	                updateBadge();
+	            });
+	        }
+
+	    } catch (Exception ignored) {}
+	}
+
+	private void refreshNotificationPanel() {
+	    notificationListBox.getChildren().clear();
+	    List<Notification> list = notificationService.getNotifications(Session.getUserId());
+
+	    if (list.isEmpty()) {
+	        Label empty = new Label("No notifications yet");
+	        empty.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 13; -fx-padding: 30;");
+	        empty.setMaxWidth(Double.MAX_VALUE);
+	        empty.setAlignment(Pos.CENTER);
+	        notificationListBox.getChildren().add(empty);
+	        return;
+	    }
+
+	    for (Notification n : list) {
+
+	        VBox row = new VBox(3);
+	        row.setPadding(new Insets(12, 16, 12, 16));
+
+	        boolean isUnread = !n.isRead();
+	        String rowBg = isUnread
+	                ? "-fx-background-color: rgba(0,140,255,0.07);"
+	                : "-fx-background-color: transparent;";
+
+	        row.setStyle(rowBg + "-fx-cursor: hand;");
+
+	        // ---------------- TOP LINE ----------------
+	        HBox topLine = new HBox(8);
+	        topLine.setAlignment(Pos.CENTER_LEFT);
+
+	        if (isUnread) {
+	            Circle dot = new Circle(4, Color.DODGERBLUE);
+	            topLine.getChildren().add(dot);
+	        }
+
+	        Label titleLbl = new Label(n.getTitle());
+	        titleLbl.setStyle(
+	            "-fx-text-fill: " + (isUnread ? "white" : "#c9d1d9") + ";" +
+	            "-fx-font-size: 13; -fx-font-weight: " + (isUnread ? "bold" : "normal") + ";"
+	        );
+	        titleLbl.setWrapText(true);
+	        titleLbl.setMaxWidth(240);
+
+	        Region spacer = new Region();
+	        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+	        // ❌ Delete button
+	        Button deleteBtn = new Button("✕");
+	        deleteBtn.setStyle(
+	            "-fx-background-color: transparent;" +
+	            "-fx-text-fill: #8b949e;" +
+	            "-fx-font-size: 12;" +
+	            "-fx-cursor: hand;"
+	        );
+
+	        deleteBtn.setOnMouseEntered(e ->
+	            deleteBtn.setStyle(
+	                "-fx-background-color: transparent;" +
+	                "-fx-text-fill: #ff4d4f;" +
+	                "-fx-font-size: 12;" +
+	                "-fx-cursor: hand;"
+	            )
+	        );
+
+	        deleteBtn.setOnMouseExited(e ->
+	            deleteBtn.setStyle(
+	                "-fx-background-color: transparent;" +
+	                "-fx-text-fill: #8b949e;" +
+	                "-fx-font-size: 12;" +
+	                "-fx-cursor: hand;"
+	            )
+	        );
+
+	        deleteBtn.setOnAction(e -> {
+	            notificationService.deleteNotification(n.getId());
+	            notificationListBox.getChildren().removeAll(row);
+
+	            if (!n.isRead()) {
+	                unreadCount = Math.max(0, unreadCount - 1);
+	                updateBadge();
+	            }
+	        });
+
+	        topLine.getChildren().addAll(titleLbl, spacer, deleteBtn);
+
+	        // ---------------- BODY ----------------
+	        Label bodyLbl = new Label(n.getBody());
+	        bodyLbl.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 11;");
+	        bodyLbl.setWrapText(true);
+	        bodyLbl.setMaxWidth(300);
+
+	        Label timeLbl = new Label(formatNotifTime(n.getCreatedAt()));
+	        timeLbl.setStyle("-fx-text-fill: #484f58; -fx-font-size: 10;");
+
+	        row.getChildren().addAll(topLine, bodyLbl, timeLbl);
+
+	        Region div = new Region();
+	        div.setPrefHeight(1);
+	        div.setStyle("-fx-background-color: #21262d;");
+
+	        row.setOnMouseEntered(e -> row.setStyle("-fx-background-color: #161b22; -fx-cursor: hand;"));
+	        row.setOnMouseExited(e -> row.setStyle(rowBg + "-fx-cursor: hand;"));
+
+	        row.setOnMouseClicked(e -> {
+	            notificationService.markRead(n.getId());
+	            refreshNotificationPanel();
+	            unreadCount = Math.max(0, unreadCount - 1);
+	            updateBadge();
+	        });
+
+	        notificationListBox.getChildren().addAll(row, div);
+	    }
+	}
+
+	private void updateBadge() {
+	    Platform.runLater(() -> {
+	        if (notificationCircle != null) {
+	            notificationCircle.setVisible(unreadCount > 0);
+	        }
+	        if (notifBadgeLabel != null) {
+	            notifBadgeLabel.setVisible(unreadCount > 0);
+	            notifBadgeLabel.setText(unreadCount > 99 ? "99+" : String.valueOf(unreadCount));
+	        }
+	    });
+	}
+
+	private String formatNotifTime(LocalDateTime dt) {
+	    if (dt == null) return "";
+
+	    LocalDateTime now = LocalDateTime.now();
+	    long minutes = java.time.Duration.between(dt, now).toMinutes();
+
+	    if (minutes < 1) return "just now";
+	    if (minutes < 60) return minutes + "m ago";
+	    if (minutes < 1440) return (minutes / 60) + "h ago";
+
+	    return dt.format(DateTimeFormatter.ofPattern("MMM d"));
+	}
 
     // ─────────────────────────────────────────────────────────────────────────
     // NAV BUTTONS
     // ─────────────────────────────────────────────────────────────────────────
     private void setupNavButtons() {
-        setupButton(btnHome,    lineHome,    this::goToHomepage);
-        setupButton(btnMovies,  lineMovies,  this::goToFilmView);
-        setupButton(btnSeries,  lineSeries,  this::goToSeriesView);
-        setupButton(btnMyList,  lineMyList,  this::goToMyListView);
+        setupButton(btnHome,    lineHome,    this::goToHomepage,    "/view/fxml/HomePage.fxml");
+        setupButton(btnMovies,  lineMovies,  this::goToFilmView,    "/view/fxml/FilmView.fxml");
+        setupButton(btnSeries,  lineSeries,  this::goToSeriesView,  "/view/fxml/SeriesView.fxml");
+        setupButton(btnMyList,  lineMyList,  this::goToMyListView,  "/view/fxml/MyList.fxml");
+        if (btnHistory != null)
+            setupButton(btnHistory, lineHistory, this::goToMyHistoryView, "/view/fxml/MyHistory.fxml");
+    }
+
+    private void restoreActiveTab(String fxmlPath) {
+        switch (fxmlPath) {
+            case "/view/fxml/FilmView.fxml"    -> activate(btnMovies,  lineMovies);
+            case "/view/fxml/SeriesView.fxml"  -> activate(btnSeries,  lineSeries);
+            case "/view/fxml/MyList.fxml"      -> activate(btnMyList,  lineMyList);
+            case "/view/fxml/MyHistory.fxml"   -> { if (btnHistory != null) activate(btnHistory, lineHistory); }
+            default                            -> activate(btnHome,    lineHome);
+        }
     }
 
     private void activate(Button btn, Rectangle line) {
+        if (activeButton != null && activeButton != btn) {
+            setButtonInactive(activeButton);
+            animateLine(activeLine, 0);
+        }
         activeButton = btn;
         activeLine   = line;
         setButtonActive(btn);
-        line.setWidth(btn.getWidth());
+        Platform.runLater(() -> animateLine(line, btn.getWidth()));
     }
 
-    private void setupButton(Button btn, Rectangle line, Runnable action) {
-        line.setFill(Color.DODGERBLUE);
-        line.setHeight(3);
+    private void setupButton(Button btn, Rectangle line, Runnable action, String fxmlPath) {
+        if (btn == null) return;
+        if (line != null) {
+            line.setFill(Color.DODGERBLUE);
+            line.setHeight(3);
+        }
 
         btn.setOnMouseEntered(e -> {
-            if (btn != activeButton) { setButtonHover(btn); animateLine(line, btn.getWidth()); }
+            if (btn != activeButton) { setButtonHover(btn); if (line != null) animateLine(line, btn.getWidth()); }
         });
         btn.setOnMouseExited(e -> {
-            if (btn != activeButton) { setButtonInactive(btn); animateLine(line, 0); }
+            if (btn != activeButton) { setButtonInactive(btn); if (line != null) animateLine(line, 0); }
         });
         btn.setOnAction(e -> {
             if (activeButton != null && activeButton != btn) {
                 setButtonInactive(activeButton);
-                animateLine(activeLine, 0);
+                if (activeLine != null) animateLine(activeLine, 0);
             }
             activeButton = btn;
             activeLine   = line;
             setButtonActive(btn);
-            line.setWidth(btn.getWidth());
-            lastActive = btn.getText();
+            if (line != null) line.setWidth(btn.getWidth());
             if (action != null) action.run();
         });
     }
 
-    private void setButtonActive  (Button btn) { btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: white;   -fx-font-size: 16;"); }
-    private void setButtonHover   (Button btn) { btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: white;   -fx-font-size: 16;"); }
-    private void setButtonInactive(Button btn) { btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 16;"); }
+    private void setButtonActive  (Button btn) { if (btn != null) btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: white;   -fx-font-size: 16;"); }
+    private void setButtonHover   (Button btn) { if (btn != null) btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: white;   -fx-font-size: 16;"); }
+    private void setButtonInactive(Button btn) { if (btn != null) btn.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 16;"); }
 
     private void animateLine(Rectangle line, double targetWidth) {
+        if (line == null) return;
         Platform.runLater(() -> new Timeline(
             new KeyFrame(Duration.millis(200), new KeyValue(line.widthProperty(), targetWidth))
         ).play());
@@ -474,33 +1039,38 @@ public class HeaderController {
     // ─────────────────────────────────────────────────────────────────────────
     // NAVIGATION
     // ─────────────────────────────────────────────────────────────────────────
-    public void goToHomepage()    { navigateTo("/view/fxml/HomePage.fxml"); }
-    public void goToFilmView()    { navigateTo("/view/fxml/FilmView.fxml"); }
-    public void goToSeriesView()  { navigateTo("/view/fxml/SeriesView.fxml"); }
-    public void goToMyListView()  { navigateTo("/view/fxml/MyList.fxml"); }
+    public void goToHomepage()      { navigateTo("/view/fxml/HomePage.fxml"); }
+    public void goToFilmView()      { navigateTo("/view/fxml/FilmView.fxml"); }
+    public void goToSeriesView()    { navigateTo("/view/fxml/SeriesView.fxml"); }
+    public void goToMyListView()    { navigateTo("/view/fxml/MyList.fxml"); }
     public void goToMyHistoryView() { navigateTo("/view/fxml/MyHistory.fxml"); }
 
     private void navigateTo(String fxmlPath) {
+        if (fxmlPath.equals(lastActiveFxml)) return;
+
         try {
             URL url = getClass().getResource(fxmlPath);
             if (url == null) { System.err.println("FXML not found: " + fxmlPath); return; }
-            Parent root = FXMLLoader.load(url);
 
-         // Set root
-         btnHome.getScene().setRoot(root);
+            Parent newRoot = FXMLLoader.load(url);
+            lastActiveFxml = fxmlPath;
 
-         // Force scroll to top for ScrollPane or ListView
-         Platform.runLater(() -> {
-             root.lookupAll(".scroll-pane").forEach(node -> {
-                 ((ScrollPane) node).setVvalue(0);  // scroll to top
-             });
-             root.lookupAll(".list-view").forEach(node -> {
-                 ((ListView<?>) node).scrollTo(0);  // scroll to first item
-             });
-         });
-        } catch (Exception e) { e.printStackTrace(); }
+            // Get the scene from any known node
+            Scene scene = btnHome.getScene();
+            if (scene == null) scene = rootPane.getScene();
+
+            scene.setRoot(newRoot);
+
+            // Scroll reset
+            Platform.runLater(() -> {
+                newRoot.lookupAll(".scroll-pane").forEach(node -> ((ScrollPane) node).setVvalue(0));
+                newRoot.lookupAll(".list-view").forEach(node  -> ((ListView<?>) node).scrollTo(0));
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-
     // ─────────────────────────────────────────────────────────────────────────
     // PROFILE
     // ─────────────────────────────────────────────────────────────────────────
@@ -510,15 +1080,17 @@ public class HeaderController {
     }
 
     private void applyProfileImage(Button btn, String imagePath) {
-        ImageView view = new ImageView(new Image(imagePath, false));
-        view.setFitWidth(45);
-        view.setFitHeight(45);
-        view.setPreserveRatio(false);
-        view.setSmooth(true);
-        view.setClip(new Circle(22.5, 22.5, 22.5));
-        btn.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
-        btn.setGraphic(view);
-        btn.setText("");
+        try {
+            ImageView view = new ImageView(new Image(imagePath, false));
+            view.setFitWidth(45);
+            view.setFitHeight(45);
+            view.setPreserveRatio(false);
+            view.setSmooth(true);
+            view.setClip(new Circle(22.5, 22.5, 22.5));
+            btn.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+            btn.setGraphic(view);
+            btn.setText("");
+        } catch (Exception ignored) {}
     }
 
     private void setupProfileButtonAction() {
@@ -532,462 +1104,358 @@ public class HeaderController {
         });
     }
 
- // ─────────────────────────────────────────────────────────────────────────
- // PROFILE POPUP  (replace the entire setupProfilePopup method)
- // ─────────────────────────────────────────────────────────────────────────
- private void setupProfilePopup() {
-     profilePopup = new Popup();
-     profilePopup.setAutoHide(true);
+    // ─────────────────────────────────────────────────────────────────────────
+    // PROFILE POPUP
+    // ─────────────────────────────────────────────────────────────────────────
+    private void setupProfilePopup() {
+        profilePopup = new Popup();
+        profilePopup.setAutoHide(true);
 
-     // ── Root container ──
-     VBox root = new VBox(0);
-     root.setPrefWidth(280);
-     root.setStyle(
-         "-fx-background-color: #0d1117;" +
-         "-fx-border-color: #21262d;" +
-         "-fx-border-width: 1;" +
-         "-fx-border-radius: 12;" +
-         "-fx-background-radius: 12;" +
-         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 20, 0.3, 0, 6);"
-     );
+        VBox root = new VBox(0);
+        root.setPrefWidth(280);
+        root.setStyle(
+            "-fx-background-color: #0d1117;" +
+            "-fx-border-color: #21262d;" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 12;" +
+            "-fx-background-radius: 12;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 20, 0.3, 0, 6);"
+        );
 
-     // ── TOP BANNER (avatar + name + email) ──
-     VBox banner = new VBox(8);
-     banner.setPadding(new Insets(20, 20, 16, 20));
-     banner.setStyle("-fx-background-color: #161b22; -fx-background-radius: 12 12 0 0;");
+        VBox banner = new VBox(8);
+        banner.setPadding(new Insets(20, 20, 16, 20));
+        banner.setStyle("-fx-background-color: #161b22; -fx-background-radius: 12 12 0 0;");
 
-     // Avatar with edit overlay
-     StackPane avatarStack = new StackPane();
-     avatarStack.setPrefSize(72, 72);
-     avatarStack.setMaxSize(72, 72);
+        StackPane avatarStack = new StackPane();
+        avatarStack.setPrefSize(72, 72);
+        avatarStack.setMaxSize(72, 72);
 
-     String imagePath = userService.getProfilePhoto(Session.getUserId());
-     if (imagePath == null || imagePath.isEmpty()) imagePath = "/assets/images/profile.png";
+        String imagePath = userService.getProfilePhoto(Session.getUserId());
+        if (imagePath == null || imagePath.isEmpty()) imagePath = "/assets/images/profile.png";
 
-     ImageView popupImg = new ImageView(new Image(imagePath));
-     popupImg.setFitWidth(72); popupImg.setFitHeight(72);
-     popupImg.setPreserveRatio(false); popupImg.setSmooth(true);
-     popupImg.setClip(new Circle(36, 36, 36));
+        ImageView popupImg = new ImageView(new Image(imagePath));
+        popupImg.setFitWidth(72); popupImg.setFitHeight(72);
+        popupImg.setPreserveRatio(false); popupImg.setSmooth(true);
+        popupImg.setClip(new Circle(36, 36, 36));
 
-     // Edit overlay (camera icon)
-     StackPane editOverlay = new StackPane();
-     editOverlay.setPrefSize(72, 72);
-     editOverlay.setStyle(
-         "-fx-background-color: rgba(0,0,0,0.55);" +
-         "-fx-background-radius: 50%;"
-     );
-     editOverlay.setOpacity(0);
-     Label cameraIcon = new Label("✎");
-     cameraIcon.setStyle("-fx-text-fill: white; -fx-font-size: 18;");
-     editOverlay.getChildren().add(cameraIcon);
-     editOverlay.setCursor(javafx.scene.Cursor.HAND);
+        StackPane editOverlay = new StackPane();
+        editOverlay.setPrefSize(72, 72);
+        editOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.55); -fx-background-radius: 50%;");
+        editOverlay.setOpacity(0);
+        Label cameraIcon = new Label("✎");
+        cameraIcon.setStyle("-fx-text-fill: white; -fx-font-size: 18;");
+        editOverlay.getChildren().add(cameraIcon);
+        editOverlay.setCursor(javafx.scene.Cursor.HAND);
 
-     avatarStack.getChildren().addAll(popupImg, editOverlay);
+        avatarStack.getChildren().addAll(popupImg, editOverlay);
 
-     // Hover fade overlay
-     FadeTransition fadeIn  = new FadeTransition(Duration.millis(150), editOverlay); fadeIn.setToValue(1);
-     FadeTransition fadeOut = new FadeTransition(Duration.millis(150), editOverlay); fadeOut.setToValue(0);
-     avatarStack.setOnMouseEntered(e -> fadeIn.playFromStart());
-     avatarStack.setOnMouseExited (e -> fadeOut.playFromStart());
+        FadeTransition fadeIn  = new FadeTransition(Duration.millis(150), editOverlay); fadeIn.setToValue(1);
+        FadeTransition fadeOut2 = new FadeTransition(Duration.millis(150), editOverlay); fadeOut2.setToValue(0);
+        avatarStack.setOnMouseEntered(e -> fadeIn.playFromStart());
+        avatarStack.setOnMouseExited (e -> fadeOut2.playFromStart());
 
-     // ── Click: file chooser that stays in-app ──
-     avatarStack.setOnMouseClicked(e -> {
-         FileChooser fc = new FileChooser();
-         fc.setTitle("Choose Profile Picture");
-         fc.getExtensionFilters().add(
-             new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
-         );
-         // ✅ Use the popup's own window as owner so it doesn't leave the app
-         Window owner = profilePopup.getOwnerWindow();
-         File file = fc.showOpenDialog(owner);
-         if (file != null) {
-             String url = file.toURI().toString();
-             Image newImg = new Image(url);
-             // Update popup avatar
-             ImageView newView = new ImageView(newImg);
-             newView.setFitWidth(72); newView.setFitHeight(72);
-             newView.setPreserveRatio(false); newView.setSmooth(true);
-             newView.setClip(new Circle(36, 36, 36));
-             avatarStack.getChildren().set(0, newView);
-             // Update header button
-             applyProfileImage(profile, url);
-             // Save
-             userService.updateProfilePhoto(Session.getUserId(), url);
-             Session.setProfileImagePath(url);
-         }
-     });
+        avatarStack.setOnMouseClicked(e -> {
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Choose Profile Picture");
+            fc.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+            );
+            Window owner = profilePopup.getOwnerWindow();
+            File file = fc.showOpenDialog(owner);
+            if (file != null) {
+                String url = file.toURI().toString();
+                Image newImg = new Image(url);
+                ImageView newView = new ImageView(newImg);
+                newView.setFitWidth(72); newView.setFitHeight(72);
+                newView.setPreserveRatio(false); newView.setSmooth(true);
+                newView.setClip(new Circle(36, 36, 36));
+                avatarStack.getChildren().set(0, newView);
+                applyProfileImage(profile, url);
+                userService.updateProfilePhoto(Session.getUserId(), url);
+                Session.setProfileImagePath(url);
+            }
+        });
 
-     // Also apply initial image to header button
-     applyProfileImage(profile, imagePath);
+        applyProfileImage(profile, imagePath);
 
-     Label usernameLabel = new Label(Session.getUsername());
-     usernameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 15; -fx-font-weight: bold;");
-     UsernameChangeNotifier.addListener(usernameLabel::setText);
+        Label usernameLabel = new Label(Session.getUsername());
+        usernameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 15; -fx-font-weight: bold;");
+        UsernameChangeNotifier.addListener(usernameLabel::setText);
 
-     String email = userService.getEmail(Session.getUserId()); // add this method if missing
-     Label emailLabel = new Label(email != null ? email : "");
-     emailLabel.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 12;");
+        String email = userService.getEmail(Session.getUserId());
+        Label emailLabel = new Label(email != null ? email : "");
+        emailLabel.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 12;");
 
-     HBox avatarRow = new HBox(14, avatarStack, new VBox(4, usernameLabel, emailLabel));
-     avatarRow.setAlignment(Pos.CENTER_LEFT);
-     ((VBox) avatarRow.getChildren().get(1)).setAlignment(Pos.CENTER_LEFT);
+        HBox avatarRow = new HBox(14, avatarStack, new VBox(4, usernameLabel, emailLabel));
+        avatarRow.setAlignment(Pos.CENTER_LEFT);
+        ((VBox) avatarRow.getChildren().get(1)).setAlignment(Pos.CENTER_LEFT);
+        banner.getChildren().add(avatarRow);
 
-     banner.getChildren().add(avatarRow);
+        Region div1 = new Region();
+        div1.setPrefHeight(1);
+        div1.setStyle("-fx-background-color: #21262d;");
 
-     // ── DIVIDER ──
-     Region div1 = new Region();
-     div1.setPrefHeight(1);
-     div1.setStyle("-fx-background-color: #21262d;");
+        VBox menu = new VBox(2);
+        menu.setPadding(new Insets(8, 8, 8, 8));
+        menu.getChildren().addAll(
+            makeMenuItem("☰",  "My List",    () -> { profilePopup.hide(); goToMyListView();    }),
+            makeMenuItem("⌛",  "My History", () -> { profilePopup.hide(); goToMyHistoryView(); }),
+            makeMenuItem("⚙",  "Settings",   () -> showSettingsPopup())
+        );
 
-     // ── MENU ITEMS ──
-     VBox menu = new VBox(2);
-     menu.setPadding(new Insets(8, 8, 8, 8));
+        Region div2 = new Region();
+        div2.setPrefHeight(1);
+        div2.setStyle("-fx-background-color: #21262d;");
 
-     menu.getChildren().addAll(
-         makeMenuItem("☰",  "My List",    () -> { profilePopup.hide(); goToMyListView();    }),
-         makeMenuItem("⌛",  "My History", () -> { profilePopup.hide(); goToMyHistoryView(); }),
-         makeMenuItem("⚙",  "Settings",   () -> showSettingsPopup())
-     );
+        HBox logoutRow = new HBox();
+        logoutRow.setPadding(new Insets(8, 8, 8, 8));
+        Button btnLogout = new Button("Sign out");
+        btnLogout.setMaxWidth(Double.MAX_VALUE);
+        btnLogout.setStyle(
+            "-fx-background-color: transparent; -fx-text-fill: #f85149; -fx-font-size: 13;" +
+            "-fx-alignment: CENTER_LEFT; -fx-padding: 8 12; -fx-background-radius: 8; -fx-cursor: hand;"
+        );
+        btnLogout.setOnMouseEntered(e -> btnLogout.setStyle(
+            "-fx-background-color: rgba(248,81,73,0.1); -fx-text-fill: #f85149; -fx-font-size: 13;" +
+            "-fx-alignment: CENTER_LEFT; -fx-padding: 8 12; -fx-background-radius: 8; -fx-cursor: hand;"
+        ));
+        btnLogout.setOnMouseExited(e -> btnLogout.setStyle(
+            "-fx-background-color: transparent; -fx-text-fill: #f85149; -fx-font-size: 13;" +
+            "-fx-alignment: CENTER_LEFT; -fx-padding: 8 12; -fx-background-radius: 8; -fx-cursor: hand;"
+        ));
+        btnLogout.setOnAction(e -> Platform.exit());
+        HBox.setHgrow(btnLogout, Priority.ALWAYS);
+        logoutRow.getChildren().add(btnLogout);
 
-     // ── DIVIDER ──
-     Region div2 = new Region();
-     div2.setPrefHeight(1);
-     div2.setStyle("-fx-background-color: #21262d;");
+        root.getChildren().addAll(banner, div1, menu, div2, logoutRow);
+        profilePopup.getContent().add(root);
+    }
 
-     // ── LOGOUT ──
-     HBox logoutRow = new HBox();
-     logoutRow.setPadding(new Insets(8, 8, 8, 8));
-     Button btnLogout = new Button("Sign out");
-     btnLogout.setMaxWidth(Double.MAX_VALUE);
-     btnLogout.setStyle(
-         "-fx-background-color: transparent;" +
-         "-fx-text-fill: #f85149;" +
-         "-fx-font-size: 13;" +
-         "-fx-alignment: CENTER_LEFT;" +
-         "-fx-padding: 8 12;" +
-         "-fx-background-radius: 8;" +
-         "-fx-cursor: hand;"
-     );
-     btnLogout.setOnMouseEntered(e -> btnLogout.setStyle(
-         "-fx-background-color: rgba(248,81,73,0.1);" +
-         "-fx-text-fill: #f85149; -fx-font-size: 13;" +
-         "-fx-alignment: CENTER_LEFT; -fx-padding: 8 12;" +
-         "-fx-background-radius: 8; -fx-cursor: hand;"
-     ));
-     btnLogout.setOnMouseExited(e -> btnLogout.setStyle(
-         "-fx-background-color: transparent;" +
-         "-fx-text-fill: #f85149; -fx-font-size: 13;" +
-         "-fx-alignment: CENTER_LEFT; -fx-padding: 8 12;" +
-         "-fx-background-radius: 8; -fx-cursor: hand;"
-     ));
-     btnLogout.setOnAction(e -> Platform.exit());
-     HBox.setHgrow(btnLogout, Priority.ALWAYS);
-     logoutRow.getChildren().add(btnLogout);
+    private HBox makeMenuItem(String icon, String label, Runnable action) {
+        HBox row = new HBox(10);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setPadding(new Insets(8, 12, 8, 12));
+        row.setStyle("-fx-background-color: transparent; -fx-background-radius: 8; -fx-cursor: hand;");
 
-     root.getChildren().addAll(banner, div1, menu, div2, logoutRow);
-     profilePopup.getContent().add(root);
- }
+        Label ico = new Label(icon);
+        ico.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 14;");
+        ico.setMinWidth(20);
+        Label lbl = new Label(label);
+        lbl.setStyle("-fx-text-fill: #c9d1d9; -fx-font-size: 13;");
+        Region spacer = new Region(); HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label arrow = new Label("›");
+        arrow.setStyle("-fx-text-fill: #484f58; -fx-font-size: 16;");
+        row.getChildren().addAll(ico, lbl, spacer, arrow);
 
- // Helper: single menu item row
- private HBox makeMenuItem(String icon, String label, Runnable action) {
-     HBox row = new HBox(10);
-     row.setAlignment(Pos.CENTER_LEFT);
-     row.setPadding(new Insets(8, 12, 8, 12));
-     row.setStyle("-fx-background-color: transparent; -fx-background-radius: 8; -fx-cursor: hand;");
+        row.setOnMouseEntered(e -> row.setStyle("-fx-background-color: #161b22; -fx-background-radius: 8; -fx-cursor: hand;"));
+        row.setOnMouseExited (e -> row.setStyle("-fx-background-color: transparent; -fx-background-radius: 8; -fx-cursor: hand;"));
+        row.setOnMouseClicked(e -> action.run());
+        return row;
+    }
 
-     Label ico = new Label(icon);
-     ico.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 14;");
-     ico.setMinWidth(20);
+    // ─────────────────────────────────────────────────────────────────────────
+    // SETTINGS POPUP
+    // ─────────────────────────────────────────────────────────────────────────
+    private void showSettingsPopup() {
+        profilePopup.hide();
 
-     Label lbl = new Label(label);
-     lbl.setStyle("-fx-text-fill: #c9d1d9; -fx-font-size: 13;");
+        Stage settingsStage = new Stage();
+        settingsStage.initOwner(profile.getScene().getWindow());
+        settingsStage.initModality(Modality.WINDOW_MODAL);
+        settingsStage.initStyle(StageStyle.TRANSPARENT);
+        settingsStage.setTitle("Settings");
 
-     Region spacer = new Region(); HBox.setHgrow(spacer, Priority.ALWAYS);
-     Label arrow = new Label("›");
-     arrow.setStyle("-fx-text-fill: #484f58; -fx-font-size: 16;");
+        StackPane overlay = new StackPane();
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.65);");
+        overlay.setPrefSize(profile.getScene().getWidth(), profile.getScene().getHeight());
 
-     row.getChildren().addAll(ico, lbl, spacer, arrow);
+        VBox card = new VBox(0);
+        card.setMaxWidth(480);
+        card.setMaxHeight(500);
+        card.setStyle(
+            "-fx-background-color: #0d1117; -fx-border-color: #30363d; -fx-border-width: 1;" +
+            "-fx-border-radius: 14; -fx-background-radius: 14;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 30, 0.4, 0, 8);"
+        );
 
-     row.setOnMouseEntered(e -> row.setStyle("-fx-background-color: #161b22; -fx-background-radius: 8; -fx-cursor: hand;"));
-     row.setOnMouseExited (e -> row.setStyle("-fx-background-color: transparent; -fx-background-radius: 8; -fx-cursor: hand;"));
-     row.setOnMouseClicked(e -> action.run());
+        HBox header = new HBox();
+        header.setPadding(new Insets(20, 20, 16, 24));
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setStyle(
+            "-fx-background-color: #161b22; -fx-background-radius: 14 14 0 0;" +
+            "-fx-border-color: transparent transparent #21262d transparent; -fx-border-width: 1;"
+        );
 
-     return row;
- }
+        Label titleLabel = new Label("Account settings");
+        titleLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");
+        Region headerSpacer = new Region(); HBox.setHgrow(headerSpacer, Priority.ALWAYS);
 
+        Button closeBtn = new Button("✕");
+        closeBtn.setStyle(
+            "-fx-background-color: #21262d; -fx-text-fill: #8b949e; -fx-font-size: 12;" +
+            "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
+            "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
+        );
+        closeBtn.setOnMouseEntered(e -> closeBtn.setStyle(
+            "-fx-background-color: #30363d; -fx-text-fill: white; -fx-font-size: 12;" +
+            "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
+            "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
+        ));
+        closeBtn.setOnMouseExited(e -> closeBtn.setStyle(
+            "-fx-background-color: #21262d; -fx-text-fill: #8b949e; -fx-font-size: 12;" +
+            "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
+            "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
+        ));
+        closeBtn.setOnAction(e -> settingsStage.close());
+        header.getChildren().addAll(titleLabel, headerSpacer, closeBtn);
 
- // ─────────────────────────────────────────────────────────────────────────
- // SETTINGS POPUP  (replace the entire showSettingsPopup method)
- // ─────────────────────────────────────────────────────────────────────────
- private void showSettingsPopup() {
-     profilePopup.hide();
+        VBox body = new VBox(20);
+        body.setPadding(new Insets(24));
 
-     Stage settingsStage = new Stage();
-     settingsStage.initOwner(profile.getScene().getWindow());
-     settingsStage.initModality(Modality.WINDOW_MODAL);
-     settingsStage.initStyle(StageStyle.TRANSPARENT);
-     settingsStage.setTitle("Settings");
+        Label sectionLabel = new Label("PROFILE");
+        sectionLabel.setStyle("-fx-text-fill: #484f58; -fx-font-size: 11; -fx-font-weight: bold;");
 
-     // ── Root overlay ──
-     StackPane overlay = new StackPane();
-     overlay.setStyle("-fx-background-color: rgba(0,0,0,0.65);");
-     overlay.setPrefSize(
-    		    profile.getScene().getWidth(),
-    		    profile.getScene().getHeight()
-    		);
+        VBox usernameGroup = makeSettingsField("Username", Session.getUsername());
+        TextField tfUsername = (TextField) ((VBox) usernameGroup).getChildren().get(1);
 
-     // ── Modal card ──
-     VBox card = new VBox(0);
-     card.setMaxWidth(480);
-     card.setMaxHeight(500);
-     card.setStyle(
-         "-fx-background-color: #0d1117;" +
-         "-fx-border-color: #30363d;" +
-         "-fx-border-width: 1;" +
-         "-fx-border-radius: 14;" +
-         "-fx-background-radius: 14;" +
-         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 30, 0.4, 0, 8);"
-     );
+        Label usernameErr = new Label();
+        usernameErr.setStyle("-fx-text-fill: #f85149; -fx-font-size: 12;");
+        usernameErr.setVisible(false);
+        usernameErr.setManaged(false);
 
-     // ── Header ──
-     HBox header = new HBox();
-     header.setPadding(new Insets(20, 20, 16, 24));
-     header.setAlignment(Pos.CENTER_LEFT);
-     header.setStyle(
-         "-fx-background-color: #161b22;" +
-         "-fx-background-radius: 14 14 0 0;" +
-         "-fx-border-color: transparent transparent #21262d transparent;" +
-         "-fx-border-width: 1;"
-     );
+        VBox passwordGroup = makeSettingsFieldPassword("New password", "Leave blank to keep current");
 
-     Label titleLabel = new Label("Account settings");
-     titleLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");
+        Region div = new Region(); div.setPrefHeight(1);
+        div.setStyle("-fx-background-color: #21262d;");
 
-     Region headerSpacer = new Region(); HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+        HBox actions = new HBox(10);
+        actions.setAlignment(Pos.CENTER_RIGHT);
 
-     Button closeBtn = new Button("✕");
-     closeBtn.setStyle(
-         "-fx-background-color: #21262d;" +
-         "-fx-text-fill: #8b949e;" +
-         "-fx-font-size: 12;" +
-         "-fx-background-radius: 50%;" +
-         "-fx-min-width: 28; -fx-min-height: 28;" +
-         "-fx-max-width: 28; -fx-max-height: 28;" +
-         "-fx-padding: 0; -fx-cursor: hand;"
-     );
-     closeBtn.setOnMouseEntered(e -> closeBtn.setStyle(
-         "-fx-background-color: #30363d; -fx-text-fill: white; -fx-font-size: 12;" +
-         "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
-         "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
-     ));
-     closeBtn.setOnMouseExited(e -> closeBtn.setStyle(
-         "-fx-background-color: #21262d; -fx-text-fill: #8b949e; -fx-font-size: 12;" +
-         "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
-         "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
-     ));
-     closeBtn.setOnAction(e -> settingsStage.close());
-     header.getChildren().addAll(titleLabel, headerSpacer, closeBtn);
+        Button btnCancel = new Button("Cancel");
+        btnCancel.setStyle(
+            "-fx-background-color: #21262d; -fx-text-fill: #c9d1d9; -fx-font-size: 13;" +
+            "-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #30363d;" +
+            "-fx-border-width: 1; -fx-padding: 8 18; -fx-cursor: hand;"
+        );
+        btnCancel.setOnAction(e -> settingsStage.close());
 
-     // ── Body ──
-     VBox body = new VBox(20);
-     body.setPadding(new Insets(24));
+        Button btnSave = new Button("Save changes");
+        btnSave.setStyle(
+            "-fx-background-color: #008cff; -fx-text-fill: white; -fx-font-size: 13;" +
+            "-fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 18; -fx-cursor: hand;"
+        );
+        btnSave.setOnMouseEntered(e -> btnSave.setStyle(
+            "-fx-background-color: #339eff; -fx-text-fill: white; -fx-font-size: 13;" +
+            "-fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 18; -fx-cursor: hand;"
+        ));
+        btnSave.setOnMouseExited(e -> btnSave.setStyle(
+            "-fx-background-color: #008cff; -fx-text-fill: white; -fx-font-size: 13;" +
+            "-fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 18; -fx-cursor: hand;"
+        ));
 
-     // Section: Profile info
-     Label sectionLabel = new Label("PROFILE");
-     sectionLabel.setStyle("-fx-text-fill: #484f58; -fx-font-size: 11; -fx-font-weight: bold;");
+        PasswordField pfPassword = (PasswordField) ((VBox) passwordGroup).getChildren().get(1);
 
-     // Username field
-     VBox usernameGroup = makeSettingsField("Username", Session.getUsername());
-     TextField tfUsername = (TextField) ((VBox) usernameGroup).getChildren().get(1);
+        HBox successBanner = new HBox(8);
+        successBanner.setPadding(new Insets(10, 14, 10, 14));
+        successBanner.setStyle(
+            "-fx-background-color: rgba(35,134,54,0.15); -fx-background-radius: 8;" +
+            "-fx-border-color: #238636; -fx-border-width: 1; -fx-border-radius: 8;"
+        );
+        successBanner.setVisible(false);
+        successBanner.setManaged(false);
+        Label successLabel = new Label("Changes saved successfully");
+        successLabel.setStyle("-fx-text-fill: #3fb950; -fx-font-size: 13;");
+        successBanner.getChildren().add(successLabel);
 
-     Label usernameErr = new Label();
-     usernameErr.setStyle("-fx-text-fill: #f85149; -fx-font-size: 12;");
-     usernameErr.setVisible(false);
-     usernameErr.setManaged(false);
+        btnSave.setOnAction(e -> {
+            boolean saved = false;
+            usernameErr.setVisible(false); usernameErr.setManaged(false);
 
-     // Password field
-     VBox passwordGroup = makeSettingsFieldPassword("New password", "Leave blank to keep current");
+            String newUsername = tfUsername.getText().trim();
+            if (!newUsername.isEmpty() && !newUsername.equals(Session.getUsername())) {
+                if (userService.usernameExists(newUsername)) {
+                    usernameErr.setText("Username already taken");
+                    usernameErr.setVisible(true); usernameErr.setManaged(true);
+                } else {
+                    userService.updateUsername(Session.getUserId(), newUsername);
+                    Session.setUsername(newUsername);
+                    UsernameChangeNotifier.notifyAllListeners(newUsername);
+                    saved = true;
+                }
+            }
 
-     Region div = new Region(); div.setPrefHeight(1);
-     div.setStyle("-fx-background-color: #21262d;");
+            String newPassword = pfPassword.getText();
+            if (!newPassword.isEmpty()) {
+                userService.updateUserPassword(Session.getUserId(), newPassword);
+                pfPassword.clear();
+                saved = true;
+            }
 
-     // ── Action buttons ──
-     HBox actions = new HBox(10);
-     actions.setAlignment(Pos.CENTER_RIGHT);
+            if (saved) {
+                successBanner.setVisible(true); successBanner.setManaged(true);
+                new Timeline(new KeyFrame(Duration.seconds(2), ev -> {
+                    successBanner.setVisible(false); successBanner.setManaged(false);
+                })).play();
+            }
+        });
 
-     Button btnCancel = new Button("Cancel");
-     btnCancel.setStyle(
-         "-fx-background-color: #21262d;" +
-         "-fx-text-fill: #c9d1d9;" +
-         "-fx-font-size: 13;" +
-         "-fx-background-radius: 8;" +
-         "-fx-border-radius: 8;" +
-         "-fx-border-color: #30363d;" +
-         "-fx-border-width: 1;" +
-         "-fx-padding: 8 18;" +
-         "-fx-cursor: hand;"
-     );
-     btnCancel.setOnMouseEntered(e -> btnCancel.setStyle(
-         "-fx-background-color: #30363d; -fx-text-fill: white; -fx-font-size: 13;" +
-         "-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #30363d;" +
-         "-fx-border-width: 1; -fx-padding: 8 18; -fx-cursor: hand;"
-     ));
-     btnCancel.setOnMouseExited(e -> btnCancel.setStyle(
-         "-fx-background-color: #21262d; -fx-text-fill: #c9d1d9; -fx-font-size: 13;" +
-         "-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #30363d;" +
-         "-fx-border-width: 1; -fx-padding: 8 18; -fx-cursor: hand;"
-     ));
-     btnCancel.setOnAction(e -> settingsStage.close());
+        actions.getChildren().addAll(btnCancel, btnSave);
+        body.getChildren().addAll(sectionLabel, usernameGroup, usernameErr, passwordGroup, successBanner, div, actions);
+        card.getChildren().addAll(header, body);
+        overlay.getChildren().add(card);
+        overlay.setOnMouseClicked(e -> { if (e.getTarget() == overlay) settingsStage.close(); });
 
-     Button btnSave = new Button("Save changes");
-     btnSave.setStyle(
-    		    "-fx-background-color: #008cff;" +  // base blue
-    		    "-fx-text-fill: white;" +
-    		    "-fx-font-size: 13;" +
-    		    "-fx-font-weight: bold;" +
-    		    "-fx-background-radius: 8;" +
-    		    "-fx-border-radius: 8;" +
-    		    "-fx-padding: 8 18;" +
-    		    "-fx-cursor: hand;"
-    		);
-    		btnSave.setOnMouseEntered(e -> btnSave.setStyle(
-    		    "-fx-background-color: #339eff; -fx-text-fill: white; -fx-font-size: 13;" + // lighter blue on hover
-    		    "-fx-font-weight: bold; -fx-background-radius: 8; -fx-border-radius: 8;" +
-    		    "-fx-padding: 8 18; -fx-cursor: hand;"
-    		));
-    		btnSave.setOnMouseExited(e -> btnSave.setStyle(
-    		    "-fx-background-color: #008cff; -fx-text-fill: white; -fx-font-size: 13;" +
-    		    "-fx-font-weight: bold; -fx-background-radius: 8; -fx-border-radius: 8;" +
-    		    "-fx-padding: 8 18; -fx-cursor: hand;"
-    		));
-     PasswordField pfPassword = (PasswordField) ((VBox) passwordGroup).getChildren().get(1);
+        Scene scene = new Scene(overlay);
+        scene.setFill(Color.TRANSPARENT);
+        settingsStage.setScene(scene);
+        settingsStage.showAndWait();
+    }
 
-     // Success banner (hidden initially)
-     HBox successBanner = new HBox(8);
-     successBanner.setPadding(new Insets(10, 14, 10, 14));
-     successBanner.setStyle("-fx-background-color: rgba(35,134,54,0.15); -fx-background-radius: 8; -fx-border-color: #238636; -fx-border-width: 1; -fx-border-radius: 8;");
-     successBanner.setVisible(false);
-     successBanner.setManaged(false);
-     Label successLabel = new Label("Changes saved successfully");
-     successLabel.setStyle("-fx-text-fill: #3fb950; -fx-font-size: 13;");
-     successBanner.getChildren().add(successLabel);
+    private VBox makeSettingsField(String labelText, String initialValue) {
+        Label lbl = new Label(labelText);
+        lbl.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 12;");
+        TextField tf = new TextField(initialValue);
+        tf.setStyle(
+            "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-border-color: #30363d;" +
+            "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8;" +
+            "-fx-font-size: 13; -fx-padding: 10 12;"
+        );
+        tf.setMaxWidth(Double.MAX_VALUE);
+        tf.setOnMouseEntered(e -> tf.setStyle(
+            "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-border-color: #8b949e;" +
+            "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-font-size: 13; -fx-padding: 10 12;"
+        ));
+        tf.setOnMouseExited(e -> tf.setStyle(
+            "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-border-color: #30363d;" +
+            "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-font-size: 13; -fx-padding: 10 12;"
+        ));
+        return new VBox(6, lbl, tf);
+    }
 
-     btnSave.setOnAction(e -> {
-         boolean saved = false;
-         usernameErr.setVisible(false); usernameErr.setManaged(false);
+    private VBox makeSettingsFieldPassword(String labelText, String promptText) {
+        Label lbl = new Label(labelText);
+        lbl.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 12;");
+        PasswordField pf = new PasswordField();
+        pf.setPromptText(promptText);
+        pf.setStyle(
+            "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-prompt-text-fill: #484f58;" +
+            "-fx-border-color: #30363d; -fx-border-width: 1; -fx-border-radius: 8;" +
+            "-fx-background-radius: 8; -fx-font-size: 13; -fx-padding: 10 12;"
+        );
+        pf.setMaxWidth(Double.MAX_VALUE);
+        pf.setOnMouseEntered(e -> pf.setStyle(
+            "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-prompt-text-fill: #484f58;" +
+            "-fx-border-color: #8b949e; -fx-border-width: 1; -fx-border-radius: 8;" +
+            "-fx-background-radius: 8; -fx-font-size: 13; -fx-padding: 10 12;"
+        ));
+        pf.setOnMouseExited(e -> pf.setStyle(
+            "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-prompt-text-fill: #484f58;" +
+            "-fx-border-color: #30363d; -fx-border-width: 1; -fx-border-radius: 8;" +
+            "-fx-background-radius: 8; -fx-font-size: 13; -fx-padding: 10 12;"
+        ));
+        return new VBox(6, lbl, pf);
+    }
 
-         String newUsername = tfUsername.getText().trim();
-         if (!newUsername.isEmpty() && !newUsername.equals(Session.getUsername())) {
-             if (userService.usernameExists(newUsername)) {
-                 usernameErr.setText("Username already taken");
-                 usernameErr.setVisible(true); usernameErr.setManaged(true);
-             } else {
-                 userService.updateUsername(Session.getUserId(), newUsername);
-                 Session.setUsername(newUsername);
-                 UsernameChangeNotifier.notifyAllListeners(newUsername);
-                 saved = true;
-             }
-         }
-
-         String newPassword = pfPassword.getText();
-         if (!newPassword.isEmpty()) {
-             userService.updateUserPassword(Session.getUserId(), newPassword); // pass plain, hash inside method
-             pfPassword.clear();
-             saved = true;
-         }
-
-         if (saved) {
-             successBanner.setVisible(true); successBanner.setManaged(true);
-             // Auto-hide after 2s
-             new Timeline(new KeyFrame(Duration.seconds(2), ev -> {
-                 successBanner.setVisible(false); successBanner.setManaged(false);
-             })).play();
-         }
-     });
-
-     actions.getChildren().addAll(btnCancel, btnSave);
-     body.getChildren().addAll(sectionLabel, usernameGroup, usernameErr, passwordGroup, successBanner, div, actions);
-
-     card.getChildren().addAll(header, body);
-     overlay.getChildren().add(card);
-
-     // Close when clicking outside the card
-     overlay.setOnMouseClicked(e -> {
-         if (e.getTarget() == overlay) settingsStage.close();
-     });
-
-     Scene scene = new Scene(overlay);
-     scene.setFill(Color.TRANSPARENT);
-     settingsStage.setScene(scene);
-     settingsStage.showAndWait();
- }
-
- // Helper: labeled text field for settings
- private VBox makeSettingsField(String labelText, String initialValue) {
-     Label lbl = new Label(labelText);
-     lbl.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 12;");
-
-     TextField tf = new TextField(initialValue);
-     tf.setStyle(
-         "-fx-background-color: #010409;" +
-         "-fx-text-fill: #c9d1d9;" +
-         "-fx-border-color: #30363d;" +
-         "-fx-border-width: 1;" +
-         "-fx-border-radius: 8;" +
-         "-fx-background-radius: 8;" +
-         "-fx-font-size: 13;" +
-         "-fx-padding: 10 12;"
-     );
-     tf.setMaxWidth(Double.MAX_VALUE);
-     tf.setOnMouseEntered(e -> tf.setStyle(
-         "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-border-color: #8b949e;" +
-         "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8;" +
-         "-fx-font-size: 13; -fx-padding: 10 12;"
-     ));
-     tf.setOnMouseExited(e -> tf.setStyle(
-         "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-border-color: #30363d;" +
-         "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8;" +
-         "-fx-font-size: 13; -fx-padding: 10 12;"
-     ));
-
-     VBox group = new VBox(6, lbl, tf);
-     return group;
- }
-
- // Helper: labeled password field for settings
- private VBox makeSettingsFieldPassword(String labelText, String promptText) {
-     Label lbl = new Label(labelText);
-     lbl.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 12;");
-
-     PasswordField pf = new PasswordField();
-     pf.setPromptText(promptText);
-     pf.setStyle(
-         "-fx-background-color: #010409;" +
-         "-fx-text-fill: #c9d1d9;" +
-         "-fx-prompt-text-fill: #484f58;" +
-         "-fx-border-color: #30363d;" +
-         "-fx-border-width: 1;" +
-         "-fx-border-radius: 8;" +
-         "-fx-background-radius: 8;" +
-         "-fx-font-size: 13;" +
-         "-fx-padding: 10 12;"
-     );
-     pf.setMaxWidth(Double.MAX_VALUE);
-     pf.setOnMouseEntered(e -> pf.setStyle(
-         "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-prompt-text-fill: #484f58;" +
-         "-fx-border-color: #8b949e; -fx-border-width: 1; -fx-border-radius: 8;" +
-         "-fx-background-radius: 8; -fx-font-size: 13; -fx-padding: 10 12;"
-     ));
-     pf.setOnMouseExited(e -> pf.setStyle(
-         "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-prompt-text-fill: #484f58;" +
-         "-fx-border-color: #30363d; -fx-border-width: 1; -fx-border-radius: 8;" +
-         "-fx-background-radius: 8; -fx-font-size: 13; -fx-padding: 10 12;"
-     ));
-
-     return new VBox(6, lbl, pf);
- }
-
-   
     // ─────────────────────────────────────────────────────────────────────────
     // FILM POPUP
     // ─────────────────────────────────────────────────────────────────────────
@@ -1063,14 +1531,13 @@ public class HeaderController {
                 synopsis.setWrapText(true); synopsis.setMaxWidth(600);
                 synopsis.setStyle("-fx-text-fill:#cccccc; -fx-font-size:16;");
 
-                // Watch status
                 int userId = Session.getUserId();
                 int filmId = film.getFilm_id();
                 int dur    = (int) film.getDuration();
                 WatchStatus status;
-                if (!filmProgressService.exists(userId, filmId))                           status = WatchStatus.NOT_STARTED;
-                else if (filmProgressService.getLastPosition(userId, filmId) >= dur - 2)   status = WatchStatus.COMPLETED;
-                else                                                                        status = WatchStatus.IN_PROGRESS;
+                if (!filmProgressService.exists(userId, filmId))                        status = WatchStatus.NOT_STARTED;
+                else if (filmProgressService.getLastPosition(userId, filmId) >= dur - 2) status = WatchStatus.COMPLETED;
+                else                                                                      status = WatchStatus.IN_PROGRESS;
 
                 Label statusLabel = new Label(status.toString());
                 String statusColor = switch (status) {
@@ -1206,8 +1673,8 @@ public class HeaderController {
         StackPane.setAlignment(right, Pos.CENTER_RIGHT); StackPane.setMargin(right, new Insets(0, 10, 0, 0));
 
         root.setOnMouseMoved(e -> {
-            fadeButton(left,  e.getX() < 150                    ? 1 : 0, 200);
-            fadeButton(right, e.getX() > root.getWidth() - 150  ? 1 : 0, 200);
+            fadeButton(left,  e.getX() < 150                   ? 1 : 0, 200);
+            fadeButton(right, e.getX() > root.getWidth() - 150 ? 1 : 0, 200);
         });
 
         Button close = new Button("✕");
@@ -1216,7 +1683,6 @@ public class HeaderController {
         addHoverAnimation(close);
         StackPane.setAlignment(close, Pos.TOP_RIGHT);
         StackPane.setMargin(close, new Insets(20));
-
         root.getChildren().addAll(left, right, close);
 
         updateSeasonSlider(cards, 0);
@@ -1259,7 +1725,6 @@ public class HeaderController {
         card.getChildren().add(contentWrapper);
 
         // ── POSTER ───────────────────────────────────────────────────
-     // ── POSTER ───────────────────────────────────────────────────
         ImageView poster = new ImageView();
         poster.setFitWidth(300);
         poster.setFitHeight(420);
@@ -1271,23 +1736,19 @@ public class HeaderController {
             poster.setImage(new Image(s.getPosterUrl(), true));
         } catch (Exception ignored) {}
 
-        // ✅ Wrap to control alignment + clipping
         StackPane posterWrapper = new StackPane(poster);
         posterWrapper.setPrefSize(300, 420);
         posterWrapper.setMaxSize(300, 420);
         posterWrapper.setAlignment(Pos.CENTER);
 
-        // ✅ Clip to force clean edges (fixes overflow / bad fit)
         Rectangle posterClip = new Rectangle(300, 420);
         posterClip.setArcWidth(20);
         posterClip.setArcHeight(20);
         posterWrapper.setClip(posterClip);
 
-        // OPTIONAL: slight zoom to avoid empty gaps
         poster.setScaleX(1.05);
         poster.setScaleY(1.05);
 
-        // Fade overlay (your code is good 👍)
         Region posterFade = new Region();
         posterFade.setPrefSize(300, 420);
         posterFade.setStyle(
@@ -1295,11 +1756,11 @@ public class HeaderController {
             "  transparent 0%, rgba(7,9,15,0.55) 70%, rgba(7,9,15,1.0) 100%);"
         );
 
-        // Final container
         StackPane posterPane = new StackPane(posterWrapper, posterFade);
         posterPane.setPrefSize(300, 420);
         posterPane.setMaxSize(300, 420);
         StackPane.setAlignment(posterPane, Pos.CENTER_LEFT);
+
         // ── INFO PANEL ───────────────────────────────────────────────
         VBox infoBox = new VBox(12);
         infoBox.setPadding(new Insets(28, 24, 24, 18));
@@ -1361,9 +1822,9 @@ public class HeaderController {
             "-fx-background-color: linear-gradient(to right, transparent, rgba(56,189,248,0.4), transparent);"
         );
 
-        Button trailerBtn = new Button("▶  Trailer");
+        Button trailerBtn  = new Button("▶  Trailer");
         Button episodesBtn = new Button("≡  Episodes");
-        styleCardButton(trailerBtn, false);
+        styleCardButton(trailerBtn,  false);
         styleCardButton(episodesBtn, true);
         addHoverAnimation(trailerBtn);
         addHoverAnimation(episodesBtn);
@@ -1403,9 +1864,7 @@ public class HeaderController {
         addHoverAnimation(backToMain);
 
         Label epHeaderTitle = new Label("Season " + s.getSeasonNum() + " — Episodes");
-        epHeaderTitle.setStyle(
-            "-fx-text-fill: white; -fx-font-size: 17px; -fx-font-weight: bold;"
-        );
+        epHeaderTitle.setStyle("-fx-text-fill: white; -fx-font-size: 17px; -fx-font-weight: bold;");
 
         Label epHeaderCount = new Label(epCount + " episodes");
         epHeaderCount.setStyle("-fx-text-fill: #38bdf8; -fx-font-size: 12px;");
@@ -1422,50 +1881,115 @@ public class HeaderController {
             "-fx-border-width: 0 0 1 0;"
         );
 
-        // Episode rows
+        // Episode rows container
         VBox episodesList = new VBox(6);
-        episodesList.setPadding(new Insets(10, 16, 16, 16));
+        episodesList.setPadding(new Insets(10, 8, 16, 16));
 
+        // ── ScrollPane — built-in bars hidden, wheel handled manually ──
         ScrollPane episodesScroll = new ScrollPane(episodesList);
         episodesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         episodesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         episodesScroll.setFitToWidth(true);
-        episodesScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-padding: 0;");
+        episodesScroll.setStyle(
+            "-fx-background: transparent;" +
+            "-fx-background-color: transparent;" +
+            "-fx-padding: 0;"
+        );
         VBox.setVgrow(episodesScroll, Priority.ALWAYS);
         episodesScroll.setOnScroll(e ->
-            episodesScroll.setVvalue(episodesScroll.getVvalue() - e.getDeltaY() * 0.003));
+            episodesScroll.setVvalue(
+                Math.max(0, Math.min(1,
+                    episodesScroll.getVvalue() - e.getDeltaY() * 0.003))
+            )
+        );
 
+        // ── Custom slim scrollbar ──────────────────────────────────────
         ScrollBar customScrollBar = new ScrollBar();
         customScrollBar.setOrientation(Orientation.VERTICAL);
-        customScrollBar.setMin(0); customScrollBar.setMax(1);
-        customScrollBar.setPrefWidth(5);
-        customScrollBar.setStyle("-fx-background-color: transparent;");
+        customScrollBar.setMin(0);
+        customScrollBar.setMax(1);
+        customScrollBar.setValue(0);
+        customScrollBar.setUnitIncrement(0.05);
+        customScrollBar.setBlockIncrement(0.2);
+
+        // Lock width to exactly 6px
+        customScrollBar.setPrefWidth(6);
+        customScrollBar.setMinWidth(6);
+        customScrollBar.setMaxWidth(6);
+
+        
+
+        // Load scrollbar.css so .thumb gets the blue-black pill look
+        customScrollBar.getStylesheets().add(
+            getClass().getResource("/view/css/scrollbar.css").toExternalForm()
+        );
+
+        // Two-way bind: dragging thumb ↔ scrolling pane
         customScrollBar.valueProperty().bindBidirectional(episodesScroll.vvalueProperty());
-        Platform.runLater(() -> {
-            Node thumb = customScrollBar.lookup(".thumb");
-            if (thumb != null) thumb.setStyle(
-                "-fx-background-color: rgba(56,189,248,0.55); -fx-background-radius: 10;");
-        });
+
+        // Adjust thumb size to reflect visible portion of content
         episodesScroll.viewportBoundsProperty().addListener((o, ov, nv) ->
             updateThumbSize(episodesScroll, customScrollBar));
 
+        // Style the thumb directly after CSS is applied
+        Platform.runLater(() -> {
+            Node thumb = customScrollBar.lookup(".thumb");
+            if (thumb != null) thumb.setStyle(
+                "-fx-background-color: #1e3a5f;" +
+                "-fx-background-radius: 10;" +
+                "-fx-border-color: transparent;"
+            );
+            Node track = customScrollBar.lookup(".track");
+            if (track != null) track.setStyle(
+                "-fx-background-color: transparent;" +
+                "-fx-border-color: transparent;"
+            );
+            // Hide arrow buttons
+            for (String sel : new String[]{".increment-button", ".decrement-button"}) {
+                Node btn = customScrollBar.lookup(sel);
+                if (btn != null) btn.setStyle(
+                    "-fx-pref-width: 0; -fx-pref-height: 0;" +
+                    "-fx-min-width: 0; -fx-min-height: 0;" +
+                    "-fx-max-width: 0; -fx-max-height: 0;" +
+                    "-fx-background-color: transparent;"
+                );
+            }
+            // Hover: brighten thumb to accent blue
+            if (thumb != null) {
+                thumb.setOnMouseEntered(ev -> thumb.setStyle(
+                    "-fx-background-color: #4a90d9;" +
+                    "-fx-background-radius: 10;" +
+                    "-fx-border-color: transparent;"
+                ));
+                thumb.setOnMouseExited(ev -> thumb.setStyle(
+                    "-fx-background-color: #1e3a5f;" +
+                    "-fx-background-radius: 10;" +
+                    "-fx-border-color: transparent;"
+                ));
+            }
+        });
+
+        // ── Episode detail pane ───────────────────────────────────────
         int userId = Session.getUserId();
         Map<Integer, WatchStatus> progressMap = episodeProgressService.loadUserProgress(userId);
 
-        // Build the shared episode detail pane
         StackPane episodeDetailPane = new StackPane();
         episodeDetailPane.setPrefSize(740, 420);
         episodeDetailPane.setStyle("-fx-background-color: #07090f;");
 
-        // Build episode rows
         for (Episode ep : s.getEpisodes()) {
-            HBox row = buildEpisodeRow(ep, s, progressMap, contentWrapper, episodeDetailPane, episodesView, popup, userId);
+            HBox row = buildEpisodeRow(
+                ep, s, progressMap, contentWrapper,
+                episodeDetailPane, episodesView, popup, userId
+            );
             episodesList.getChildren().add(row);
         }
 
-        HBox scrollRow = new HBox(4, episodesScroll, customScrollBar);
+        // scrollRow: ScrollPane fills width, slim bar on the right edge
+        HBox scrollRow = new HBox(0, episodesScroll, customScrollBar);
         HBox.setHgrow(episodesScroll, Priority.ALWAYS);
         VBox.setVgrow(scrollRow, Priority.ALWAYS);
+
         episodesView.getChildren().addAll(epHeader, scrollRow);
 
         // ── WIRE ACTIONS ─────────────────────────────────────────────
@@ -1476,16 +2000,12 @@ public class HeaderController {
         contentWrapper.getChildren().setAll(mainView);
         return card;
     }
-
     // ═══════════════════════ EPISODE ROW ═══════════════════════
-    // Single definition — 8 params including episodesView
     private HBox buildEpisodeRow(
             Episode ep, Season s,
             Map<Integer, WatchStatus> progressMap,
-            StackPane contentWrapper,
-            StackPane detailPane,
-            VBox episodesView,
-            Stage popup, int userId) {
+            StackPane contentWrapper, StackPane detailPane,
+            VBox episodesView, Stage popup, int userId) {
 
         WatchStatus status = progressMap.getOrDefault(ep.getEpId(), WatchStatus.NOT_STARTED);
 
@@ -1493,21 +2013,12 @@ public class HeaderController {
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(12, 16, 12, 16));
 
-        String baseStyle =
-            "-fx-background-color: rgba(15,20,32,0.6);" +
-            "-fx-background-radius: 10;" +
-            "-fx-border-color: rgba(56,189,248,0.07);" +
-            "-fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;";
-        String hoverStyle =
-            "-fx-background-color: rgba(56,189,248,0.08);" +
-            "-fx-background-radius: 10;" +
-            "-fx-border-color: rgba(56,189,248,0.25);" +
-            "-fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;";
+        String baseStyle  = "-fx-background-color: rgba(15,20,32,0.6); -fx-background-radius: 10; -fx-border-color: rgba(56,189,248,0.07); -fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;";
+        String hoverStyle = "-fx-background-color: rgba(56,189,248,0.08); -fx-background-radius: 10; -fx-border-color: rgba(56,189,248,0.25); -fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;";
         row.setStyle(baseStyle);
         row.setOnMouseEntered(e -> row.setStyle(hoverStyle));
-        row.setOnMouseExited(e  -> row.setStyle(baseStyle));
+        row.setOnMouseExited (e -> row.setStyle(baseStyle));
 
-        // Number circle
         Label numBadge = new Label(String.format("%02d", ep.getNumEpisode()));
         numBadge.setPrefSize(34, 34); numBadge.setMinSize(34, 34);
         numBadge.setAlignment(Pos.CENTER);
@@ -1517,35 +2028,27 @@ public class HeaderController {
             "-fx-text-fill: #38bdf8; -fx-font-size: 12px; -fx-font-weight: bold;"
         );
 
-        // Title + stars
         VBox textCol = new VBox(4);
         HBox.setHgrow(textCol, Priority.ALWAYS);
-
         Label epTitleLbl = new Label(ep.getTitle());
-        epTitleLbl.setStyle(
-            "-fx-text-fill: rgba(226,232,240,0.95); -fx-font-size: 14px; -fx-font-weight: bold;"
-        );
-
+        epTitleLbl.setStyle("-fx-text-fill: rgba(226,232,240,0.95); -fx-font-size: 14px; -fx-font-weight: bold;");
         HBox miniStars = new HBox(2);
         int rating = (int) Math.round(ep.getRating());
         for (int i = 0; i < 5; i++) {
             Label st = new Label("★");
-            st.setStyle("-fx-font-size: 10px; -fx-text-fill: " +
-                (i < rating ? "#38bdf8" : "rgba(255,255,255,0.12)") + ";");
+            st.setStyle("-fx-font-size: 10px; -fx-text-fill: " + (i < rating ? "#38bdf8" : "rgba(255,255,255,0.12)") + ";");
             miniStars.getChildren().add(st);
         }
         textCol.getChildren().addAll(epTitleLbl, miniStars);
 
-        // Duration
         int h = ep.getDuration() / 60, m = ep.getDuration() % 60;
         Label duration = new Label((h > 0 ? h + "h " : "") + m + "m");
         duration.setStyle("-fx-text-fill: rgba(148,163,184,0.6); -fx-font-size: 12px;");
 
-        // Status pill
         String pillText   = switch (status) { case COMPLETED -> "✓ Watched"; case IN_PROGRESS -> "▶ In Progress"; default -> "Not Started"; };
         String pillBg     = switch (status) { case COMPLETED -> "rgba(34,197,94,0.15)";  case IN_PROGRESS -> "rgba(56,189,248,0.15)";  default -> "rgba(100,116,139,0.12)"; };
         String pillBorder = switch (status) { case COMPLETED -> "rgba(34,197,94,0.5)";   case IN_PROGRESS -> "rgba(56,189,248,0.45)";  default -> "rgba(100,116,139,0.25)"; };
-        String pillFg     = switch (status) { case COMPLETED -> "#4ade80";                case IN_PROGRESS -> "#38bdf8";                default -> "#64748b"; };
+        String pillFg     = switch (status) { case COMPLETED -> "#4ade80"; case IN_PROGRESS -> "#38bdf8"; default -> "#64748b"; };
 
         Label statusPill = new Label(pillText);
         statusPill.setStyle(
@@ -1553,23 +2056,18 @@ public class HeaderController {
             "-fx-border-width: 1; -fx-border-radius: 20; -fx-background-radius: 20;" +
             "-fx-text-fill: " + pillFg + "; -fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 3 9;"
         );
-
         Label arrow = new Label("›");
         arrow.setStyle("-fx-text-fill: rgba(56,189,248,0.4); -fx-font-size: 20px;");
 
         row.getChildren().addAll(numBadge, textCol, duration, statusPill, arrow);
-
-        // Click → populate detail + switch view
         row.setOnMouseClicked(ev -> {
             populateEpisodeDetail(detailPane, ep, s, contentWrapper, episodesView, popup, userId);
             switchView(contentWrapper, detailPane);
         });
-
         return row;
     }
 
     // ═══════════════════════ EPISODE DETAIL ═══════════════════════
-    // Single definition — 7 params including contentWrapper + episodesView
     private void populateEpisodeDetail(
             StackPane detailPane, Episode ep, Season s,
             StackPane contentWrapper, VBox episodesView,
@@ -1577,31 +2075,21 @@ public class HeaderController {
 
         detailPane.getChildren().clear();
 
-        // ── COVER ─────────────────────────────────────────────
         ImageView cover = new ImageView();
-        cover.setFitWidth(740);
-        cover.setFitHeight(280);
-        cover.setPreserveRatio(false);
-
-        try {
-            cover.setImage(new Image(ep.getCovertUrl(), true));
-        } catch (Exception ignored) {}
+        cover.setFitWidth(740); cover.setFitHeight(280); cover.setPreserveRatio(false);
+        try { cover.setImage(new Image(ep.getCovertUrl(), true)); } catch (Exception ignored) {}
 
         Region coverGradient = new Region();
         coverGradient.setPrefSize(740, 280);
         coverGradient.setStyle(
-            "-fx-background-color: linear-gradient(to bottom," +
-            "rgba(7,9,15,0) 0%, rgba(7,9,15,0.6) 55%, rgba(7,9,15,1.0) 100%);"
+            "-fx-background-color: linear-gradient(to bottom, rgba(7,9,15,0) 0%, rgba(7,9,15,0.6) 55%, rgba(7,9,15,1.0) 100%);"
         );
 
         StackPane coverPane = new StackPane(cover, coverGradient);
         coverPane.setMaxSize(740, 280);
         StackPane.setAlignment(coverPane, Pos.TOP_CENTER);
-
-        // IMPORTANT: don't block clicks
         coverPane.setMouseTransparent(true);
 
-        // ── PLAY BUTTON ───────────────────────────────────────
         Button play = new Button("▶");
         play.setPrefSize(64, 64);
         play.setStyle(
@@ -1611,87 +2099,45 @@ public class HeaderController {
             "-fx-effect: dropshadow(gaussian, rgba(56,189,248,0.55), 22, 0.4, 0, 0);"
         );
 
-        // Pulse animation
         ScaleTransition pulse = new ScaleTransition(Duration.millis(900), play);
-        pulse.setFromX(1.0);
-        pulse.setFromY(1.0);
-        pulse.setToX(1.12);
-        pulse.setToY(1.12);
+        pulse.setFromX(1.0); pulse.setFromY(1.0);
+        pulse.setToX(1.12);  pulse.setToY(1.12);
         pulse.setAutoReverse(true);
         pulse.setCycleCount(Animation.INDEFINITE);
         pulse.play();
 
-        // Hover
-        play.setOnMouseEntered(e -> {
-            pulse.stop();
-            play.setScaleX(1.18);
-            play.setScaleY(1.18);
-        });
-
-        play.setOnMouseExited(e -> {
-            play.setScaleX(1.0);
-            play.setScaleY(1.0);
-            pulse.play();
-        });
+        play.setOnMouseEntered(e -> { pulse.stop(); play.setScaleX(1.18); play.setScaleY(1.18); });
+        play.setOnMouseExited (e -> { play.setScaleX(1.0); play.setScaleY(1.0); pulse.play(); });
 
         StackPane.setAlignment(play, Pos.CENTER);
         StackPane.setMargin(play, new Insets(0, 0, 160, 0));
 
-        // ── INFO PANEL ────────────────────────────────────────
         VBox infoPanel = new VBox(8);
         infoPanel.setPadding(new Insets(0, 28, 20, 28));
         infoPanel.setAlignment(Pos.TOP_LEFT);
         StackPane.setAlignment(infoPanel, Pos.BOTTOM_CENTER);
 
         Button backBtn = new Button("← Episodes");
-        backBtn.setStyle(
-            "-fx-background-color: rgba(56,189,248,0.1);" +
-            "-fx-border-color: rgba(56,189,248,0.35);" +
-            "-fx-text-fill: #38bdf8;"
-        );
+        backBtn.setStyle("-fx-background-color: rgba(56,189,248,0.1); -fx-border-color: rgba(56,189,248,0.35); -fx-text-fill: #38bdf8;");
         addHoverAnimation(backBtn);
 
-        Label epNum = new Label("EPISODE " + ep.getNumEpisode());
+        Label epNum   = new Label("EPISODE " + ep.getNumEpisode());
         Label epTitle = new Label(ep.getTitle());
-
-        int h = ep.getDuration() / 60;
-        int m = ep.getDuration() % 60;
-
-        Label metaLabel = new Label(h + "h " + m + "m");
-
-        Label synopsis = new Label(
-            ep.getResume() != null ? ep.getResume() : "No synopsis available."
-        );
+        int hh = ep.getDuration() / 60, mm = ep.getDuration() % 60;
+        Label metaLabel = new Label(hh + "h " + mm + "m");
+        Label synopsis  = new Label(ep.getResume() != null ? ep.getResume() : "No synopsis available.");
         synopsis.setWrapText(true);
-
         infoPanel.getChildren().addAll(backBtn, epNum, epTitle, metaLabel, synopsis);
 
-        // ── ACTIONS ───────────────────────────────────────────
         play.setOnAction(e -> {
-            System.out.println("PLAY CLICKED ✅");
-
             try {
                 if (popup != null) popup.close();
-
-                goToLecturePageEpisode(
-                    s.getSerieId(),
-                    s.getSeasonNum(),
-                    ep.getEpId()
-                );
-
-                
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+                goToLecturePageEpisode(s.getSerieId(), s.getSeasonNum(), ep.getEpId());
+            } catch (Exception ex) { ex.printStackTrace(); }
         });
-
         backBtn.setOnAction(e -> switchView(contentWrapper, episodesView));
 
-        // ── FINAL LAYOUT (FIXED ORDER) ─────────────────────────
         detailPane.getChildren().addAll(coverPane, infoPanel, play);
-
-        // FORCE play button on top
         play.toFront();
     }
 
@@ -1715,21 +2161,18 @@ public class HeaderController {
         }
     }
 
-    // ═══════════════════════ BUTTON STYLES ═══════════════════════
     private void styleCardButton(Button btn, boolean primary) {
         if (primary) {
             btn.setStyle(
-                "-fx-background-color: #38bdf8; -fx-text-fill: #07090f;" +
-                "-fx-font-weight: bold; -fx-font-size: 13px; -fx-background-radius: 8;" +
-                "-fx-padding: 8 20; -fx-cursor: hand;" +
+                "-fx-background-color: #38bdf8; -fx-text-fill: #07090f; -fx-font-weight: bold;" +
+                "-fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 8 20; -fx-cursor: hand;" +
                 "-fx-effect: dropshadow(gaussian, rgba(56,189,248,0.45), 16, 0.3, 0, 0);"
             );
         } else {
             btn.setStyle(
                 "-fx-background-color: rgba(56,189,248,0.08); -fx-text-fill: #38bdf8;" +
-                "-fx-font-size: 13px; -fx-background-radius: 8;" +
-                "-fx-border-color: rgba(56,189,248,0.35); -fx-border-width: 1;" +
-                "-fx-border-radius: 8; -fx-padding: 8 20; -fx-cursor: hand;"
+                "-fx-font-size: 13px; -fx-background-radius: 8; -fx-border-color: rgba(56,189,248,0.35);" +
+                "-fx-border-width: 1; -fx-border-radius: 8; -fx-padding: 8 20; -fx-cursor: hand;"
             );
         }
     }
@@ -1737,89 +2180,348 @@ public class HeaderController {
     // ─────────────────────────────────────────────────────────────────────────
     // TRAILER POPUP
     // ─────────────────────────────────────────────────────────────────────────
-    private void showTrailerPopup(Object item, int seasonIndex) {
+	private void showTrailerPopup(Object item, int seasonIndex) {
         String trailerUrl = null;
-        if (item instanceof Film f)       trailerUrl = f.getVideo_url();
-        else if (item instanceof Serie s) {
-            if (s.getSeasons() != null && !s.getSeasons().isEmpty()) {
-                int idx = (seasonIndex < 0 || seasonIndex >= s.getSeasons().size()) ? 0 : seasonIndex;
-                trailerUrl = s.getSeasons().get(idx).getTrailerUrl();
+
+        if (item instanceof Film) {
+            trailerUrl = ((Film) item).getTrailer_url();
+        } else if (item instanceof Serie) {
+            Serie serie = (Serie) item;
+            if (serie.getSeasons() != null && !serie.getSeasons().isEmpty()) {
+                if (seasonIndex < 0 || seasonIndex >= serie.getSeasons().size()) seasonIndex = 0;
+                trailerUrl = serie.getSeasons().get(seasonIndex).getTrailerUrl();
             }
         }
+
         if (trailerUrl == null) return;
 
-        URL videoUrl  = getClass().getResource(trailerUrl);
-        if (videoUrl == null) { System.err.println("Video not found: " + trailerUrl); return; }
+        URL videoUrl = getClass().getResource(trailerUrl);
+        if (videoUrl == null) { System.out.println("Video file not found: " + trailerUrl); return; }
         String videoPath = trailerUrl.startsWith("http") ? trailerUrl : videoUrl.toExternalForm();
 
-        javafx.scene.web.WebView webView = new javafx.scene.web.WebView();
-        webView.setPrefSize(1500, 700);
-        webView.getEngine().loadContent(
-            "<html><body style='margin:0;background:black;'>" +
-            "<video width='100%' height='100%' controls>" +
-            "<source src='" + videoPath + "' type='video/mp4'>" +
-            "</video></body></html>"
-        );
+        // ── Modern HTML5 player with custom controls ──────────────────
+        String html =
+        		"<!DOCTYPE html><html><head><style>" +
 
-        Rectangle2D screen   = Screen.getPrimary().getBounds();
-        double fullW = screen.getWidth(), fullH = screen.getHeight();
-        double smallW = 1200, smallH = 600;
+        		"  * { margin:0; padding:0; box-sizing:border-box; }" +
+
+        		"  body { background:#000; overflow:hidden; display:flex; flex-direction:column;" +
+        		"         width:100vw; height:100vh; font-family:'Segoe UI',sans-serif; }" +
+
+        		"  video { flex:1; width:100%; min-height:0; object-fit:contain; display:block; cursor:pointer; }" +
+
+        		/* ================= CONTROLS BAR ================= */
+        		"  #bar {" +
+        		"    background: linear-gradient(to top, rgba(0,0,0,0.98), rgba(0,20,40,0.85));" +
+        		"    padding: 6px 18px 10px;" +
+        		"    display:flex; flex-direction:column; gap:7px;" +
+        		"  }" +
+
+        		/* ================= PROGRESS BAR ================= */
+        		"  #prog-wrap {" +
+        		"    position:relative; height:4px; background:rgba(255,255,255,0.08);" +
+        		"    border-radius:4px; cursor:pointer; transition:height 0.15s;" +
+        		"  }" +
+
+        		"  #prog-wrap:hover { height:6px; }" +
+
+        		"  #prog-buf { position:absolute; height:100%; border-radius:4px;" +
+        		"    background:rgba(0,140,255,0.2); width:0%; pointer-events:none; }" +
+
+        		"  #prog-fill { position:absolute; height:100%; border-radius:4px;" +
+        		"    background:linear-gradient(to right,#002b55,#00aaff); width:0%; pointer-events:none; }" +
+
+        		"  #prog-thumb { position:absolute; top:50%; width:13px; height:13px;" +
+        		"    background:#00aaff; border-radius:50%; transform:translate(-50%,-50%);" +
+        		"    box-shadow:0 0 10px rgba(0,170,255,0.9); left:0%;" +
+        		"    opacity:0; transition:opacity 0.15s; pointer-events:none; }" +
+
+        		"  #prog-wrap:hover #prog-thumb { opacity:1; }" +
+
+        		/* ================= ROW ================= */
+        		"  #row { display:flex; align-items:center; gap:10px; }" +
+
+        		"  .btn {" +
+        		"    background:rgba(0,0,0,0.6);" +
+        		"    border:none;" +
+        		"    cursor:pointer;" +
+        		"    color:#00aaff;" +
+        		"    font-size:13px;" +
+        		"    border-radius:7px;" +
+        		"    padding:4px 9px;" +
+        		"    transition:0.2s;" +
+        		"    display:flex; align-items:center; justify-content:center;" +
+        		"    min-width:32px; height:30px;" +
+        		"  }" +
+
+        		"  .btn:hover { background:rgba(0,140,255,0.25); color:#ffffff; }" +
+        		"  .btn:active { background:rgba(0,100,180,0.4); }" +
+
+        		/* ================= TIME ================= */
+        		"  #time { font-size:11px; color:rgba(180,200,255,0.75); min-width:105px; letter-spacing:0.3px; }" +
+
+        		/* ================= VOLUME ================= */
+        		"  #vol-wrap { display:flex; align-items:center; gap:6px; }" +
+
+        		"  #vol { -webkit-appearance:none; width:72px; height:3px;" +
+        		"    background:rgba(255,255,255,0.15); border-radius:3px; outline:none; cursor:pointer; }" +
+
+        		"  #vol::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px;" +
+        		"    background:#00aaff; border-radius:50%; box-shadow:0 0 6px rgba(0,170,255,0.7); }" +
+
+        		"  #spacer { flex:1; }" +
+
+        		/* ================= SPEED ================= */
+        		"  #speed { background:rgba(0,0,0,0.7); border:none;" +
+        		"    color:#00aaff; font-size:11px; padding:4px 7px; border-radius:6px;" +
+        		"    cursor:pointer; outline:none; }" +
+
+        		"  #speed:hover { background:rgba(0,140,255,0.2); }" +
+
+        		/* ================= TOOLTIP ================= */
+        		"  #tip { position:fixed; bottom:72px; left:50%; transform:translateX(-50%);" +
+        		"    background:rgba(0,0,0,0.85); border:none;" +
+        		"    color:#00aaff; font-size:11px; padding:4px 14px; border-radius:20px;" +
+        		"    opacity:0; transition:opacity 0.25s; pointer-events:none; }" +
+
+        		"  ::-webkit-scrollbar { display:none; }" +
+
+        		"</style></head><body>" +
+
+        		"<video id='v'><source src='" + videoPath + "' type='video/mp4'></video>" +
+
+        		"<div id='bar'>" +
+        		"  <div id='prog-wrap' onmousedown='seekStart(event)' onmousemove='seekHover(event)'>" +
+        		"    <div id='prog-buf'></div>" +
+        		"    <div id='prog-fill'></div>" +
+        		"    <div id='prog-thumb'></div>" +
+        		"  </div>" +
+
+        		"  <div id='row'>" +
+        		"    <button class='btn' onclick='togglePlay()' id='playBtn'>&#9654;</button>" +
+        		"    <button class='btn' onclick='skip(-10)'>&#9198; 10</button>" +
+        		"    <button class='btn' onclick='skip(10)'>10 &#9197;</button>" +
+
+        		"    <div id='vol-wrap'>" +
+        		"      <button class='btn' onclick='toggleMute()' id='muteBtn'>&#128266;</button>" +
+        		"      <input id='vol' type='range' min='0' max='1' step='0.02' value='1' oninput='setVol(this.value)'>" +
+        		"    </div>" +
+
+        		"    <span id='time'>0:00 / 0:00</span>" +
+
+        		"    <div id='spacer'></div>" +
+
+        		"    <select id='speed' onchange='setSpeed(this.value)'>" +
+        		"      <option value='0.25'>0.25×</option>" +
+        		"      <option value='0.5'>0.5×</option>" +
+        		"      <option value='0.75'>0.75×</option>" +
+        		"      <option value='1' selected>1×</option>" +
+        		"      <option value='1.25'>1.25×</option>" +
+        		"      <option value='1.5'>1.5×</option>" +
+        		"      <option value='2'>2×</option>" +
+        		"    </select>" +
+        		"  </div>" +
+        		"</div>" +
+
+        		"<div id='tip'></div>" +
+
+        		"<script>" +
+        		"var v=document.getElementById('v')," +
+        		"pFill=document.getElementById('prog-fill')," +
+        		"pBuf=document.getElementById('prog-buf')," +
+        		"pThumb=document.getElementById('prog-thumb')," +
+        		"playBtn=document.getElementById('playBtn')," +
+        		"muteBtn=document.getElementById('muteBtn')," +
+        		"timeEl=document.getElementById('time')," +
+        		"tip=document.getElementById('tip')," +
+        		"seeking=false, tipTimer;" +
+
+        		"v.addEventListener('timeupdate',function(){" +
+        		"  if(!v.duration||seeking)return;" +
+        		"  var p=(v.currentTime/v.duration*100).toFixed(2)+'%';" +
+        		"  pFill.style.width=p; pThumb.style.left=p;" +
+        		"  timeEl.textContent=fmt(v.currentTime)+' / '+fmt(v.duration);" +
+        		"});" +
+
+        		"v.addEventListener('progress',function(){" +
+        		"  if(!v.duration||!v.buffered.length)return;" +
+        		"  pBuf.style.width=(v.buffered.end(v.buffered.length-1)/v.duration*100)+'%';" +
+        		"});" +
+
+        		"v.addEventListener('play',function(){playBtn.textContent='⏸';});" +
+        		"v.addEventListener('pause',function(){playBtn.textContent='▶';});" +
+        		"v.addEventListener('ended',function(){playBtn.textContent='↺';});" +
+        		"v.addEventListener('click',togglePlay);" +
+
+        		"function togglePlay(){if(v.ended){v.currentTime=0;v.play();}else if(v.paused)v.play();else v.pause();}" +
+        		"function skip(s){v.currentTime=Math.max(0,Math.min(v.duration||0,v.currentTime+s));toast((s>0?'+':'')+s+'s');}" +
+
+        		"function seekAt(e){" +
+        		"var r=document.getElementById('prog-wrap').getBoundingClientRect();" +
+        		"var ratio=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));" +
+        		"v.currentTime=ratio*(v.duration||0);" +
+        		"}" +
+
+        		"function seekStart(e){" +
+        		"seeking=true;seekAt(e);" +
+        		"document.addEventListener('mousemove',seekAt);" +
+        		"document.addEventListener('mouseup',function up(){" +
+        		"seeking=false;" +
+        		"document.removeEventListener('mousemove',seekAt);" +
+        		"document.removeEventListener('mouseup',up);" +
+        		"});" +
+        		"}" +
+
+        		"function seekHover(e){" +
+        		"var r=document.getElementById('prog-wrap').getBoundingClientRect();" +
+        		"var t=Math.max(0,(e.clientX-r.left)/r.width)*v.duration;" +
+        		"tip.textContent=fmt(t);" +
+        		"tip.style.opacity='1';tip.style.left=e.clientX+'px';" +
+        		"}" +
+
+        		"document.getElementById('prog-wrap').addEventListener('mouseleave',function(){tip.style.opacity='0';});" +
+
+        		"function setVol(val){v.volume=parseFloat(val);v.muted=val==0;}" +
+        		"function toggleMute(){v.muted=!v.muted;document.getElementById('vol').value=v.muted?0:v.volume;}" +
+        		"function setSpeed(val){v.playbackRate=parseFloat(val);}" +
+
+        		"function fmt(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=Math.floor(s%60);" +
+        		"return (h>0?h+':':'')+(h>0&&m<10?'0':'')+m+':'+(ss<10?'0':'')+ss;}" +
+
+        		"document.addEventListener('keydown',function(e){" +
+        		"if(e.code==='Space'){e.preventDefault();togglePlay();}" +
+        		"if(e.code==='ArrowRight')skip(5);" +
+        		"if(e.code==='ArrowLeft')skip(-5);" +
+        		"});" +
+
+        		"v.play().catch(function(){});" +
+        		"</script></body></html>";
+
+        WebView webView = new WebView();
+        webView.setPrefSize(1500, 700);
+        webView.getEngine().loadContent(html);
+
+        // ── Stage ────────────────────────────────────────────────────
+        Rectangle2D screenBounds = Screen.getPrimary().getBounds();
+        double fullWidth  = screenBounds.getWidth();
+        double fullHeight = screenBounds.getHeight();
+        double smallWidth = 1200, smallHeight = 660;
 
         Stage popup = new Stage();
         popup.initOwner(rootPane.getScene().getWindow());
         popup.initModality(Modality.WINDOW_MODAL);
         popup.initStyle(StageStyle.TRANSPARENT);
-        popup.setWidth(fullW); popup.setHeight(fullH);
+        popup.setWidth(fullWidth); popup.setHeight(fullHeight);
         popup.setX(0); popup.setY(0);
 
-        Button toggleSize = new Button("🗗");
-        toggleSize.setStyle("-fx-background-color:#008cff; -fx-text-fill:white; -fx-font-weight:bold; -fx-background-radius:50%; -fx-padding:5 8;");
-        addHoverAnimation(toggleSize);
+        // ── Backdrop ─────────────────────────────────────────────────
+        StackPane root = new StackPane();
+        root.setStyle("-fx-background-color: rgba(0,0,0,0.88);");
 
-        Button exitButton = new Button("✕");
-        exitButton.setStyle("-fx-background-color:#008cff; -fx-text-fill:white; -fx-font-weight:bold; -fx-background-radius:50%; -fx-padding:5 8;");
-        exitButton.setOnAction(e -> popup.close());
-        addHoverAnimation(exitButton);
+        // ── Card ─────────────────────────────────────────────────────
+        VBox card = new VBox(0);
+        card.setMaxSize(fullWidth - 40, fullHeight - 40);
+        card.setPrefSize(fullWidth - 40, fullHeight - 40);
+        card.setStyle(
+            "-fx-background-color: #07090f;" +
+            "-fx-background-radius: 14;" +
+            "-fx-border-color: rgba(56,189,248,0.18);" +
+            "-fx-border-width: 1.5;" +
+            "-fx-border-radius: 14;" +
+            "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.95),60,0.7,0,10);"
+        );
 
-        VBox layout = new VBox(15);
-        layout.setStyle("-fx-background-color: rgba(0,0,0,0.2); -fx-background-radius:15; -fx-padding:15; -fx-alignment:center;");
-        layout.setPrefSize(fullW, fullH);
+        Rectangle cardClip = new Rectangle();
+        cardClip.setArcWidth(28); cardClip.setArcHeight(28);
+        card.layoutBoundsProperty().addListener((o, ov, nv) -> {
+            cardClip.setWidth(nv.getWidth());
+            cardClip.setHeight(nv.getHeight());
+        });
+        card.setClip(cardClip);
 
-        final boolean[] isFullScreen = {true};
-        toggleSize.setOnAction(e -> {
-            if (isFullScreen[0]) {
-                popup.setWidth(smallW); popup.setHeight(smallH);
-                popup.setX((fullW - smallW) / 2); popup.setY((fullH - smallH) / 2);
-                layout.setPrefSize(smallW, smallH);
+        // ── Card top bar ─────────────────────────────────────────────
+        HBox cardBar = new HBox(8);
+        cardBar.setAlignment(Pos.CENTER_RIGHT);
+        cardBar.setPadding(new Insets(9, 12, 9, 16));
+        cardBar.setMinHeight(42); cardBar.setMaxHeight(42);
+        cardBar.setStyle(
+            "-fx-background-color: #0a0e1a;" +
+            "-fx-border-color: transparent transparent rgba(56,189,248,0.1) transparent;" +
+            "-fx-border-width: 0 0 1 0;"
+        );
+
+        Region d1 = minidot("#1e3a5f"), d2 = minidot("#2c5282"), d3 = minidot("#4a90d9");
+        Region barSpacer = new Region(); HBox.setHgrow(barSpacer, Priority.ALWAYS);
+
+        Button btnResize = popupCtrlBtn("⊡", false);
+        Button btnClose  = popupCtrlBtn("✕", true);
+        btnClose.setOnAction(e -> popup.close());
+
+        final boolean[] isSmall = {false};
+        btnResize.setOnAction(e -> {
+            if (!isSmall[0]) {
+                card.setMaxSize(smallWidth, smallHeight);
+                card.setPrefSize(smallWidth, smallHeight);
+                isSmall[0] = true; btnResize.setText("⊞");
             } else {
-                popup.setWidth(fullW); popup.setHeight(fullH);
-                popup.setX(0); popup.setY(0);
-                layout.setPrefSize(fullW, fullH);
+                card.setMaxSize(fullWidth - 40, fullHeight - 40);
+                card.setPrefSize(fullWidth - 40, fullHeight - 40);
+                isSmall[0] = false; btnResize.setText("⊡");
             }
-            isFullScreen[0] = !isFullScreen[0];
         });
 
-        HBox topBar = new HBox(10, toggleSize, exitButton);
-        topBar.setAlignment(Pos.TOP_RIGHT);
-        topBar.setPadding(new Insets(10));
-        topBar.setPickOnBounds(false);
+        cardBar.getChildren().addAll(d1, d2, d3, barSpacer, btnResize, btnClose);
+        VBox.setVgrow(webView, Priority.ALWAYS);
+        card.getChildren().addAll(cardBar, webView);
 
-        layout.getChildren().addAll(topBar, webView);
+        root.setOnMouseClicked(e -> { if (e.getTarget() == root) popup.close(); });
+        root.getChildren().add(card);
+        StackPane.setAlignment(card, Pos.CENTER);
 
-        StackPane root = new StackPane(layout);
-        root.setStyle("-fx-background-color: rgba(0,0,0,0.85);");
+        Scene scene = new Scene(root);
+        scene.setFill(Color.TRANSPARENT);
 
+        java.net.URL cssUrl = getClass().getResource("/style/scrollbar.css");
+        if (cssUrl != null) scene.getStylesheets().add(cssUrl.toExternalForm());
+
+        popup.setScene(scene);
+        popup.setAlwaysOnTop(true);
+        popup.toFront();
+        popup.requestFocus();
         popup.setOnHidden(e -> {
             webView.getEngine().load(null);
             if (autoSlide != null) autoSlide.play();
         });
-
-        Scene scene = new Scene(root);
-        scene.setFill(Color.TRANSPARENT);
-        popup.setScene(scene);
         popup.showAndWait();
+}
+
+    private Button popupCtrlBtn(String symbol, boolean isClose) {
+        Button btn = new Button(symbol);
+        btn.setPrefSize(30, 30); btn.setMinSize(30, 30); btn.setMaxSize(30, 30);
+        btn.setCursor(Cursor.HAND);
+        String base = "-fx-background-radius:7;-fx-border-radius:7;-fx-border-width:1;-fx-font-size:12;-fx-padding:0;";
+        String normal  = base + "-fx-background-color:#0d1829;-fx-border-color:#1e3a5f;-fx-text-fill:#4a90d9;";
+        String hover   = base + (isClose
+            ? "-fx-background-color:#c0392b;-fx-border-color:#e74c3c;-fx-text-fill:white;"
+            : "-fx-background-color:#162238;-fx-border-color:#2c5282;-fx-text-fill:#7eb8f7;");
+        String pressed = base + (isClose
+            ? "-fx-background-color:#922b21;-fx-border-color:#c0392b;-fx-text-fill:white;"
+            : "-fx-background-color:#0a1520;-fx-border-color:#1e3a5f;-fx-text-fill:#4a90d9;");
+        btn.setStyle(normal);
+        btn.setOnMouseEntered(e  -> btn.setStyle(hover));
+        btn.setOnMouseExited(e   -> btn.setStyle(normal));
+        btn.setOnMousePressed(e  -> btn.setStyle(pressed));
+        btn.setOnMouseReleased(e -> btn.setStyle(hover));
+        return btn;
     }
 
+    private Region minidot(String color) {
+        Region d = new Region();
+        d.setPrefSize(9, 9); d.setMinSize(9, 9); d.setMaxSize(9, 9);
+        d.setStyle("-fx-background-color:" + color + ";-fx-background-radius:5;");
+        HBox.setMargin(d, new Insets(0, 1, 0, 0));
+        return d;
+    }
     // ─────────────────────────────────────────────────────────────────────────
     // LECTURE PAGE NAVIGATION
     // ─────────────────────────────────────────────────────────────────────────
@@ -1851,9 +2553,9 @@ public class HeaderController {
             double opacity = offset == 0 ? 1.0 : Math.abs(offset) == 1 ? 0.85 : Math.abs(offset) == 2 ? 0.6 : 0.4;
             StackPane card = cards.get(i);
             new Timeline(new KeyFrame(Duration.millis(400),
-                new KeyValue(card.scaleXProperty(),   scale,   Interpolator.EASE_BOTH),
-                new KeyValue(card.scaleYProperty(),   scale,   Interpolator.EASE_BOTH),
-                new KeyValue(card.opacityProperty(),  opacity, Interpolator.EASE_BOTH)
+                new KeyValue(card.scaleXProperty(),  scale,   Interpolator.EASE_BOTH),
+                new KeyValue(card.scaleYProperty(),  scale,   Interpolator.EASE_BOTH),
+                new KeyValue(card.opacityProperty(), opacity, Interpolator.EASE_BOTH)
             )).play();
         }
     }
@@ -1863,7 +2565,9 @@ public class HeaderController {
         double scrollPaneWidth = scrollPane.getViewportBounds().getWidth();
         double cardCenter      = card.getBoundsInParent().getMinX() + card.getBoundsInParent().getWidth() / 2.0;
         double hValue = Math.min(Math.max((cardCenter - scrollPaneWidth / 2) / (scrollWidth - scrollPaneWidth), 0), 1);
-        new Timeline(new KeyFrame(Duration.millis(400), new KeyValue(scrollPane.hvalueProperty(), hValue, Interpolator.EASE_BOTH))).play();
+        new Timeline(new KeyFrame(Duration.millis(400),
+            new KeyValue(scrollPane.hvalueProperty(), hValue, Interpolator.EASE_BOTH)
+        )).play();
     }
 
     private void styleSlideButton(Button btn) {
@@ -1883,19 +2587,6 @@ public class HeaderController {
     // ─────────────────────────────────────────────────────────────────────────
     // SCROLLBAR HELPERS
     // ─────────────────────────────────────────────────────────────────────────
-    private void autoHideScrollbar(ScrollPane scrollPane, ScrollBar scrollBar) {
-        Node content = scrollPane.getContent();
-        if (content == null) return;
-        Runnable check = () -> {
-            boolean need = content.getLayoutBounds().getHeight() > scrollPane.getViewportBounds().getHeight() + 1;
-            scrollBar.setVisible(need);
-            scrollBar.setManaged(need);
-        };
-        content.layoutBoundsProperty().addListener((obs, o, n) -> check.run());
-        scrollPane.viewportBoundsProperty().addListener((obs, o, n) -> check.run());
-        Platform.runLater(check);
-    }
-
     private void updateThumbSize(ScrollPane scrollPane, ScrollBar scrollBar) {
         Node content = scrollPane.getContent();
         if (content == null) return;
@@ -1913,16 +2604,8 @@ public class HeaderController {
     // ─────────────────────────────────────────────────────────────────────────
     // STYLE HELPERS
     // ─────────────────────────────────────────────────────────────────────────
-    private void styleModernButton(Button btn) {
-        btn.setStyle(
-            "-fx-background-color: #0f172a; -fx-text-fill: #38bdf8; -fx-font-weight: bold;" +
-            "-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #38bdf8;" +
-            "-fx-border-width: 1.5; -fx-padding: 6 14; -fx-cursor: hand;"
-        );
-    }
-
     private void addHoverAnimation(Button btn) {
-        ScaleTransition up   = new ScaleTransition(Duration.millis(120), btn); up.setToX(1.15);   up.setToY(1.15);
+        ScaleTransition up   = new ScaleTransition(Duration.millis(120), btn); up.setToX(1.15);  up.setToY(1.15);
         ScaleTransition down = new ScaleTransition(Duration.millis(120), btn); down.setToX(1.0); down.setToY(1.0);
         btn.setOnMouseEntered(e -> up.playFromStart());
         btn.setOnMouseExited (e -> down.playFromStart());

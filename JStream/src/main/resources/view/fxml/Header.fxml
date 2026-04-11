@@ -6,94 +6,127 @@
 <?import javafx.scene.shape.*?>
 
 <HBox xmlns:fx="http://javafx.com/fxml"
-           fx:controller="JStream.controller.HeaderController"
-           stylesheets="@/view/css/scrollbar.css"
-             alignment="CENTER_LEFT"
-             fx:id="rootPane"
-                  maxHeight="80"
-                  spacing="20"
-                  StackPane.alignment="TOP_LEFT"
-                  style="-fx-background-color: rgba(0,0,0,0.1);
-                         -fx-padding: 10 50 10 50;
-                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 10,0,0,2);
-                         -fx-pref-width: 98%;">
+      fx:controller="JStream.controller.HeaderController"
+      stylesheets="@/view/css/scrollbar.css"
+      alignment="CENTER_LEFT"
+      fx:id="rootPane"
+      maxHeight="70"
+      spacing="16"
+      StackPane.alignment="TOP_LEFT"
+      style="-fx-background-color: rgba(0,0,0,0.15);
+             -fx-padding: 8 40 8 40;
+             -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 10, 0, 0, 2);">
 
-     
-                <!-- LOGO -->
-                <ImageView fx:id="logoImage" fitHeight="100" fitWidth="150" preserveRatio="true"/>
-                <Region HBox.hgrow="ALWAYS"/>
+    <!-- LOGO -->
+    <ImageView fx:id="logoImage" fitHeight="90" fitWidth="130" preserveRatio="true"/>
 
-                <!-- CENTER MENU -->
-            <HBox fx:id="buttonsBox" alignment="CENTER" spacing="35">
+    <Region HBox.hgrow="ALWAYS"/>
 
-    <VBox alignment="CENTER" spacing="3">
-        <Button fx:id="btnHome"  onAction="#goToHomepage" text="Home" style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 16;"/>
-        <Rectangle fx:id="lineHome" height="2" fill="blue" width="0"/>
-    </VBox>
+    <!-- HAMBURGER (shown on small screens, hidden by default, managed in controller) -->
+    <Button fx:id="btnHamburger"
+            text="☰"
+            visible="false"
+            managed="false"
+            style="-fx-background-color: transparent; -fx-text-fill: white;
+                   -fx-font-size: 22; -fx-cursor: hand; -fx-padding: 4 10;"/>
 
-    <VBox alignment="CENTER" spacing="3">
-        <Button fx:id="btnMovies" text="Movies" style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 16;"/>
-        <Rectangle fx:id="lineMovies" height="2" fill="blue" width="0"/>
-    </VBox>
+    <!-- CENTER NAV MENU (hidden on small screens) -->
+    <HBox fx:id="buttonsBox" alignment="CENTER" spacing="30">
 
-    <VBox alignment="CENTER" spacing="3">
-        <Button fx:id="btnSeries" text="Series" style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 16;"/>
-        <Rectangle fx:id="lineSeries" height="2" fill="blue" width="0"/>
-    </VBox>
+        <VBox alignment="CENTER" spacing="3">
+            <Button fx:id="btnHome" onAction="#goToHomepage" text="Home"
+                    style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 15;"/>
+            <Rectangle fx:id="lineHome" height="3" fill="dodgerblue" width="0"/>
+        </VBox>
 
-    <VBox alignment="CENTER" spacing="3">
-        <Button fx:id="btnMyList" text="My List" style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 16;"/>
-        <Rectangle fx:id="lineMyList" height="2" fill="blue" width="0"/>
-    </VBox>
+        <VBox alignment="CENTER" spacing="3">
+            <Button fx:id="btnMovies" text="Movies"
+                    style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 15;"/>
+            <Rectangle fx:id="lineMovies" height="3" fill="dodgerblue" width="0"/>
+        </VBox>
 
-</HBox>
+        <VBox alignment="CENTER" spacing="3">
+            <Button fx:id="btnSeries" text="Series"
+                    style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 15;"/>
+            <Rectangle fx:id="lineSeries" height="3" fill="dodgerblue" width="0"/>
+        </VBox>
 
-                <Region HBox.hgrow="ALWAYS"/>
+        <VBox alignment="CENTER" spacing="3">
+            <Button fx:id="btnMyList" text="My List"
+                    style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 15;"/>
+            <Rectangle fx:id="lineMyList" height="3" fill="dodgerblue" width="0"/>
+        </VBox>
 
-                <!-- RIGHT ICONS -->
-                <HBox alignment="CENTER_RIGHT" spacing="15">
-                <StackPane alignment="CENTER_RIGHT">
+        <VBox alignment="CENTER" spacing="3">
+            <Button fx:id="btnHistory" text="History"
+                    style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-text-fill: #cccccc; -fx-font-size: 15;"/>
+            <Rectangle fx:id="lineHistory" height="3" fill="dodgerblue" width="0"/>
+        </VBox>
 
-    <HBox fx:id="searchBox" alignment="CENTER_RIGHT" spacing="5">
+    </HBox>
 
-    <StackPane fx:id="searchStack" prefHeight="40" alignment="CENTER_LEFT">
-        <!-- The TextField -->
-        <TextField fx:id="searchInput"
-                   promptText="Type to search..."
-                   styleClass="input-search"
-                   prefHeight="40"
-                   maxWidth="0"
-                   prefWidth="0"/>
+    <Region HBox.hgrow="ALWAYS"/>
 
-        <!-- The X button -->
-        <Button fx:id="clearBtn"
-                text="✕"
-                style="-fx-background-color: transparent; -fx-text-fill: #888; -fx-font-size: 14;"
-                visible="false"
-                pickOnBounds="true"/>
-    </StackPane>
+    <!-- RIGHT ICONS -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
 
-    <Button fx:id="btnResearch"
-            onAction="#toggleSearch"
-            prefWidth="50"
-            prefHeight="50"
-            styleClass="btn-search"/>
-</HBox>
-
-</StackPane>
-   <Button fx:id="btnNotification" style="-fx-background-color: transparent;">
-                        <graphic>
-                            <StackPane fx:id="bellContainer">
-                                <ImageView fx:id="bellIcon" fitWidth="22" fitHeight="22"/>
-                                <Circle fx:id="notificationCircle" radius="2" fill="#f72918" stroke="#ffffff" strokeWidth="0.5" translateX="6" translateY="-6" visible="false"/>
-                            </StackPane>
-                        </graphic>
-                    </Button>
-                <Button fx:id="profile" prefWidth="60" prefHeight="60" 
-    style="-fx-background-color: transparent; 
-           -fx-background-image: url('/assets/images/profile.png'); 
-           -fx-background-repeat: no-repeat; 
-           -fx-background-position: center; 
-           -fx-background-size: 34 34;"/>           </HBox>
-
+        <!-- SEARCH -->
+        <StackPane>
+            <HBox fx:id="searchBox" alignment="CENTER_RIGHT" spacing="5">
+                <StackPane fx:id="searchStack" prefHeight="38" alignment="CENTER_LEFT">
+                    <TextField fx:id="searchInput"
+                               promptText="Search titles..."
+                               styleClass="input-search"
+                               prefHeight="38"
+                               maxWidth="0"
+                               prefWidth="0"/>
+                    <Button fx:id="clearBtn"
+                            text="✕"
+                            style="-fx-background-color: transparent; -fx-text-fill: #888; -fx-font-size: 14;"
+                            visible="false"
+                            pickOnBounds="true"/>
+                </StackPane>
+                <Button fx:id="btnResearch"
+                        onAction="#toggleSearch"
+                        prefWidth="44"
+                        prefHeight="44"
+                        styleClass="btn-search"/>
             </HBox>
+        </StackPane>
+
+        <!-- BELL NOTIFICATION -->
+        <Button fx:id="btnNotification"
+                style="-fx-background-color: transparent; -fx-padding: 6; -fx-cursor: hand;">
+            <graphic>
+                <StackPane fx:id="bellContainer" prefWidth="32" prefHeight="32">
+                    <ImageView fx:id="bellIcon" fitWidth="22" fitHeight="22"/>
+                    <!-- Red dot for unread count -->
+                    <Circle fx:id="notificationCircle"
+                            radius="5"
+                            fill="#008cff"
+                            stroke="#0d1117"
+                            strokeWidth="2"
+                            translateX="9"
+                            translateY="-9"
+                            visible="false"/>
+                </StackPane>
+            </graphic>
+        </Button>
+
+        <!-- PROFILE BUTTON -->
+        <Button fx:id="profile"
+                prefWidth="54"
+                prefHeight="54"
+                style="-fx-background-color: transparent; -fx-cursor: hand;">
+            <graphic>
+                <ImageView fitWidth="36" fitHeight="36" preserveRatio="true">
+                    <image>
+                        <Image url="@/assets/images/profile.png"/>
+                    </image>
+                </ImageView>
+            </graphic>
+        </Button>
+
+    </HBox>
+
+</HBox>
