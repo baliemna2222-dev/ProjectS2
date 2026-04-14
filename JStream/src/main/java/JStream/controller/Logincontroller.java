@@ -104,7 +104,11 @@ public class Logincontroller implements Initializable {
             RakshaController controller = loader.getController();
 
             stage.getScene().setRoot(root);
-            stage.setMaximized(true);
+            // Lier le root à la taille du stage
+            if (root instanceof javafx.scene.layout.Region region) {
+                region.prefWidthProperty().bind(stage.widthProperty());
+                region.prefHeightProperty().bind(stage.heightProperty());
+            }
 
             Platform.runLater(() -> {
                 root.applyCss();
@@ -328,7 +332,7 @@ public class Logincontroller implements Initializable {
     }
 
     // ========== HOME PAGE ==========
-    @FXML
+    
     private void goToHomepage(ActionEvent event, User user) {
         // Get the stage and current scene
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -370,6 +374,12 @@ public class Logincontroller implements Initializable {
 
             // Swap root
             stage.getScene().setRoot(root);
+            
+            // Lier le root à la taille du stage
+            if (root instanceof javafx.scene.layout.Region region) {
+                region.prefWidthProperty().bind(stage.widthProperty());
+                region.prefHeightProperty().bind(stage.heightProperty());
+            }
 
             // Fade in
             FadeTransition ft = new FadeTransition(Duration.millis(500), root);

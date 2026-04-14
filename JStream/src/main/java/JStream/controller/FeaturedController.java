@@ -335,12 +335,34 @@ public class FeaturedController {
             }
         }
 
-        if (trailerUrl == null) return;
+        String videoPath;
 
-        URL videoUrl = getClass().getResource(trailerUrl);
-        if (videoUrl == null) { System.out.println("Video file not found: " + trailerUrl); return; }
-        String videoPath = trailerUrl.startsWith("http") ? trailerUrl : videoUrl.toExternalForm();
+        if (trailerUrl.startsWith("http")) {
+            // Online video
+            videoPath = trailerUrl;
 
+        } else {
+            java.io.File file = new java.io.File(trailerUrl);
+
+            if (file.exists()) {
+                // LOCAL FILE (Windows path)
+                videoPath = file.toURI().toString();  // ✅ VERY IMPORTANT
+            } else {
+                // Try classpath
+                URL resource = getClass().getResource(
+                    trailerUrl.startsWith("/") ? trailerUrl : "/" + trailerUrl
+                );
+
+                if (resource != null) {
+                    videoPath = resource.toExternalForm();
+                } else {
+                    System.out.println("Video NOT FOUND: " + trailerUrl);
+                    return;
+                }
+            }
+        }
+
+        System.out.println("FINAL PATH = " + videoPath);
         // ── Modern HTML5 player with custom controls ──────────────────
         String html =
         		"<!DOCTYPE html><html><head><style>" +
@@ -429,9 +451,14 @@ public class FeaturedController {
         		"  ::-webkit-scrollbar { display:none; }" +
 
         		"</style></head><body>" +
-
-        		"<video id='v'><source src='" + videoPath + "' type='video/mp4'></video>" +
-
+        		"<video id='v'>" +
+        		"  <source src='" + videoPath + "' type='video/mp4'>" +
+        		"  <source src='" + videoPath + "' type='video/webm'>" +
+        		"  <source src='" + videoPath + "' type='video/ogg'>" +
+        		"  <source src='" + videoPath + "' type='video/avi'>" +
+        		"  <source src='" + videoPath + "' type='video/mov'>" +
+        		"  <source src='" + videoPath + "' type='video/mkv'>" +
+        		"</video>" +
         		"<div id='bar'>" +
         		"  <div id='prog-wrap' onmousedown='seekStart(event)' onmousemove='seekHover(event)'>" +
         		"    <div id='prog-buf'></div>" +
@@ -666,19 +693,52 @@ public class FeaturedController {
     }
     private void showTrailerPopup() {
         if (latestItems == null || latestItems.isEmpty()) return;
+
         FeaturedItem item = latestItems.get(currentIndex);
-        if (item.getTrailerUrl() == null || item.getTrailerUrl().isEmpty()) return;
-        URL videoUrl = getClass().getResource(item.getTrailerUrl());
-        if (videoUrl == null) return;
-        buildVideoPopup(videoUrl.toExternalForm(), "Trailer - " + item.getTitle(), item, this.currentItem);
+        String trailerUrl = item.getTrailerUrl();
+
+        if (trailerUrl == null || trailerUrl.isBlank()) return;
+
+        String videoPath;
+
+        if (trailerUrl.startsWith("http")) {
+            // 🌐 Online video
+            videoPath = trailerUrl;
+
+        } else {
+            java.io.File file = new java.io.File(trailerUrl);
+
+            if (file.exists()) {
+                // 💻 Local file (Windows path)
+                videoPath = file.toURI().toString();  // ✅ FIX
+            } else {
+                // 📦 Try resources folder
+                URL resource = getClass().getResource(
+                    trailerUrl.startsWith("/") ? trailerUrl : "/" + trailerUrl
+                );
+
+                if (resource != null) {
+                    videoPath = resource.toExternalForm();
+                } else {
+                    System.out.println("Trailer NOT FOUND: " + trailerUrl);
+                    return;
+                }
+            }
+        }
+
+        System.out.println("FINAL VIDEO PATH = " + videoPath);
+
+        buildVideoPopup(
+            videoPath,
+            "Trailer - " + item.getTitle(),
+            item,
+            this.currentItem
+        );
     }
 
     private void buildVideoPopup(String videoPath, String title, FeaturedItem listItem, FeaturedItem heroItem) {
 
         WebView webView = new WebView();
-        
-
-        // ✅ SAFE HTML (minimal, no risky JS)
         String html =
         		"<!DOCTYPE html><html><head><style>" +
 
@@ -767,8 +827,14 @@ public class FeaturedController {
 
         		"</style></head><body>" +
 
-        		"<video id='v'><source src='" + videoPath + "' type='video/mp4'></video>" +
-
+"<video id='v'>" +
+"  <source src='" + videoPath + "' type='video/mp4'>" +
+"  <source src='" + videoPath + "' type='video/webm'>" +
+"  <source src='" + videoPath + "' type='video/ogg'>" +
+"  <source src='" + videoPath + "' type='video/avi'>" +
+"  <source src='" + videoPath + "' type='video/mov'>" +
+"  <source src='" + videoPath + "' type='video/mkv'>" +
+"</video>" +
         		"<div id='bar'>" +
         		"  <div id='prog-wrap' onmousedown='seekStart(event)' onmousemove='seekHover(event)'>" +
         		"    <div id='prog-buf'></div>" +
@@ -1005,20 +1071,20 @@ public class FeaturedController {
                 HBox filmBox = new HBox(30);
                 filmBox.setAlignment(Pos.TOP_LEFT);
                 filmBox.setMaxWidth(Double.MAX_VALUE);
-
                 ImageView poster = new ImageView();
-                poster.setFitWidth(300); poster.setFitHeight(450);
-                try { poster.setImage(new Image(film.getPoster_url())); } catch (Exception ignored) {}
+                poster.setFitWidth(300);
+                poster.setFitHeight(450);
 
+                poster.setImage(ImageUtil.load(film.getPoster_url()));
                 VBox right = new VBox(15);
                 right.setAlignment(Pos.TOP_LEFT);
                 right.setMaxWidth(Double.MAX_VALUE);
                 HBox.setHgrow(right, Priority.ALWAYS);
-
                 ImageView titleImage = new ImageView();
-                titleImage.setFitHeight(150); titleImage.setPreserveRatio(true);
-                try { titleImage.setImage(new Image(film.getTitle_image_url())); } catch (Exception ignored) {}
+                titleImage.setFitHeight(150);
+                titleImage.setPreserveRatio(true);
 
+                titleImage.setImage(ImageUtil.load(film.getTitle_image_url()));
                 HBox starsBox = new HBox(3);
                 int fullStars = film.getRating();
                 for (int i = 0; i < 5; i++) {
@@ -1291,10 +1357,7 @@ public class FeaturedController {
         poster.setSmooth(true);
         poster.setCache(true);
 
-        try {
-            poster.setImage(new Image(s.getPosterUrl(), true));
-        } catch (Exception ignored) {}
-
+        poster.setImage(ImageUtil.load(s.getPosterUrl()));
         StackPane posterWrapper = new StackPane(poster);
         posterWrapper.setPrefSize(300, 420);
         posterWrapper.setMaxSize(300, 420);
@@ -1666,9 +1729,7 @@ public class FeaturedController {
         cover.setFitHeight(280);
         cover.setPreserveRatio(false);
 
-        try {
-            cover.setImage(new Image(ep.getCovertUrl(), true));
-        } catch (Exception ignored) {}
+        cover.setImage(ImageUtil.load(ep.getCovertUrl()));
 
         Region coverGradient = new Region();
         coverGradient.setPrefSize(740, 280);

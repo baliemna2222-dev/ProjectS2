@@ -3,6 +3,9 @@ package JStream.service;
 import JStream.dao.EpisodeProgressDAO;
 import JStream.dao.FeaturedDAO;
 import JStream.dao.FilmProgressDAO;
+import JStream.dao.FilmDAO;
+import JStream.dao.SerieDAO;
+
 import JStream.entity.FeaturedItem;
 import JStream.entity.FeaturedItemProgress;
 import JStream.entity.Category;
@@ -10,24 +13,19 @@ import JStream.entity.Episode;
 import JStream.entity.Film;
 import JStream.entity.Serie;
 import JStream.entity.Session;
-import JStream.entity.WatchStatus;
 import JStream.entity.Season;
-import JStream.utils.Database;
-
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class FeaturedService {
 
     private final FeaturedDAO dao;
-
+    private final FilmDAO     filmDAO  = new FilmDAO();   // ✅ NEW
+    private final SerieDAO    serieDAO = new SerieDAO();
     public FeaturedService() {
         
         dao = new FeaturedDAO();
@@ -243,7 +241,33 @@ public class FeaturedService {
             e.printStackTrace();
             return null;
         }
-    }    
-   
-    
+    }     
+    public Film getFilmDetail(int filmId) throws SQLException {
+        return filmDAO.getFilmById(filmId);   // ✅ uses FilmDAO — director is mapped
+    }
+
+    public Serie getSerieDetail(int serieId) throws SQLException {
+        Serie serie = serieDAO.getSerieById(serieId);  // ✅ uses SerieDAO — director is mapped
+        if (serie != null) {
+            // Attach seasons (FeaturedDAO still handles the season/episode tree)
+            serie.setSeasons(dao.getSeasonsBySerie(serieId));
+        }
+        return serie;
+    }
+//for what to watch next 
+ public List<FeaturedItem> getSimilarFilms(int filmId, List<String> categories, int limit) {
+     try {
+         return dao.getFilteredItems(
+             new java.util.HashSet<>(categories),
+             java.util.Set.of("film"),
+             java.util.Set.of()
+         ).stream()
+          .filter(item -> item.getId() != filmId)
+          .limit(limit)
+          .collect(java.util.stream.Collectors.toList());
+     } catch (SQLException e) {
+         e.printStackTrace();
+         return new java.util.ArrayList<>();
+     }
+ }
 }

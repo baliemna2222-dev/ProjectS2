@@ -9,6 +9,7 @@ public class Serie {
     private String title;
     private String synopsis;
     private String casting;
+    private String director;
     private String covertUrl;
     private String titleUrl;
     private List<Category> categories;  // ✅ multiple categories
@@ -24,9 +25,9 @@ public class Serie {
         this.seasons = new ArrayList<>();
         this.categories = new ArrayList<>();
     }
-
+ 
     // Full constructor
-    public Serie(int serieId, String title, String synopsis, String casting, String covertUrl,
+    public Serie(int serieId, String title, String synopsis, String casting,String director, String covertUrl,
                  List<Category> categories, Timestamp createdAt, Timestamp updatedAt,
                  int rating, String age_rating,String titleUrl) {
         this.serieId = serieId;
@@ -34,6 +35,7 @@ public class Serie {
         this.title = title;
         this.synopsis = synopsis;
         this.casting = casting;
+        this.setDirector(director);
         this.covertUrl = covertUrl;
         this.categories = categories != null ? categories : new ArrayList<>();
         this.seasons = new ArrayList<>();
@@ -100,4 +102,12 @@ public class Serie {
                ", createdAt=" + createdAt + ", updatedAt=" + updatedAt +
                ", rating=" + rating + ", age_rating=" + age_rating + "]";
     }
+
+	public String getDirector() {
+		return director;
+	}
+
+	public void setDirector(String director) {
+		this.director = director;
+	}
 }

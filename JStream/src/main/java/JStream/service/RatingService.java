@@ -12,7 +12,7 @@ public class RatingService {
     public boolean submitRating(Rating rating) {
         return ratingDAO.upsert(rating);
     }
-
+ 
     //Moyenne des ratings users pour un film (sur 5). 
     public double getAverageForFilm(int filmId) {
         return ratingDAO.getAverageForFilm(filmId);

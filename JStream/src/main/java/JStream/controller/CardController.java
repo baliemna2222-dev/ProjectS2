@@ -286,24 +286,22 @@ public class CardController {
                 filmBox.setAlignment(Pos.TOP_LEFT);
                 filmBox.setMaxWidth(Double.MAX_VALUE);
 
-                // Poster
                 ImageView poster = new ImageView();
                 poster.setFitWidth(300);
                 poster.setFitHeight(450);
-                try { poster.setImage(new Image(film.getPoster_url())); } catch (Exception ex) {}
 
+                poster.setImage(ImageUtil.load(film.getPoster_url()));
                 // Right info column
                 VBox right = new VBox(15);
                 right.setAlignment(Pos.TOP_LEFT);
                 right.setMaxWidth(Double.MAX_VALUE);
                 HBox.setHgrow(right, Priority.ALWAYS);
 
-                // Title image
                 ImageView titleImage = new ImageView();
                 titleImage.setFitHeight(150);
                 titleImage.setPreserveRatio(true);
-                try { titleImage.setImage(new Image(film.getTitle_image_url())); } catch (Exception ex) {}
 
+                titleImage.setImage(ImageUtil.load(film.getTitle_image_url()));
                 // Stars
                 HBox starsBox = new HBox(3);
                 int fullStars = film.getRating();
@@ -482,7 +480,7 @@ public class CardController {
 	    btn.setOnMouseExited(e -> down.playFromStart());
 	}
 
-	private void showTrailerPopup(Object item, int seasonIndex) {
+   	private void showTrailerPopup(Object item, int seasonIndex) {
         String trailerUrl = null;
 
         if (item instanceof Film) {
@@ -495,12 +493,34 @@ public class CardController {
             }
         }
 
-        if (trailerUrl == null) return;
+        String videoPath;
 
-        URL videoUrl = getClass().getResource(trailerUrl);
-        if (videoUrl == null) { System.out.println("Video file not found: " + trailerUrl); return; }
-        String videoPath = trailerUrl.startsWith("http") ? trailerUrl : videoUrl.toExternalForm();
+        if (trailerUrl.startsWith("http")) {
+            // Online video
+            videoPath = trailerUrl;
 
+        } else {
+            java.io.File file = new java.io.File(trailerUrl);
+
+            if (file.exists()) {
+                // LOCAL FILE (Windows path)
+                videoPath = file.toURI().toString();  // ✅ VERY IMPORTANT
+            } else {
+                // Try classpath
+                URL resource = getClass().getResource(
+                    trailerUrl.startsWith("/") ? trailerUrl : "/" + trailerUrl
+                );
+
+                if (resource != null) {
+                    videoPath = resource.toExternalForm();
+                } else {
+                    System.out.println("Video NOT FOUND: " + trailerUrl);
+                    return;
+                }
+            }
+        }
+
+        System.out.println("FINAL PATH = " + videoPath);
         // ── Modern HTML5 player with custom controls ──────────────────
         String html =
         		"<!DOCTYPE html><html><head><style>" +
@@ -589,9 +609,14 @@ public class CardController {
         		"  ::-webkit-scrollbar { display:none; }" +
 
         		"</style></head><body>" +
-
-        		"<video id='v'><source src='" + videoPath + "' type='video/mp4'></video>" +
-
+        		"<video id='v'>" +
+        		"  <source src='" + videoPath + "' type='video/mp4'>" +
+        		"  <source src='" + videoPath + "' type='video/webm'>" +
+        		"  <source src='" + videoPath + "' type='video/ogg'>" +
+        		"  <source src='" + videoPath + "' type='video/avi'>" +
+        		"  <source src='" + videoPath + "' type='video/mov'>" +
+        		"  <source src='" + videoPath + "' type='video/mkv'>" +
+        		"</video>" +
         		"<div id='bar'>" +
         		"  <div id='prog-wrap' onmousedown='seekStart(event)' onmousemove='seekHover(event)'>" +
         		"    <div id='prog-buf'></div>" +
@@ -1088,10 +1113,7 @@ public class CardController {
 	        poster.setSmooth(true);
 	        poster.setCache(true);
 
-	        try {
-	            poster.setImage(new Image(s.getPosterUrl(), true));
-	        } catch (Exception ignored) {}
-
+	        poster.setImage(ImageUtil.load(s.getPosterUrl()));
 	        StackPane posterWrapper = new StackPane(poster);
 	        posterWrapper.setPrefSize(300, 420);
 	        posterWrapper.setMaxSize(300, 420);
@@ -1461,9 +1483,7 @@ public class CardController {
 	        cover.setFitHeight(280);
 	        cover.setPreserveRatio(false);
 
-	        try {
-	            cover.setImage(new Image(ep.getCovertUrl(), true));
-	        } catch (Exception ignored) {}
+	        cover.setImage(ImageUtil.load(ep.getCovertUrl()));
 
 	        Region coverGradient = new Region();
 	        coverGradient.setPrefSize(740, 280);

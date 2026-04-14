@@ -188,4 +188,36 @@ public class NotificationDAO {
             e.printStackTrace();
         }
     }
+    public boolean isAlreadyNotified(int userId, int epId) {
+        String sql = "SELECT 1 FROM user_notified_episodes WHERE user_id=? AND ep_id=?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ps.setInt(2, epId);
+
+            return ps.executeQuery().next();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+    public void markEpisodeAsNotified(int userId, int epId) {
+        String sql = "INSERT IGNORE INTO user_notified_episodes(user_id, ep_id) VALUES (?, ?)";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ps.setInt(2, epId);
+
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

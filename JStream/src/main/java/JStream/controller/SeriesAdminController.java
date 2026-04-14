@@ -9,7 +9,9 @@ import javafx.animation.*;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
@@ -25,6 +27,7 @@ public class SeriesAdminController {
 
     // ── FXML Fields ───────────────────────────────────────────────────────────
     @FXML private TextField   titleField;
+    @FXML private TextField   directorField;
     @FXML private TextField   ageRatingField;
     @FXML private TextArea    synopsisField;
     @FXML private TextField   castingField;
@@ -59,20 +62,22 @@ public class SeriesAdminController {
     // ── Init ──────────────────────────────────────────────────────────────────
     @FXML
     public void initialize() {
+        // Allow multi-selection in category list
         categoryListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         categoryListView.setCellFactory(list -> new ListCell<>() {
-            @Override protected void updateItem(Category item, boolean empty) {
+            @Override
+            protected void updateItem(Category item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item.getName());
             }
         });
 
-        // Bind cancel button visibility to layout space
+        // Bind visibility to managed so hidden items don't take space
         cancelEditBtn.managedProperty().bind(cancelEditBtn.visibleProperty());
         validationLabel.managedProperty().bind(validationLabel.visibleProperty());
         validationLabel.setVisible(false);
 
-        // Real-time validation feedback
+        // Clear validation on typing
         titleField.textProperty().addListener((obs, o, n) -> clearValidation());
 
         // Live search
@@ -100,23 +105,29 @@ public class SeriesAdminController {
         cancelEditBtn.setVisible(true);
 
         titleField.setText(nvl(serie.getTitle()));
+        directorField.setText(nvl(serie.getDirector()));
         ageRatingField.setText(nvl(serie.getAge_rating()));
         synopsisField.setText(nvl(serie.getSynopsis()));
         castingField.setText(nvl(serie.getCasting()));
         coverField.setText(nvl(serie.getCovertUrl()));
         titleUrlField.setText(nvl(serie.getTitleUrl()));
 
-        // Re-select categories
-        categoryListView.getSelectionModel().clearSelection();
-        if (serie.getCategories() != null) {
+        // ── FIX: re-select categories by matching category_id ─────────────
+        // Must run after the ListView is rendered, so use Platform.runLater
+        javafx.application.Platform.runLater(() -> {
+            categoryListView.getSelectionModel().clearSelection();
+            if (serie.getCategories() == null) return;
+
             ObservableList<Category> items = categoryListView.getItems();
             for (int i = 0; i < items.size(); i++) {
-                for (Category sel : serie.getCategories()) {
-                    if (items.get(i).getCategory_id() == sel.getCategory_id())
-                        categoryListView.getSelectionModel().select(i);
+                final int idx = i;
+                boolean shouldSelect = serie.getCategories().stream()
+                        .anyMatch(sel -> sel.getCategory_id() == items.get(idx).getCategory_id());
+                if (shouldSelect) {
+                    categoryListView.getSelectionModel().select(idx);
                 }
             }
-        }
+        });
 
         clearValidation();
         scrollPane.setVvalue(0);
@@ -152,15 +163,17 @@ public class SeriesAdminController {
     }
 
     // ── File choosers ─────────────────────────────────────────────────────────
-    @FXML private void chooseCoverFile()    { chooseFile(coverField,    "Choose Cover Image",  "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
-    @FXML private void chooseTitleUrlFile() { chooseFile(titleUrlField, "Choose Title Logo",   "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
+    @FXML private void chooseCoverFile()    { chooseImageFile(coverField,    "Choose Cover Image"); }
+    @FXML private void chooseTitleUrlFile() { chooseImageFile(titleUrlField, "Choose Title Logo"); }
 
-    private void chooseFile(TextField target, String dialogTitle, String... exts) {
+    private void chooseImageFile(TextField target, String dialogTitle) {
         if (target == null || target.getScene() == null) return;
         FileChooser fc = new FileChooser();
         fc.setTitle(dialogTitle);
         fc.setInitialDirectory(new File(System.getProperty("user.home")));
-        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Images", exts));
+        fc.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.bmp")
+        );
         File f = fc.showOpenDialog(target.getScene().getWindow());
         if (f != null) target.setText(f.getAbsolutePath());
     }
@@ -201,22 +214,24 @@ public class SeriesAdminController {
     private boolean validateForm() {
         List<String> errors = new ArrayList<>();
 
-        if (titleField.getText().isBlank())    errors.add("Title is required");
-        if (synopsisField.getText().isBlank())  errors.add("Synopsis is required");
-        if (coverField.getText().isBlank())     errors.add("Cover image is required");
+        if (titleField.getText().isBlank())   errors.add("Title is required");
+        if (synopsisField.getText().isBlank()) errors.add("Synopsis is required");
+        if (coverField.getText().isBlank())    errors.add("Cover image is required");
         if (categoryListView.getSelectionModel().getSelectedItems().isEmpty())
             errors.add("At least one category must be selected");
 
         if (!errors.isEmpty()) {
             showValidation("⚠  " + String.join("  ·  ", errors));
-
-            // Shake animation on the form
-            TranslateTransition shake = new TranslateTransition(Duration.millis(60), formPanel);
-            shake.setFromX(-6); shake.setToX(6); shake.setCycleCount(4); shake.setAutoReverse(true);
-            shake.play();
+            shakeForm();
             return false;
         }
         return true;
+    }
+
+    private void shakeForm() {
+        TranslateTransition shake = new TranslateTransition(Duration.millis(60), formPanel);
+        shake.setFromX(-6); shake.setToX(6); shake.setCycleCount(4); shake.setAutoReverse(true);
+        shake.play();
     }
 
     private void showValidation(String msg) {
@@ -236,7 +251,13 @@ public class SeriesAdminController {
 
     private void loadSeries(List<Serie> series) {
         seriesContainer.getChildren().clear();
-        serieCountLabel.setText(series.size() + " series");
+
+        String text = series.size() + " series";
+        serieCountLabel.setText(text);
+
+        if (serieCountLabel != null) {
+            serieCountLabel.setText(text);
+        }
 
         for (int i = 0; i < series.size(); i++) {
             VBox card = createSerieCard(series.get(i));
@@ -247,20 +268,20 @@ public class SeriesAdminController {
             PauseTransition pause = new PauseTransition(Duration.millis(delay));
             FadeTransition fade = new FadeTransition(Duration.millis(320), card);
             fade.setFromValue(0); fade.setToValue(1);
+
             TranslateTransition slide = new TranslateTransition(Duration.millis(320), card);
             slide.setFromY(18); slide.setToY(0);
+
             pause.setOnFinished(e -> new ParallelTransition(fade, slide).play());
             pause.play();
         }
     }
-
     private void filterSeries(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             loadSeries(serieService.getAllSeries());
         } else {
-            List<Serie> all = serieService.getAllSeries();
             String kw = keyword.toLowerCase().trim();
-            List<Serie> filtered = all.stream()
+            List<Serie> filtered = serieService.getAllSeries().stream()
                 .filter(s -> s.getTitle().toLowerCase().contains(kw)
                           || s.getCategoriesAsString().toLowerCase().contains(kw))
                 .toList();
@@ -270,7 +291,6 @@ public class SeriesAdminController {
 
     // ── Card builder ──────────────────────────────────────────────────────────
     private VBox createSerieCard(Serie serie) {
-        // Poster image
         ImageView imageView = new ImageView();
         imageView.setFitWidth(180);
         imageView.setFitHeight(250);
@@ -281,15 +301,15 @@ public class SeriesAdminController {
         StackPane posterPane = new StackPane(imageView);
         posterPane.setPrefSize(180, 250);
 
-        // Hover overlay
+        // Hover overlay with buttons
         VBox overlay = new VBox(6);
         overlay.setAlignment(Pos.CENTER);
         overlay.setStyle("-fx-background-color: rgba(0,5,30,0.82); -fx-background-radius: 10;");
         overlay.setOpacity(0);
 
-        Button seasonsBtn = iconButton("▶  Seasons",   "#1d4ed8");
-        Button editBtn    = iconButton("✎  Edit",      "#0ea5e9");
-        Button delBtn     = iconButton("✕  Delete",    "#374151");
+        Button seasonsBtn = iconButton("▶  Seasons", "#1d4ed8");
+        Button editBtn    = iconButton("✎  Edit",    "#0ea5e9");
+        Button delBtn     = iconButton("✕  Delete",  "#374151");
 
         seasonsBtn.setOnAction(e -> ouvrirDetailsSerie(serie));
         editBtn.setOnAction(e    -> setEditMode(serie));
@@ -303,9 +323,14 @@ public class SeriesAdminController {
         posterPane.setOnMouseEntered(e -> { fadeIn.setFromValue(overlay.getOpacity()); fadeIn.setToValue(1); fadeIn.play(); });
         posterPane.setOnMouseExited(e  -> { fadeOut.setFromValue(overlay.getOpacity()); fadeOut.setToValue(0); fadeOut.play(); });
 
-        // Title
         Label title = new Label(serie.getTitle());
         title.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px; -fx-wrap-text: true; -fx-max-width: 180;");
+
+        // Director label
+        Label dirLabel = new Label(nvl(serie.getDirector()).isEmpty() ? "" : "Dir. " + serie.getDirector());
+        dirLabel.setStyle("-fx-text-fill: #9ca3af; -fx-font-size: 10px; -fx-font-style: italic;");
+        dirLabel.setVisible(!nvl(serie.getDirector()).isEmpty());
+        dirLabel.setManaged(!nvl(serie.getDirector()).isEmpty());
 
         // Category chips
         FlowPane chips = new FlowPane();
@@ -319,11 +344,10 @@ public class SeriesAdminController {
             }
         }
 
-        // Meta
-        Label meta = new Label((serie.getAge_rating() != null ? serie.getAge_rating() : ""));
+        Label meta = new Label(nvl(serie.getAge_rating()));
         meta.setStyle("-fx-text-fill: #6b7280; -fx-font-size: 11px;");
 
-        VBox card = new VBox(8, posterPane, title, chips, meta);
+        VBox card = new VBox(8, posterPane, title, dirLabel, chips, meta);
         card.setStyle("""
             -fx-background-color: #080d1a;
             -fx-padding: 12;
@@ -333,26 +357,136 @@ public class SeriesAdminController {
             -fx-cursor: hand;
             """);
 
-        card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + "-fx-effect: dropshadow(gaussian, rgba(29,78,216,0.40), 22, 0, 0, 6);"));
-        card.setOnMouseExited(e  -> card.setStyle(card.getStyle().replace("-fx-effect: dropshadow(gaussian, rgba(29,78,216,0.40), 22, 0, 0, 6);", "")));
+        final String baseStyle = card.getStyle();
+        card.setOnMouseEntered(e -> card.setStyle(baseStyle + "-fx-effect: dropshadow(gaussian, rgba(29,78,216,0.40), 22, 0, 0, 6);"));
+        card.setOnMouseExited(e  -> card.setStyle(baseStyle));
 
         return card;
     }
 
     // ── Delete confirmation ────────────────────────────────────────────────────
     private void confirmDelete(Serie serie) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Delete Series");
-        alert.setHeaderText("Delete \"" + serie.getTitle() + "\"?");
-        alert.setContentText("All seasons and episodes will also be removed. This cannot be undone.");
-        alert.getDialogPane().setStyle("-fx-background-color: #080d1a; -fx-font-family: 'Segoe UI';");
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
+
+        Stage popup = new Stage();
+        popup.initOwner(scrollPane.getScene().getWindow());
+        popup.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        popup.initStyle(javafx.stage.StageStyle.UNDECORATED);
+
+        // ── ROOT ──
+        StackPane root = new StackPane();
+        root.setStyle("-fx-background-color: rgba(0,0,0,0.65);");
+        root.setPrefSize(400, 220);
+
+        // ── CARD ──
+        VBox card = new VBox(18);
+        card.setAlignment(Pos.CENTER);
+        card.setStyle("""
+            -fx-background-color: linear-gradient(to bottom right, #0f172a, #111827);
+            -fx-background-radius: 18;
+            -fx-padding: 26;
+            -fx-border-color: rgba(255,255,255,0.08);
+            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 20, 0, 0, 10);
+        """);
+
+        // Title
+        Label title = new Label("Delete Series?");
+        title.setStyle("""
+            -fx-text-fill: white;
+            -fx-font-size: 20px;
+            -fx-font-weight: bold;
+        """);
+
+        // Message
+        Label msg = new Label("Are you sure you want to delete:\n" + serie.getTitle() +
+                "\n\nAll seasons and episodes will also be removed.");
+        msg.setStyle("""
+            -fx-text-fill: #cbd5e1;
+            -fx-font-size: 13px;
+            -fx-text-alignment: center;
+        """);
+
+        // Buttons
+        Button deleteBtn = new Button("Delete");
+        Button cancelBtn = new Button("Cancel");
+
+        deleteBtn.setStyle("""
+            -fx-background-color: #ef4444;
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-background-radius: 10;
+            -fx-padding: 8 20;
+            -fx-cursor: hand;
+        """);
+
+        cancelBtn.setStyle("""
+            -fx-background-color: #1f2937;
+            -fx-text-fill: #e5e7eb;
+            -fx-background-radius: 10;
+            -fx-padding: 8 20;
+            -fx-cursor: hand;
+        """);
+
+        // Hover effect
+        deleteBtn.setOnMouseEntered(e -> deleteBtn.setStyle("""
+            -fx-background-color: #dc2626;
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-background-radius: 10;
+            -fx-padding: 8 20;
+        """));
+
+        deleteBtn.setOnMouseExited(e -> deleteBtn.setStyle("""
+            -fx-background-color: #ef4444;
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-background-radius: 10;
+            -fx-padding: 8 20;
+        """));
+
+        HBox buttons = new HBox(12, cancelBtn, deleteBtn);
+        buttons.setAlignment(Pos.CENTER);
+
+        card.getChildren().addAll(title, msg, buttons);
+        root.getChildren().add(card);
+
+        Scene scene = new Scene(root, 420, 240);
+        popup.setScene(scene);
+        popup.centerOnScreen();
+
+        // ── ANIMATION ──
+        card.setScaleX(0.8);
+        card.setScaleY(0.8);
+        card.setOpacity(0);
+
+        FadeTransition fade = new FadeTransition(Duration.millis(180), card);
+        fade.setFromValue(0);
+        fade.setToValue(1);
+
+        ScaleTransition scale = new ScaleTransition(Duration.millis(180), card);
+        scale.setFromX(0.8);
+        scale.setFromY(0.8);
+        scale.setToX(1);
+        scale.setToY(1);
+
+        new ParallelTransition(fade, scale).play();
+
+        // ── ACTIONS ──
+        cancelBtn.setOnAction(e -> popup.close());
+
+        deleteBtn.setOnAction(e -> {
             serieService.deleteSerie(serie.getSerieId());
             loadSeries(serieService.getAllSeries());
-            if (editingSerie != null && editingSerie.getSerieId() == serie.getSerieId())
+            showToast("Series deleted ✓");
+
+            if (editingSerie != null &&
+                editingSerie.getSerieId() == serie.getSerieId()) {
                 setAddMode();
-        }
+            }
+
+            popup.close();
+        });
+
+        popup.showAndWait();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -364,6 +498,7 @@ public class SeriesAdminController {
 
     private void populateSerieFromForm(Serie s) {
         s.setTitle(titleField.getText().trim());
+        s.setDirector(directorField.getText().trim());
         s.setSynopsis(synopsisField.getText().trim());
         s.setCasting(castingField.getText().trim());
         s.setAge_rating(ageRatingField.getText().trim());
@@ -374,8 +509,13 @@ public class SeriesAdminController {
     }
 
     private void clearFields() {
-        titleField.clear(); ageRatingField.clear(); synopsisField.clear();
-        castingField.clear(); coverField.clear(); titleUrlField.clear();
+        titleField.clear();
+        directorField.clear();
+        ageRatingField.clear();
+        synopsisField.clear();
+        castingField.clear();
+        coverField.clear();
+        titleUrlField.clear();
         categoryListView.getSelectionModel().clearSelection();
     }
 
@@ -384,9 +524,13 @@ public class SeriesAdminController {
         try {
             Image img;
             File f = new File(path);
-            if (path.startsWith("http"))  img = new Image(path, true);
-            else if (f.exists())          img = new Image(f.toURI().toString(), true);
-            else                          img = new Image(getClass().getResource(path).toExternalForm(), true);
+            if (path.startsWith("http"))   img = new Image(path, true);
+            else if (f.exists())            img = new Image(f.toURI().toString(), true);
+            else {
+                java.net.URL res = getClass().getResource(path);
+                if (res == null) return;
+                img = new Image(res.toExternalForm(), true);
+            }
             iv.setImage(img);
         } catch (Exception ignored) {}
     }

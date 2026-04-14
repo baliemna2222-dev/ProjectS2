@@ -9,217 +9,111 @@
 <BorderPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="JStream.controller.DashboardController"
-            stylesheets="@/view/css/style.css">
+            stylesheets="@/view/css/style.css"
+            style="-fx-background-color: linear-gradient(to bottom, #0a0f1f, #0d1a33);">
 
     <top>
-        <Label text="Admin Dashboard"
-               style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold; -fx-padding: 20 20 5 30; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 5, 0, 2, 2);" />
+        <VBox spacing="5" style="-fx-background: linear-gradient(to bottom, #0f2247, transparent);
+                               -fx-padding: 30 30 20 30;
+                               -fx-border-color: rgba(100, 181, 246, 0.1);
+                               -fx-border-width: 0 0 1 0;">
+            <Label text="📊 Admin Dashboard"
+                   style="-fx-text-fill: white; -fx-font-size: 36px; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(26, 105, 171, 0.4), 5, 0, 2, 2);" />
+            <Label text="Real-time platform analytics and insights"
+                   style="-fx-text-fill: #64b5f6; -fx-font-size: 14px; -fx-font-weight: normal;" />
+        </VBox>
     </top>
 
     <center>
-        <VBox spacing="35" style="-fx-padding: 15 30 30 30;">
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
+            <VBox spacing="25" style="-fx-padding: 25 30 30 30;">
 
-            <HBox spacing="20">
+                <!-- Statistics Cards Row -->
+                <HBox spacing="15" style="-fx-padding: 0;">
+                    <VBox style="-fx-background-color: linear-gradient(to bottom right, #1a3a63, #1e4a7f); -fx-padding: 25; -fx-background-radius: 16; -fx-pref-width: 190; -fx-alignment: top-center; -fx-spacing: 12; -fx-border-color: rgba(100, 181, 246, 0.3); -fx-border-radius: 16; -fx-border-width: 1;">
+                        <effect><DropShadow color="#1a69ab60" radius="15" offsetY="8" offsetX="0" spread="0.2"/></effect>
+                        <Label text="👥" style="-fx-font-size: 32px; -fx-text-alignment: center;"/>
+                        <Label text="USERS" style="-fx-text-fill: #64b5f6; -fx-font-size: 12px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+                        <Label fx:id="totalUsersLabel" text="0" style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox style="-fx-background-color: linear-gradient(to bottom right, #0f2d5a, #1a4a8e); -fx-padding: 25; -fx-background-radius: 16; -fx-pref-width: 190; -fx-alignment: top-center; -fx-spacing: 12; -fx-border-color: rgba(66, 165, 245, 0.3); -fx-border-radius: 16; -fx-border-width: 1;">
+                        <effect><DropShadow color="#1a4a8e60" radius="15" offsetY="8" offsetX="0" spread="0.2"/></effect>
+                        <Label text="🎬" style="-fx-font-size: 32px; -fx-text-alignment: center;"/>
+                        <Label text="FILMS" style="-fx-text-fill: #42a5f5; -fx-font-size: 12px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+                        <Label fx:id="totalFilmsLabel" text="0" style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox style="-fx-background-color: linear-gradient(to bottom right, #1a325a, #2e5a8f); -fx-padding: 25; -fx-background-radius: 16; -fx-pref-width: 190; -fx-alignment: top-center; -fx-spacing: 12; -fx-border-color: rgba(90, 155, 245, 0.3); -fx-border-radius: 16; -fx-border-width: 1;">
+                        <effect><DropShadow color="#2e5a8f60" radius="15" offsetY="8" offsetX="0" spread="0.2"/></effect>
+                        <Label text="📺" style="-fx-font-size: 32px; -fx-text-alignment: center;"/>
+                        <Label text="SERIES" style="-fx-text-fill: #5a9bf5; -fx-font-size: 12px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+                        <Label fx:id="totalSeriesLabel" text="0" style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox style="-fx-background-color: linear-gradient(to bottom right, #0d2852, #1a3f73); -fx-padding: 25; -fx-background-radius: 16; -fx-pref-width: 190; -fx-alignment: top-center; -fx-spacing: 12; -fx-border-color: rgba(66, 165, 245, 0.3); -fx-border-radius: 16; -fx-border-width: 1;">
+                        <effect><DropShadow color="#1a3f7360" radius="15" offsetY="8" offsetX="0" spread="0.2"/></effect>
+                        <Label text="💬" style="-fx-font-size: 32px; -fx-text-alignment: center;"/>
+                        <Label text="COMMENTS" style="-fx-text-fill: #42a5f5; -fx-font-size: 12px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+                        <Label fx:id="totalCommentsLabel" text="0" style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox style="-fx-background-color: linear-gradient(to bottom right, #1a3d63, #1f5a99); -fx-padding: 25; -fx-background-radius: 16; -fx-pref-width: 190; -fx-alignment: top-center; -fx-spacing: 12; -fx-border-color: rgba(100, 181, 246, 0.3); -fx-border-radius: 16; -fx-border-width: 1;">
+                        <effect><DropShadow color="#1f5a9960" radius="15" offsetY="8" offsetX="0" spread="0.2"/></effect>
+                        <Label text="⏱️" style="-fx-font-size: 32px; -fx-text-alignment: center;"/>
+                        <Label text="SESSIONS" style="-fx-text-fill: #64b5f6; -fx-font-size: 12px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+                        <Label fx:id="totalWatchSessionsLabel" text="0" style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox style="-fx-background-color: linear-gradient(to bottom right, #0f275a, #1a4a99); -fx-padding: 25; -fx-background-radius: 16; -fx-pref-width: 190; -fx-alignment: top-center; -fx-spacing: 12; -fx-border-color: rgba(100, 181, 246, 0.3); -fx-border-radius: 16; -fx-border-width: 1;">
+                        <effect><DropShadow color="#1a4a9960" radius="15" offsetY="8" offsetX="0" spread="0.2"/></effect>
+                        <Label text="👁️" style="-fx-font-size: 32px; -fx-text-alignment: center;"/>
+                        <Label text="LIVE" style="-fx-text-fill: #64b5f6; -fx-font-size: 12px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+                        <Label fx:id="totalActiveViewersLabel" text="0" style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold;"/>
+                    </VBox>
+                </HBox>
 
-                <VBox style="-fx-background-color: linear-gradient(to bottom right, #2b323c, #1e2329);
-                             -fx-padding: 25;
-                             -fx-background-radius: 15;
-                             -fx-pref-width: 180;
-                             -fx-alignment: center;
-                             -fx-border-color: #ffffff1a;
-                             -fx-border-radius: 15;
-                             -fx-border-width: 1;">
-                    <effect>
-                        <DropShadow color="#00000080" radius="10" offsetY="6" offsetX="0"/>
-                    </effect>
-                    <Label text="USERS" style="-fx-text-fill: #00d2ff; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 0 0 5 0;"/>
-                    <Label fx:id="totalUsersLabel"
-                           text="0"
-                           style="-fx-text-fill: white;
-                                  -fx-font-size: 34px;
-                                  -fx-font-weight: bold;"/>
-                </VBox>
+                <!-- Tables Row -->
+                <HBox spacing="20" VBox.vgrow="ALWAYS" style="-fx-padding: 0;">
+                    <VBox spacing="12" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(15, 34, 71, 0.5); -fx-background-radius: 16; -fx-border-color: rgba(100, 181, 246, 0.15); -fx-border-radius: 16; -fx-border-width: 1; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(26, 69, 145, 0.3), 10, 0, 0, 4);">
+                        <Label text="📊 Most Watched Films" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" />
+                        <TableView fx:id="topFilmsTable" style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-control-inner-background: rgba(15, 34, 71, 0.3);" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="filmTitleColumn" text="Film" prefWidth="250" style="-fx-alignment: CENTER-LEFT;"/>
+                                <TableColumn fx:id="filmViewsColumn" text="Views" prefWidth="100" style="-fx-alignment: CENTER;"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                    <VBox spacing="12" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(15, 34, 71, 0.5); -fx-background-radius: 16; -fx-border-color: rgba(100, 181, 246, 0.15); -fx-border-radius: 16; -fx-border-width: 1; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(26, 69, 145, 0.3), 10, 0, 0, 4);">
+                        <Label text="📺 Most Watched Series" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" />
+                        <TableView fx:id="topSeriesTable" style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-control-inner-background: rgba(15, 34, 71, 0.3);" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="seriesTitleColumn" text="Series" prefWidth="250" style="-fx-alignment: CENTER-LEFT;"/>
+                                <TableColumn fx:id="seriesViewsColumn" text="Views" prefWidth="100" style="-fx-alignment: CENTER;"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </HBox>
 
-                <VBox style="-fx-background-color: linear-gradient(to bottom right, #2b323c, #1e2329);
-                             -fx-padding: 25;
-                             -fx-background-radius: 15;
-                             -fx-pref-width: 180;
-                             -fx-alignment: center;
-                             -fx-border-color: #ffffff1a;
-                             -fx-border-radius: 15;
-                             -fx-border-width: 1;">
-                    <effect>
-                        <DropShadow color="#00000080" radius="10" offsetY="6" offsetX="0"/>
-                    </effect>
-                    <Label text="FILMS" style="-fx-text-fill: #3a7bd5; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 0 0 5 0;"/>
-                    <Label fx:id="totalFilmsLabel"
-                           text="0"
-                           style="-fx-text-fill: white;
-                                  -fx-font-size: 34px;
-                                  -fx-font-weight: bold;"/>
-                </VBox>
+                <!-- Charts Row -->
+                <HBox spacing="20" VBox.vgrow="ALWAYS" style="-fx-padding: 0;">
+                    <VBox spacing="12" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(15, 34, 71, 0.5); -fx-background-radius: 16; -fx-border-color: rgba(100, 181, 246, 0.15); -fx-border-radius: 16; -fx-border-width: 1; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(26, 69, 145, 0.3), 10, 0, 0, 4);">
+                        <Label text="🎯 Category Distribution" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" />
+                        <PieChart fx:id="categoryPieChart" prefHeight="300" style="-fx-legend-visible: true;" />
+                    </VBox>
+                    <VBox spacing="12" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(15, 34, 71, 0.5); -fx-background-radius: 16; -fx-border-color: rgba(100, 181, 246, 0.15); -fx-border-radius: 16; -fx-border-width: 1; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(26, 69, 145, 0.3), 10, 0, 0, 4);">
+                        <Label text="📈 Top Films Performance" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" />
+                        <BarChart fx:id="topFilmsBarChart" prefHeight="300" legendVisible="false" style="-fx-background-color: transparent;">
+                            <xAxis><CategoryAxis fx:id="filmsCategoryAxis" label="Film" /></xAxis>
+                            <yAxis><NumberAxis fx:id="filmsNumberAxis" label="Views" /></yAxis>
+                        </BarChart>
+                    </VBox>
+                    <VBox spacing="12" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(15, 34, 71, 0.5); -fx-background-radius: 16; -fx-border-color: rgba(100, 181, 246, 0.15); -fx-border-radius: 16; -fx-border-width: 1; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(26, 69, 145, 0.3), 10, 0, 0, 4);">
+                        <Label text="📅 Daily Signups Trend" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" />
+                        <LineChart fx:id="signupLineChart" prefHeight="300" legendVisible="false" style="-fx-background-color: transparent;">
+                            <xAxis><CategoryAxis fx:id="signupDateAxis" label="Date" /></xAxis>
+                            <yAxis><NumberAxis fx:id="signupCountAxis" label="Signups" /></yAxis>
+                        </LineChart>
+                    </VBox>
+                </HBox>
 
-                <VBox style="-fx-background-color: linear-gradient(to bottom right, #2b323c, #1e2329);
-                             -fx-padding: 25;
-                             -fx-background-radius: 15;
-                             -fx-pref-width: 180;
-                             -fx-alignment: center;
-                             -fx-border-color: #ffffff1a;
-                             -fx-border-radius: 15;
-                             -fx-border-width: 1;">
-                    <effect>
-                        <DropShadow color="#00000080" radius="10" offsetY="6" offsetX="0"/>
-                    </effect>
-                    <Label text="SERIES" style="-fx-text-fill: #f5af19; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 0 0 5 0;"/>
-                    <Label fx:id="totalSeriesLabel"
-                           text="0"
-                           style="-fx-text-fill: white;
-                                  -fx-font-size: 34px;
-                                  -fx-font-weight: bold;"/>
-                </VBox>
-
-                <VBox style="-fx-background-color: linear-gradient(to bottom right, #2b323c, #1e2329);
-                             -fx-padding: 25;
-                             -fx-background-radius: 15;
-                             -fx-pref-width: 180;
-                             -fx-alignment: center;
-                             -fx-border-color: #ffffff1a;
-                             -fx-border-radius: 15;
-                             -fx-border-width: 1;">
-                    <effect>
-                        <DropShadow color="#00000080" radius="10" offsetY="6" offsetX="0"/>
-                    </effect>
-                    <Label text="COMMENTS" style="-fx-text-fill: #f97316; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 0 0 5 0;"/>
-                    <Label fx:id="totalCommentsLabel"
-                           text="0"
-                           style="-fx-text-fill: white;
-                                  -fx-font-size: 34px;
-                                  -fx-font-weight: bold;"/>
-                </VBox>
-
-                <VBox style="-fx-background-color: linear-gradient(to bottom right, #2b323c, #1e2329);
-                             -fx-padding: 25;
-                             -fx-background-radius: 15;
-                             -fx-pref-width: 180;
-                             -fx-alignment: center;
-                             -fx-border-color: #ffffff1a;
-                             -fx-border-radius: 15;
-                             -fx-border-width: 1;">
-                    <effect>
-                        <DropShadow color="#00000080" radius="10" offsetY="6" offsetX="0"/>
-                    </effect>
-                    <Label text="WATCH SESSIONS" style="-fx-text-fill: #76e4f7; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 0 0 5 0;"/>
-                    <Label fx:id="totalWatchSessionsLabel"
-                           text="0"
-                           style="-fx-text-fill: white;
-                                  -fx-font-size: 34px;
-                                  -fx-font-weight: bold;"/>
-                </VBox>
-
-                <VBox style="-fx-background-color: linear-gradient(to bottom right, #2b323c, #1e2329);
-                             -fx-padding: 25;
-                             -fx-background-radius: 15;
-                             -fx-pref-width: 180;
-                             -fx-alignment: center;
-                             -fx-border-color: #ffffff1a;
-                             -fx-border-radius: 15;
-                             -fx-border-width: 1;">
-                    <effect>
-                        <DropShadow color="#00000080" radius="10" offsetY="6" offsetX="0"/>
-                    </effect>
-                    <Label text="ACTIVE VIEWERS" style="-fx-text-fill: #d946ef; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 0 0 5 0;"/>
-                    <Label fx:id="totalActiveViewersLabel"
-                           text="0"
-                           style="-fx-text-fill: white;
-                                  -fx-font-size: 34px;
-                                  -fx-font-weight: bold;"/>
-                </VBox>
-
-            </HBox>
-
-            <HBox spacing="30" VBox.vgrow="ALWAYS">
-                <VBox spacing="10" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS"
-                      style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 15; -fx-padding: 20;">
-                    <Label text="Most Watched Films"
-                           style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;" />
-                    <TableView fx:id="topFilmsTable"
-                               style="-fx-background-color: transparent; 
-                                      -fx-border-color: #ffffff33; 
-                                      -fx-border-radius: 8; 
-                                      -fx-background-radius: 8;"
-                               VBox.vgrow="ALWAYS">
-                        <columns>
-                            <TableColumn fx:id="filmTitleColumn"
-                                         text="Film"
-                                         prefWidth="360"
-                                         style="-fx-alignment: CENTER-LEFT;"/>
-                            <TableColumn fx:id="filmViewsColumn"
-                                         text="Views"
-                                         prefWidth="120"
-                                         style="-fx-alignment: CENTER;"/>
-                        </columns>
-                    </TableView>
-                </VBox>
-
-                <VBox spacing="10" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS"
-                      style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 15; -fx-padding: 20;">
-                    <Label text="Most Watched Series"
-                           style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;" />
-                    <TableView fx:id="topSeriesTable"
-                               style="-fx-background-color: transparent; 
-                                      -fx-border-color: #ffffff33; 
-                                      -fx-border-radius: 8; 
-                                      -fx-background-radius: 8;"
-                               VBox.vgrow="ALWAYS">
-                        <columns>
-                            <TableColumn fx:id="seriesTitleColumn"
-                                         text="Series"
-                                         prefWidth="360"
-                                         style="-fx-alignment: CENTER-LEFT;"/>
-                            <TableColumn fx:id="seriesViewsColumn"
-                                         text="Views"
-                                         prefWidth="120"
-                                         style="-fx-alignment: CENTER;"/>
-                        </columns>
-                    </TableView>
-                </VBox>
-            </HBox>
-
-            <HBox spacing="30" VBox.vgrow="ALWAYS">
-                <VBox spacing="10" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS"
-                      style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 15; -fx-padding: 20;">
-                    <Label text="Film Distribution by Category" style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;" />
-                    <PieChart fx:id="categoryPieChart" prefHeight="320" prefWidth="360" />
-                </VBox>
-
-                <VBox spacing="10" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS"
-                      style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 15; -fx-padding: 20;">
-                    <Label text="Top 5 Most Watched Films" style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;" />
-                    <BarChart fx:id="topFilmsBarChart" prefHeight="320" prefWidth="360" legendVisible="false">
-                        <xAxis>
-                            <CategoryAxis fx:id="filmsCategoryAxis" label="Film" />
-                        </xAxis>
-                        <yAxis>
-                            <NumberAxis fx:id="filmsNumberAxis" label="Views" />
-                        </yAxis>
-                    </BarChart>
-                </VBox>
-
-                <VBox spacing="10" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS"
-                      style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 15; -fx-padding: 20;">
-                    <Label text="Daily Signups" style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;" />
-                    <LineChart fx:id="signupLineChart" prefHeight="320" prefWidth="360" legendVisible="false">
-                        <xAxis>
-                            <CategoryAxis fx:id="signupDateAxis" label="Date" />
-                        </xAxis>
-                        <yAxis>
-                            <NumberAxis fx:id="signupCountAxis" label="Signups" />
-                        </yAxis>
-                    </LineChart>
-                </VBox>
-            </HBox>
-
-        </VBox>
+            </VBox>
+        </ScrollPane>
     </center>
 
 </BorderPane>

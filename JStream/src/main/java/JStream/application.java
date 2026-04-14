@@ -15,9 +15,8 @@ public class application extends Application {
     public void start(Stage stage) {
         try {
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(getClass().getClassLoader().getResource("view/fxml/HomePage.fxml"));
+            loader.setLocation(getClass().getClassLoader().getResource("view/fxml/admin_home.fxml"));
             Parent root = loader.load();
-         // Get actual screen dimensions
             javafx.geometry.Rectangle2D screenBounds =
                 javafx.stage.Screen.getPrimary().getVisualBounds();
 

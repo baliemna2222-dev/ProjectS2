@@ -10,27 +10,28 @@ import java.util.List;
 
 public class FilmDAO {
 
-    // ===== INSERT (Zidna trailer_url w posterV_url) =====
+    // ===== INSERT =====
     public boolean insertFilm(Film film) {
-        String sql = "INSERT INTO film (title, synopsis, casting, trailer_url, video_url, image_url, " +
+        String sql = "INSERT INTO film (title, synopsis, casting, director, trailer_url, video_url, image_url, " +
                      "title_image_url, poster_url, poster_v_url, release_date, duration, age_rating, rating) " +
-                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            ps.setString(1, film.getTitle());
-            ps.setString(2, film.getSynopsis());
-            ps.setString(3, film.getCasting());
-            ps.setString(4, film.getTrailer_url()); 
-            ps.setString(5, film.getVideo_url());
-            ps.setString(6, film.getImage_url());
-            ps.setString(7, film.getTitle_image_url());
-            ps.setString(8, film.getPoster_url());
-            ps.setString(9, film.getPosterV_url()); 
-            ps.setObject(10, film.getRelease_date());
-            ps.setDouble(11, film.getDuration());
-            ps.setString(12, film.getAge_rating());
-            ps.setInt(13, film.getRating());
+            ps.setString(1,  film.getTitle());
+            ps.setString(2,  film.getSynopsis());
+            ps.setString(3,  film.getCasting());
+            ps.setString(4,  film.getDirector());
+            ps.setString(5,  film.getTrailer_url());
+            ps.setString(6,  film.getVideo_url());
+            ps.setString(7,  film.getImage_url());
+            ps.setString(8,  film.getTitle_image_url());
+            ps.setString(9,  film.getPoster_url());
+            ps.setString(10, film.getPosterV_url());
+            ps.setObject(11, film.getRelease_date());
+            ps.setDouble(12, film.getDuration());
+            ps.setString(13, film.getAge_rating());
+            ps.setInt(14,    film.getRating());
 
             int rows = ps.executeUpdate();
             if (rows > 0) {
@@ -47,51 +48,44 @@ public class FilmDAO {
         return false;
     }
 
-    // ===== UPDATE (Zidna el jdod) =====
+    // ===== UPDATE =====
     public boolean updateFilm(Film film) {
-        String sql = "UPDATE film SET title=?, synopsis=?, casting=?, video_url=?, image_url=?, " +
-                     "title_image_url=?, poster_url=?, release_date=?, duration=?, age_rating=?, rating=? " +
-                     "WHERE film_id=?";
-        try (Connection conn = Database.getConnection()) {
-            conn.setAutoCommit(false);
+        String sql = "UPDATE film SET title=?, synopsis=?, casting=?, director=?, trailer_url=?, video_url=?, " +
+                     "image_url=?, title_image_url=?, poster_url=?, poster_v_url=?, release_date=?, " +
+                     "duration=?, age_rating=?, rating=? WHERE film_id=?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1,  film.getTitle());
-                ps.setString(2,  film.getSynopsis());
-                ps.setString(3,  film.getCasting());
-                ps.setString(4,  film.getVideo_url());
-                ps.setString(5,  film.getImage_url());
-                ps.setString(6,  film.getTitle_image_url());
-                ps.setString(7,  film.getPoster_url());
-                ps.setObject(8, film.getRelease_date());
-                ps.setDouble(9, film.getDuration());
-                ps.setString(10, film.getAge_rating());
-                ps.setInt(11,    film.getRating());
-                ps.setInt(12,    film.getFilm_id());
+            ps.setString(1,  film.getTitle());
+            ps.setString(2,  film.getSynopsis());
+            ps.setString(3,  film.getCasting());
+            ps.setString(4,  film.getDirector());
+            ps.setString(5,  film.getTrailer_url());
+            ps.setString(6,  film.getVideo_url());
+            ps.setString(7,  film.getImage_url());
+            ps.setString(8,  film.getTitle_image_url());
+            ps.setString(9,  film.getPoster_url());
+            ps.setString(10, film.getPosterV_url());
+            ps.setObject(11, film.getRelease_date());
+            ps.setDouble(12, film.getDuration());
+            ps.setString(13, film.getAge_rating());
+            ps.setInt(14,    film.getRating());
+            ps.setInt(15,    film.getFilm_id());
 
-                boolean updated = ps.executeUpdate() > 0;
-                if (updated && film.getCategories() != null) {
-                    deleteFilmCategories(conn, film.getFilm_id());
-                    insertFilmCategories(conn, film.getFilm_id(), film.getCategories());
-                }
-
-                conn.commit();
-                return updated;
-
-            } catch (SQLException e) {
-                conn.rollback();
-                e.printStackTrace();
-                return false;
-            } finally {
-                conn.setAutoCommit(true);
+            boolean updated = ps.executeUpdate() > 0;
+            if (updated && film.getCategories() != null) {
+                deleteFilmCategories(conn, film.getFilm_id());
+                insertFilmCategories(conn, film.getFilm_id(), film.getCategories());
             }
+            return updated;
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    // ===== DELETE (Ma yetbaddelch) =====
+    // ===== DELETE =====
     public boolean deleteFilm(int filmId) {
         String sql = "DELETE FROM film WHERE film_id = ?";
         try (Connection conn = Database.getConnection();
@@ -104,10 +98,10 @@ public class FilmDAO {
         return false;
     }
 
-    // ===== GET ALL (Badelna f-el mapRow) =====
+    // ===== GET ALL =====
     public List<Film> getAllFilms() {
         List<Film> list = new ArrayList<>();
-        String sql = "SELECT f.*, GROUP_CONCAT(CONCAT(c.category_id,'::',c.name) SEPARATOR ',') AS categories " +
+        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
                      "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
@@ -124,7 +118,7 @@ public class FilmDAO {
 
     // ===== GET BY ID =====
     public Film getFilmById(int filmId) {
-        String sql = "SELECT f.*, GROUP_CONCAT(CONCAT(c.category_id,'::',c.name) SEPARATOR ',') AS categories " +
+        String sql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
                      "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
@@ -140,14 +134,14 @@ public class FilmDAO {
         return null;
     }
 
-    // ===== SEARCH (title, category name, or year) =====
+    // ===== SEARCH =====
     public List<Film> searchFilms(String keyword) {
         List<Film> list = new ArrayList<>();
-        String sql = "SELECT DISTINCT f.*, GROUP_CONCAT(CONCAT(c.category_id,'::',c.name) SEPARATOR ',') AS categories " +
+        String sql = "SELECT DISTINCT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
                      "FROM film f " +
                      "LEFT JOIN film_category fc ON f.film_id = fc.film_id " +
                      "LEFT JOIN category c ON fc.category_id = c.category_id " +
-                     "WHERE f.title LIKE ? OR c.name LIKE ? OR YEAR(f.release_date) LIKE ? " +
+                     "WHERE f.title LIKE ? OR f.director LIKE ? OR c.name LIKE ? OR YEAR(f.release_date) LIKE ? " +
                      "GROUP BY f.film_id ORDER BY f.title";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -155,6 +149,7 @@ public class FilmDAO {
             ps.setString(1, like);
             ps.setString(2, like);
             ps.setString(3, like);
+            ps.setString(4, like);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -163,7 +158,7 @@ public class FilmDAO {
         return list;
     }
 
-    // ===== HELPERS (Baddelna el mapping hna) =====
+    // ===== HELPERS =====
     private void insertFilmCategories(Connection conn, int filmId, List<Category> categories) throws SQLException {
         if (categories == null || categories.isEmpty()) return;
         String sql = "INSERT IGNORE INTO film_category (film_id, category_id) VALUES (?,?)";
@@ -191,134 +186,31 @@ public class FilmDAO {
         film.setTitle(rs.getString("title"));
         film.setSynopsis(rs.getString("synopsis"));
         film.setCasting(rs.getString("casting"));
-        
-        film.setTrailer_url(rs.getString("trailer_url")); 
-        film.setPosterV_url(rs.getString("poster_v_url"));
-
+        film.setDirector(rs.getString("director"));
+        film.setTrailer_url(rs.getString("trailer_url"));
         film.setVideo_url(rs.getString("video_url"));
         film.setImage_url(rs.getString("image_url"));
         film.setTitle_image_url(rs.getString("title_image_url"));
         film.setPoster_url(rs.getString("poster_url"));
+        film.setPosterV_url(rs.getString("poster_v_url"));
         film.setDuration(rs.getDouble("duration"));
         film.setAge_rating(rs.getString("age_rating"));
         film.setRating(rs.getInt("rating"));
         film.setUpdated_at(rs.getTimestamp("updated_at"));
-        
+
         if (rs.getTimestamp("release_date") != null)
             film.setRelease_date(rs.getTimestamp("release_date").toLocalDateTime());
 
         List<Category> cats = new ArrayList<>();
         String catStr = rs.getString("categories");
         if (catStr != null && !catStr.isEmpty()) {
-            for (String entry : catStr.split(",")) {
-                String[] parts = entry.trim().split("::");
-                if (parts.length == 2) {
-                    Category c = new Category();
-                    c.setCategory_id(Integer.parseInt(parts[0]));
-                    c.setName(parts[1]);
-                    cats.add(c);
-                }
+            for (String name : catStr.split(",")) {
+                Category c = new Category();
+                c.setName(name.trim());
+                cats.add(c);
             }
         }
         film.setCategories(cats);
         return film;
     }
-   
-
-    private List<Category> getCategoriesForFilm(int filmId, Connection conn) {
-        List<Category> categories = new ArrayList<>();
-        String sql = "SELECT c.* FROM category c " +
-                     "JOIN film_category fc ON c.category_id = fc.category_id " +
-                     "WHERE fc.film_id = ?";
-
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, filmId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Category cat = new Category();
-                    cat.setCategory_id(rs.getInt("category_id"));
-                    cat.setName(rs.getString("name"));
-                    // cat.setDescription(rs.getString("description")); // Décommente si tu as une description
-                    categories.add(cat);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return categories;
-    }
-
-    public void addFilm(Film film) {
-        String insertFilmSql = "INSERT INTO film (title, synopsis, casting, video_url, image_url, title_image_url, poster_url, duration, age_rating, release_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        String insertCategorySql = "INSERT INTO film_category (film_id, category_id) VALUES (?, ?)";
-
-        Connection conn = null;
-        try {
-            conn = Database.getConnection();
-            // Transaction : on bloque l'enregistrement automatique
-            conn.setAutoCommit(false); 
-
-            try (PreparedStatement stmtFilm = conn.prepareStatement(insertFilmSql, Statement.RETURN_GENERATED_KEYS)) {
-                stmtFilm.setString(1, film.getTitle());
-                stmtFilm.setString(2, film.getSynopsis());
-                stmtFilm.setString(3, film.getCasting());
-                stmtFilm.setString(4, film.getVideo_url());
-                stmtFilm.setString(5, film.getImage_url());
-                stmtFilm.setString(6, film.getTitle_image_url());
-                stmtFilm.setString(7, film.getPoster_url());
-                stmtFilm.setDouble(8, film.getDuration());
-                stmtFilm.setString(9, film.getAge_rating());
-                
-                if (film.getRelease_date() != null) {
-                    stmtFilm.setTimestamp(10, Timestamp.valueOf(film.getRelease_date()));
-                } else {
-                    stmtFilm.setNull(10, java.sql.Types.TIMESTAMP);
-                }
-
-                stmtFilm.executeUpdate();
-
-                // On récupère l'ID du film nouvellement créé
-                try (ResultSet generatedKeys = stmtFilm.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        int newFilmId = generatedKeys.getInt(1);
-
-                        // On insère les catégories dans la table de liaison
-                        if (film.getCategories() != null && !film.getCategories().isEmpty()) {
-                            try (PreparedStatement stmtCategory = conn.prepareStatement(insertCategorySql)) {
-                                for (Category cat : film.getCategories()) {
-                                    stmtCategory.setInt(1, newFilmId);
-                                    stmtCategory.setInt(2, cat.getCategory_id());
-                                    stmtCategory.addBatch();
-                                }
-                                stmtCategory.executeBatch();
-                            }
-                        }
-                    }
-                }
-            }
-            // Si tout s'est bien passé, on valide !
-            conn.commit();
-
-        } catch (Exception e) {
-            if (conn != null) {
-                try {
-                    conn.rollback(); // En cas d'erreur, on annule tout !
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-            e.printStackTrace();
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-   
 }

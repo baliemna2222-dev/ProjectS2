@@ -3,13 +3,11 @@ package JStream.controller;
 import java.util.List;
 
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -20,30 +18,32 @@ import JStream.service.CategoryService;
 
 public class CategoriesController {
 
-    @FXML private VBox categoryListContainer;
+    @FXML private VBox      categoryListContainer;
     @FXML private TextField nameField;
     @FXML private TextField descriptionField;
-    @FXML private Button addButton;
-    @FXML private Button cancelEditButton;
+    @FXML private Button    addButton;
+    @FXML private Button    cancelEditButton;
+    @FXML private Label     validationLabel;   // add this Label to your FXML
 
     private CategoryService categoryService = new CategoryService();
-    private Category selectedCategory;
+    private Category        selectedCategory;
 
     @FXML
-    public void initialize(){
+    public void initialize() {
         loadCategories();
     }
 
-    private void loadCategories(){
+    // ── Load ──────────────────────────────────────────────────────────────────
+    private void loadCategories() {
         List<Category> categories = categoryService.getAllCategories();
         categoryListContainer.getChildren().clear();
-
-        for(Category category : categories){
+        for (Category category : categories) {
             categoryListContainer.getChildren().add(createCategoryCard(category));
         }
     }
 
-    private HBox createCategoryCard(Category category){
+    // ── Card builder ──────────────────────────────────────────────────────────
+    private HBox createCategoryCard(Category category) {
         Label title = new Label(category.getName());
         title.getStyleClass().add("category-card-title");
 
@@ -77,35 +77,68 @@ public class CategoriesController {
         return card;
     }
 
-    private void editCategory(Category category){
+    // ── Edit / cancel ─────────────────────────────────────────────────────────
+    private void editCategory(Category category) {
         selectedCategory = category;
         nameField.setText(category.getName());
         descriptionField.setText(category.getDescription());
         addButton.setText("Save");
         cancelEditButton.setVisible(true);
         cancelEditButton.setManaged(true);
+        clearValidation();
     }
 
     @FXML
-    private void cancelEdit(){
+    private void cancelEdit() {
         selectedCategory = null;
         nameField.clear();
         descriptionField.clear();
         addButton.setText("Add");
         cancelEditButton.setVisible(false);
         cancelEditButton.setManaged(false);
+        clearValidation();
     }
 
+    // ── Add / update ──────────────────────────────────────────────────────────
     @FXML
-    private void addCategory(){
-        String name = nameField.getText().trim();
+    private void addCategory() {
+        String name        = nameField.getText().trim();
         String description = descriptionField.getText().trim();
 
-        if(name.isEmpty()){
+        if (name.isEmpty()) {
+            showValidation("Category name is required.");
             return;
         }
 
-        if(selectedCategory != null){
+        // ── FIX: duplicate name check ─────────────────────────────────────────
+        // Only block creation when adding a brand-new category.
+        // When editing, skip the check for the category's own current name.
+        if (selectedCategory == null) {
+            // Adding new — name must not already exist (case-insensitive)
+            boolean nameExists = categoryService.getAllCategories()
+                .stream()
+                .anyMatch(c -> c.getName().equalsIgnoreCase(name));
+
+            if (nameExists) {
+                showValidation("A category named \"" + name + "\" already exists.");
+                return;
+            }
+        } else {
+            // Editing — allow keeping the same name, but block collision with others
+            boolean nameConflict = categoryService.getAllCategories()
+                .stream()
+                .filter(c -> c.getCategory_id() != selectedCategory.getCategory_id())
+                .anyMatch(c -> c.getName().equalsIgnoreCase(name));
+
+            if (nameConflict) {
+                showValidation("Another category named \"" + name + "\" already exists.");
+                return;
+            }
+        }
+
+        clearValidation();
+
+        if (selectedCategory != null) {
             selectedCategory.setName(name);
             selectedCategory.setDescription(description);
             categoryService.updateCategory(selectedCategory);
@@ -120,11 +153,30 @@ public class CategoriesController {
         loadCategories();
     }
 
-    private void deleteCategory(Category category){
+    // ── Delete ────────────────────────────────────────────────────────────────
+    private void deleteCategory(Category category) {
         categoryService.deleteCategory(category.getCategory_id());
-        if(selectedCategory != null && selectedCategory.getCategory_id() == category.getCategory_id()){
+        if (selectedCategory != null &&
+            selectedCategory.getCategory_id() == category.getCategory_id()) {
             cancelEdit();
         }
         loadCategories();
+    }
+
+    // ── Validation helpers ────────────────────────────────────────────────────
+    private void showValidation(String msg) {
+        if (validationLabel != null) {
+            validationLabel.setText(msg);
+            validationLabel.setVisible(true);
+            validationLabel.setManaged(true);
+        }
+    }
+
+    private void clearValidation() {
+        if (validationLabel != null) {
+            validationLabel.setText("");
+            validationLabel.setVisible(false);
+            validationLabel.setManaged(false);
+        }
     }
 }

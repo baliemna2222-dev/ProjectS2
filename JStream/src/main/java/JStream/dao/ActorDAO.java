@@ -26,7 +26,7 @@ public class ActorDAO {
 
     public List<Actor> getActorsBySerie(int serieId) {
         String sql =
-            "SELECT a.actor_id, a.name, a.photo_url, sa.role_name " +
+            "SELECT a.actor_id, a.name, a.photo_url, sa.role_name " + 
             "FROM actor a " +
             "JOIN serie_actor sa ON a.actor_id = sa.actor_id " +
             "WHERE sa.serie_id = ? " +

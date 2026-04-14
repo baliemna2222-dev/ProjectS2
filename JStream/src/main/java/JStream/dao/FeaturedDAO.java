@@ -22,15 +22,12 @@ public class FeaturedDAO {
 
 	    // -------- FILMS --------
 	    String filmSql =
-	        """
-	        SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories
-	        FROM film f
-	        LEFT JOIN film_category fc ON f.film_id = fc.film_id
-	        LEFT JOIN category c ON fc.category_id = c.category_id
-	        GROUP BY f.film_id
-	        ORDER BY f.release_date DESC
-	        LIMIT ?
-	        """;
+	        "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
+	        "FROM film f " +
+	        "JOIN film_category fc ON f.film_id = fc.film_id " +
+	        "JOIN category c ON fc.category_id = c.category_id " +
+	        "GROUP BY f.film_id " +
+	        "ORDER BY f.release_date DESC LIMIT ?";
 
 	    try (Connection conn = Database.getConnection();
 	         PreparedStatement ps = conn.prepareStatement(filmSql)) {
@@ -39,10 +36,7 @@ public class FeaturedDAO {
 	        ResultSet rs = ps.executeQuery();
 
 	        while (rs.next()) {
-	            String categoriesStr = rs.getString("categories");
-	            List<String> categories = categoriesStr != null && !categoriesStr.isBlank()
-	                    ? List.of(categoriesStr.split(","))
-	                    : new ArrayList<>();
+	            List<String> categories = List.of(rs.getString("categories").split(","));
 
 	            featured.add(new FeaturedItem(
 	                    rs.getInt("film_id"),
@@ -59,42 +53,40 @@ public class FeaturedDAO {
 	        }
 	    }
 
-	    // -------- SERIES --------
+	    // -------- SEASONS --------
 	    String seasonSql =
-	        """
-	        SELECT 
-	            s.season_id,
-	            s.status,
-	            s.season_num,
-	            s.poster_url,
-	            s.trailer_url,
-	            se.serie_id,
-	            se.title AS serie_title,
-	            se.title_url,
-	            se.synopsis,
-	            se.rating,
-	            se.covert_url,
-	            se.age_rating,
-	            GROUP_CONCAT(DISTINCT c.name SEPARATOR ',') AS categories,
-	            COALESCE(MAX(e.num_episode), 0) AS last_episode
-	        FROM season s
-	        JOIN serie se ON s.serie_id = se.serie_id
-	        JOIN serie_category sc ON se.serie_id = sc.serie_id
-	        JOIN category c ON sc.category_id = c.category_id
-	        LEFT JOIN episode e ON e.season_id = s.season_id
-	        WHERE s.season_id = (
-	            SELECT s2.season_id
-	            FROM season s2
-	            LEFT JOIN episode e2 ON e2.season_id = s2.season_id
-	            WHERE s2.serie_id = s.serie_id
-	            GROUP BY s2.season_id
-	            ORDER BY MAX(e2.released_at) DESC
-	            LIMIT 1
-	        )
-	        GROUP BY s.season_id
-	        ORDER BY MAX(e.released_at) DESC
-	        LIMIT ?
-	        """;
+	        "SELECT " +
+	        "    s.season_id, " +
+	        "    s.status, " +
+	        "    s.season_num, " +
+	        "    s.poster_url, " +
+	        "    s.trailer_url, " +
+	        "    se.serie_id, " +
+	        "    se.title AS serie_title, " +
+	        "    se.title_url, " +
+	        "    se.synopsis, " +
+	        "    se.rating, " +
+	        "    se.covert_url, " +
+	        "    se.age_rating, " +
+	        "    GROUP_CONCAT(DISTINCT c.name SEPARATOR ',') AS categories, " +
+	        "    COALESCE(MAX(e.num_episode), 0) AS last_episode " +
+	        "FROM season s " +
+	        "JOIN serie se ON s.serie_id = se.serie_id " +
+	        "JOIN serie_category sc ON se.serie_id = sc.serie_id " +
+	        "JOIN category c ON sc.category_id = c.category_id " +
+	        "LEFT JOIN episode e ON e.season_id = s.season_id " +
+	        "WHERE s.season_id = ( " +
+	        "    SELECT s2.season_id " +
+	        "    FROM season s2 " +
+	        "    LEFT JOIN episode e2 ON e2.season_id = s2.season_id " +
+	        "    WHERE s2.serie_id = s.serie_id " +
+	        "    GROUP BY s2.season_id " +
+	        "    ORDER BY MAX(e2.released_at) DESC " +
+	        "    LIMIT 1 " +
+	        ") " +
+	        "GROUP BY s.season_id " +
+	        "ORDER BY MAX(e.released_at) DESC " +
+	        "LIMIT ?";
 
 	    try (Connection conn = Database.getConnection();
 	         PreparedStatement ps = conn.prepareStatement(seasonSql)) {
@@ -103,27 +95,26 @@ public class FeaturedDAO {
 	        ResultSet rs = ps.executeQuery();
 
 	        while (rs.next()) {
-	            String categoriesStr = rs.getString("categories");
-	            List<String> categories = categoriesStr != null && !categoriesStr.isBlank()
-	                    ? new ArrayList<>(new LinkedHashSet<>(List.of(categoriesStr.split(","))))
-	                    : new ArrayList<>();
+	            List<String> categories = new ArrayList<>(
+	                new LinkedHashSet<>(List.of(rs.getString("categories").split(",")))
+	            );
 
 	            featured.add(new FeaturedItem(
-	                    rs.getInt("season_id"),
-	                    rs.getInt("serie_id"),
-	                    rs.getString("serie_title"),
-	                    rs.getString("synopsis"),
-	                    rs.getString("trailer_url"),
-	                    rs.getString("covert_url"),
-	                    rs.getString("title_url"),
-	                    rs.getString("poster_url"),
-	                    categories,
-	                    rs.getString("age_rating"),
-	                    rs.getInt("rating"),
-	                    rs.getString("status"),
-	                    rs.getInt("season_num"),
-	                    rs.getInt("last_episode")
-	            ));
+	                rs.getInt("season_id"),
+	                rs.getInt("serie_id"),
+	                rs.getString("serie_title"),
+	                rs.getString("synopsis"),
+	                rs.getString("trailer_url"),
+	                rs.getString("covert_url"),
+	                rs.getString("title_url"),
+	                rs.getString("poster_url"),
+	                categories,
+	                rs.getString("age_rating"),
+	                rs.getInt("rating"),
+	                rs.getString("status"),
+	                rs.getInt("season_num"),
+	                rs.getInt("last_episode")
+	            )); 
 	        }
 	    }
 
@@ -834,7 +825,7 @@ public class FeaturedDAO {
 	                    rs.getInt("film_id"),
 	                    rs.getString("title"),
 	                    rs.getString("synopsis"),
-	                    rs.getString("trailor_url"),
+	                    rs.getString("trailer_url"),
 	                    rs.getString("image_url"),
 	                    rs.getString("title_image_url"),
 	                    rs.getString("poster_url"),

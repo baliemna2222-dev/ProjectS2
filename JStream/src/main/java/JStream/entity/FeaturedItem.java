@@ -19,6 +19,8 @@ public class FeaturedItem {
     private int seasonNumber;  
     private int lastEpisodeNumber;  // Only for series
     private int serieId;            // Only for series
+    private int releaseYear;
+    private String director;
 
     // Constructor for films
     public FeaturedItem(int id, String title, String synopsis, String trailerUrl,
@@ -36,7 +38,50 @@ public class FeaturedItem {
         this.ageRating = ageRating;
         this.rating = rating;
     }
+    // ── Constructor for films (lecturepage) ──────────────────────────
+    public FeaturedItem(int id, String title, String synopsis, String trailerUrl,
+                        String mainImageUrl, String titleImageUrl, String posterUrl,
+                        List<String> categoryNames, String ageRating, int rating,
+                        int releaseYear, String director) {
+        this.id = id;
+        this.type = "film";
+        this.title = title;
+        this.synopsis = synopsis;
+        this.trailerUrl = trailerUrl;
+        this.mainImageUrl = mainImageUrl;
+        this.titleImageUrl = titleImageUrl;
+        this.posterUrl = posterUrl;
+        this.categoryNames = categoryNames;
+        this.ageRating = ageRating;
+        this.rating = rating;
+        this.releaseYear = releaseYear;
+        this.director = director;
+    }
 
+    // ── Constructor for series/season (lecyurepage) ──────────────────
+    public FeaturedItem(int seasonId, int serieId, String title, String synopsis, String trailerUrl,
+                        String mainImageUrl, String titleImageUrl, String posterUrl,
+                        List<String> categoryNames, String ageRating, int rating,
+                        String seasonStatus, int seasonNumber, int lastEpisodeNumber,
+                        int releaseYear, String director) {
+        this.id = seasonId;
+        this.serieId = serieId;
+        this.type = "serie";
+        this.title = title;
+        this.synopsis = synopsis;
+        this.trailerUrl = trailerUrl;
+        this.mainImageUrl = mainImageUrl;
+        this.titleImageUrl = titleImageUrl;
+        this.posterUrl = posterUrl;
+        this.categoryNames = categoryNames;
+        this.ageRating = ageRating;
+        this.rating = rating;
+        this.seasonStatus = seasonStatus;
+        this.seasonNumber = seasonNumber;
+        this.lastEpisodeNumber = lastEpisodeNumber;
+        this.releaseYear = releaseYear;
+        this.director = director;
+    }
     // Constructor for series (season)
     public FeaturedItem(int seasonId, int serieId, String title, String synopsis, String trailerUrl,
                         String mainImageUrl, String titleImageUrl, String posterUrl,
@@ -104,10 +149,16 @@ public class FeaturedItem {
 
     public int getSeasonNumber() { return seasonNumber; }
     public void setSeasonNumber(int seasonNumber) { this.seasonNumber = seasonNumber; }
-
+ 
     public int getLastEpisodeNumber() { return lastEpisodeNumber; }
     public void setLastEpisodeNumber(int lastEpisodeNumber) { this.lastEpisodeNumber = lastEpisodeNumber; }
 
     public int getSerieId() { return serieId; }
     public void setSerieId(int serieId) { this.serieId = serieId; }
+    public int getReleaseYear() { return releaseYear; }
+    public void setReleaseYear(int releaseYear) { this.releaseYear = releaseYear; }
+
+    public String getDirector() { return director; }
+    public void setDirector(String director) { this.director = director; }
+    
 }

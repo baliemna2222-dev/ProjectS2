@@ -46,5 +46,16 @@ public class Category {
 		return "Category [category_id=" + category_id + ", name=" + name + ", description=" + description
 				+ ", created_at=" + created_at + "]";
 	}
+	@Override
+	public boolean equals(Object o) {
+	    if (this == o) return true;
+	    if (!(o instanceof Category)) return false;
+	    Category c = (Category) o;
+	    return category_id == c.category_id;
+	}
 
+	@Override
+	public int hashCode() {
+	    return Integer.hashCode(category_id);
+	}
 }

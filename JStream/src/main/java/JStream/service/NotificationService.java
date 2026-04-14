@@ -26,4 +26,11 @@ public class NotificationService {
     public void deleteAll(int userId) {
         dao.deleteAll(userId);
     }
+    public boolean isAlreadyNotified(int userId, int epId) {
+        return dao.isAlreadyNotified(userId, epId);
+    }
+
+    public void markEpisodeAsNotified(int userId, int epId) {
+        dao.markEpisodeAsNotified(userId, epId);
+    }
 }

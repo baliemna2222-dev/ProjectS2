@@ -9,15 +9,14 @@ public class Film {
     private String title;
     private String synopsis;
     private String casting;
+    private String director;
     private String trailer_url;
     private String video_url;
     private String image_url;
     private String title_image_url;
     private String poster_url;
     private String posterV_url;
-    
-    private List<Category> categories; 
-    
+    private List<Category> categories;
     private LocalDateTime release_date;
     private Timestamp updated_at;
     private double duration;
@@ -26,22 +25,22 @@ public class Film {
 
     public Film() {}
 
-    public Film(int film_id, String title, String synopsis, String casting,String trailer_url,
-                String video_url, String image_url, String title_image_url, String poster_url,String posterV_url ,
-                List<Category> categories,
+    public Film(int film_id, String title, String synopsis, String casting, String director,
+                String trailer_url, String video_url, String image_url, String title_image_url,
+                String poster_url, String posterV_url, List<Category> categories,
                 LocalDateTime release_date, Timestamp updated_at,
                 double duration, String age_rating, int rating) {
-
         this.film_id = film_id;
         this.title = title;
         this.synopsis = synopsis;
         this.casting = casting;
-        this.trailer_url=trailer_url;
+        this.director = director;
+        this.trailer_url = trailer_url;
         this.video_url = video_url;
         this.image_url = image_url;
         this.title_image_url = title_image_url;
         this.poster_url = poster_url;
-        this.posterV_url=posterV_url;
+        this.posterV_url = posterV_url;
         this.categories = categories;
         this.release_date = release_date;
         this.updated_at = updated_at;
@@ -50,136 +49,59 @@ public class Film {
         this.rating = rating;
     }
 
-	public int getFilm_id() {
-		return film_id;
-	}
+    public int getFilm_id()                        { return film_id; }
+    public void setFilm_id(int film_id)            { this.film_id = film_id; }
 
-	public void setFilm_id(int film_id) {
-		this.film_id = film_id;
-	}
+    public String getTitle()                        { return title; }
+    public void setTitle(String title)              { this.title = title; }
 
-	public String getTitle() {
-		return title;
-	}
+    public String getSynopsis()                     { return synopsis; }
+    public void setSynopsis(String synopsis)        { this.synopsis = synopsis; }
 
-	public void setTitle(String title) {
-		this.title = title;
-	}
+    public String getCasting()                      { return casting; }
+    public void setCasting(String casting)          { this.casting = casting; }
 
-	public String getSynopsis() {
-		return synopsis;
-	}
+    public String getDirector()                     { return director; }
+    public void setDirector(String director)        { this.director = director; }
 
-	public void setSynopsis(String synopsis) {
-		this.synopsis = synopsis;
-	}
+    public String getTrailer_url()                  { return trailer_url; }
+    public void setTrailer_url(String trailer_url)  { this.trailer_url = trailer_url; }
 
-	public String getCasting() {
-		return casting;
-	}
+    public String getVideo_url()                    { return video_url; }
+    public void setVideo_url(String video_url)      { this.video_url = video_url; }
 
-	public void setCasting(String casting) {
-		this.casting = casting;
-	}
+    public String getImage_url()                    { return image_url; }
+    public void setImage_url(String image_url)      { this.image_url = image_url; }
 
-	public String getVideo_url() {
-		return video_url;
-	}
+    public String getTitle_image_url()                          { return title_image_url; }
+    public void setTitle_image_url(String title_image_url)      { this.title_image_url = title_image_url; }
 
-	public void setVideo_url(String video_url) {
-		this.video_url = video_url;
-	}
+    public String getPoster_url()                   { return poster_url; }
+    public void setPoster_url(String poster_url)    { this.poster_url = poster_url; }
 
-	public String getImage_url() {
-		return image_url;
-	}
+    public String getPosterV_url()                  { return posterV_url; }
+    public void setPosterV_url(String posterV_url)  { this.posterV_url = posterV_url; }
 
-	public void setImage_url(String image_url) {
-		this.image_url = image_url;
-	}
+    public List<Category> getCategories()                       { return categories; }
+    public void setCategories(List<Category> categories)        { this.categories = categories; }
 
-	public String getTitle_image_url() {
-		return title_image_url;
-	}
+    public LocalDateTime getRelease_date()                      { return release_date; }
+    public void setRelease_date(LocalDateTime release_date)     { this.release_date = release_date; }
 
-	public void setTitle_image_url(String title_image_url) {
-		this.title_image_url = title_image_url;
-	}
+    public Timestamp getUpdated_at()                            { return updated_at; }
+    public void setUpdated_at(Timestamp updated_at)             { this.updated_at = updated_at; }
 
-	public String getPoster_url() {
-		return poster_url;
-	}
+    public double getDuration()                     { return duration; }
+    public void setDuration(double duration)        { this.duration = duration; }
 
-	public void setPoster_url(String poster_url) {
-		this.poster_url = poster_url;
-	}
+    public String getAge_rating()                   { return age_rating; }
+    public void setAge_rating(String age_rating)    { this.age_rating = age_rating; }
 
-	public List<Category> getCategories() {
-		return categories;
-	}
+    public int getRating()                          { return rating; }
+    public void setRating(int rating)               { this.rating = rating; }
 
-	public void setCategories(List<Category> categories) {
-		this.categories = categories;
-	}
-
-	public LocalDateTime getRelease_date() {
-		return release_date;
-	}
-
-	public void setRelease_date(LocalDateTime release_date) {
-		this.release_date = release_date;
-	}
-
-	public Timestamp getUpdated_at() {
-		return updated_at;
-	}
-
-	public void setUpdated_at(Timestamp updated_at) {
-		this.updated_at = updated_at;
-	}
-
-	public double getDuration() {
-		return duration;
-	}
-
-	public void setDuration(double duration) {
-		this.duration = duration;
-	}
-
-	public String getAge_rating() {
-		return age_rating;
-	}
-
-	public void setAge_rating(String age_rating) {
-		this.age_rating = age_rating;
-	}
-
-	public int getRating() {
-		return rating;
-	}
-
-	public void setRating(int rating) {
-		this.rating = rating;
-	}
-	 public String getCategoriesAsString() {
-	        if (categories == null || categories.isEmpty()) return "";
-	        return String.join(", ", categories.stream().map(Category::getName).toList());
-	    }
-
-	 public String getPosterV_url() {
-		return posterV_url;
-	 }
-
-	 public void setPosterV_url(String posterV_url) {
-		this.posterV_url = posterV_url;
-	 }
-
-	 public String getTrailer_url() {
-		return trailer_url;
-	 }
-
-	 public void setTrailer_url(String trailer_url) {
-		this.trailer_url = trailer_url;
-	 }
+    public String getCategoriesAsString() {
+        if (categories == null || categories.isEmpty()) return "";
+        return String.join(", ", categories.stream().map(Category::getName).toList());
+    }
 }
-   

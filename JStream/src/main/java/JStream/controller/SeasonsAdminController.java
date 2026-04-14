@@ -5,11 +5,14 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
+
 import JStream.entity.Serie;
 import JStream.entity.Season;
 import JStream.service.SeasonService;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -87,6 +90,7 @@ public class SeasonsAdminController {
         titleUrlField.setText(nvl(season.getTitleUrl()));
         imageUrlField.setText(nvl(season.getImageUrl()));
         statusComboBox.setValue(season.getStatus());
+
         clearValidation();
         animateFormHighlight();
     }
@@ -103,7 +107,6 @@ public class SeasonsAdminController {
     private void cancelEdit() { setAddMode(); }
 
     private void doAddSeason() {
-        clearValidation();
         Season s = buildSeasonFromForm();
         seasonService.addSeason(s);
         clearFields();
@@ -113,12 +116,35 @@ public class SeasonsAdminController {
     }
 
     private void doUpdateSeason() {
-        clearValidation();
         populateSeasonFromForm(editingSeason);
         seasonService.updateSeason(editingSeason);
         chargerSaisons();
         setAddMode();
         showToast("Season updated successfully ✓");
+    }
+
+    // ── File choosers ─────────────────────────────────────────────────────────
+    @FXML private void choosePosterFile()   { chooseImageFile(posterUrlField,  "Choose Poster Image"); }
+    @FXML private void chooseTitleUrlFile() { chooseImageFile(titleUrlField,   "Choose Title Logo"); }
+    @FXML private void chooseImageFile()    { chooseImageFile(imageUrlField,   "Choose General Image"); }
+    @FXML private void chooseTrailerFile()  { chooseVideoFile(trailerUrlField, "Choose Trailer Video"); }
+
+    private void chooseImageFile(TextField target, String dialogTitle) {
+        chooseFile(target, dialogTitle, new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.bmp"));
+    }
+
+    private void chooseVideoFile(TextField target, String dialogTitle) {
+        chooseFile(target, dialogTitle, new FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi", "*.mov", "*.webm"));
+    }
+
+    private void chooseFile(TextField target, String dialogTitle, FileChooser.ExtensionFilter filter) {
+        if (target == null || target.getScene() == null) return;
+        FileChooser fc = new FileChooser();
+        fc.setTitle(dialogTitle);
+        fc.setInitialDirectory(new File(System.getProperty("user.home")));
+        fc.getExtensionFilters().add(filter);
+        File f = fc.showOpenDialog(target.getScene().getWindow());
+        if (f != null) target.setText(f.getAbsolutePath());
     }
 
     // ── Load seasons ──────────────────────────────────────────────────────────
@@ -155,19 +181,13 @@ public class SeasonsAdminController {
 
     // ── Season card ───────────────────────────────────────────────────────────
     private VBox createSeasonCard(Season season) {
-        // Season badge
         Label badge = new Label("S" + season.getSeasonNum());
         badge.setStyle("""
             -fx-background-color: linear-gradient(to bottom right, #1d4ed8, #0ea5e9);
-            -fx-text-fill: white;
-            -fx-font-weight: bold;
-            -fx-font-size: 15px;
-            -fx-padding: 10 16;
-            -fx-background-radius: 10;
-            -fx-min-width: 52;
+            -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px;
+            -fx-padding: 10 16; -fx-background-radius: 10; -fx-min-width: 52;
             """);
 
-        // Title & meta
         String displayTitle = "Season " + season.getSeasonNum();
         if (season.getTitle() != null && !season.getTitle().isEmpty())
             displayTitle += " — " + season.getTitle();
@@ -175,31 +195,33 @@ public class SeasonsAdminController {
         Label lblTitle = new Label(displayTitle);
         lblTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px;");
 
-        // Status chip
-        String statusColor = switch (nvl(season.getStatus())) {
-            case "Completed"  -> "rgba(16,185,129,0.20)";
-            case "Ongoing"    -> "rgba(59,130,246,0.20)";
-            case "Cancelled"  -> "rgba(239,68,68,0.20)";
-            default           -> "rgba(107,114,128,0.20)";
+        // Status chip colours
+        String statusBg = switch (nvl(season.getStatus())) {
+            case "Completed" -> "rgba(16,185,129,0.20)";
+            case "Ongoing"   -> "rgba(59,130,246,0.20)";
+            case "Cancelled" -> "rgba(239,68,68,0.20)";
+            default          -> "rgba(107,114,128,0.20)";
         };
-        String statusText = switch (nvl(season.getStatus())) {
-            case "Completed"  -> "#34d399";
-            case "Ongoing"    -> "#60a5fa";
-            case "Cancelled"  -> "#f87171";
-            default           -> "#9ca3af";
+        String statusFg = switch (nvl(season.getStatus())) {
+            case "Completed" -> "#34d399";
+            case "Ongoing"   -> "#60a5fa";
+            case "Cancelled" -> "#f87171";
+            default          -> "#9ca3af";
         };
-        Label statusChip = new Label(nvl(season.getStatus()).isEmpty() ? "Unknown" : season.getStatus());
-        statusChip.setStyle("-fx-background-color: " + statusColor + "; -fx-text-fill: " + statusText + "; -fx-padding: 3 10; -fx-background-radius: 20; -fx-font-size: 11px;");
+        String statusLabel = nvl(season.getStatus()).isEmpty() ? "Unknown" : season.getStatus();
+        Label statusChip = new Label(statusLabel);
+        statusChip.setStyle("-fx-background-color: " + statusBg + "; -fx-text-fill: " + statusFg
+                + "; -fx-padding: 3 10; -fx-background-radius: 20; -fx-font-size: 11px;");
 
-        Label lblMeta = new Label(season.getPlannedEpisodes() + " episodes planned"
-            + (season.getRating() > 0 ? "  ·  ★ " + season.getRating() + "/5" : ""));
+        String metaText = season.getPlannedEpisodes() > 0 ? season.getPlannedEpisodes() + " episodes planned" : "";
+        if (season.getRating() > 0) metaText += (metaText.isEmpty() ? "" : "  ·  ") + "★ " + season.getRating() + "/5";
+        Label lblMeta = new Label(metaText);
         lblMeta.setStyle("-fx-text-fill: #6b7280; -fx-font-size: 12px;");
 
         VBox info = new VBox(4, lblTitle, new HBox(8, statusChip, lblMeta));
         info.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(info, Priority.ALWAYS);
 
-        // Action buttons
         Button episodesBtn = smallBtn("▶ Episodes", "#1d4ed8");
         Button editBtn     = smallBtn("✎ Edit",     "#0ea5e9");
         Button delBtn      = smallBtn("✕",           "#374151");
@@ -215,17 +237,17 @@ public class SeasonsAdminController {
         row.setAlignment(Pos.CENTER_LEFT);
 
         VBox card = new VBox(row);
-        card.setStyle("""
+        final String baseStyle = """
             -fx-background-color: #080d1a;
             -fx-padding: 18 20;
             -fx-background-radius: 14;
             -fx-border-color: rgba(29,78,216,0.18);
             -fx-border-radius: 14;
             -fx-cursor: hand;
-            """);
-
-        card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + "-fx-effect: dropshadow(gaussian, rgba(29,78,216,0.35), 18, 0, 0, 4);"));
-        card.setOnMouseExited(e  -> card.setStyle(card.getStyle().replace("-fx-effect: dropshadow(gaussian, rgba(29,78,216,0.35), 18, 0, 0, 4);", "")));
+            """;
+        card.setStyle(baseStyle);
+        card.setOnMouseEntered(e -> card.setStyle(baseStyle + "-fx-effect: dropshadow(gaussian, rgba(29,78,216,0.35), 18, 0, 0, 4);"));
+        card.setOnMouseExited(e  -> card.setStyle(baseStyle));
 
         return card;
     }
@@ -246,7 +268,8 @@ public class SeasonsAdminController {
     @FXML
     private void retourSeries() {
         try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/fxml/admin_series.fxml"));
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/view/fxml/admin_series.fxml"));
             javafx.scene.Parent view = loader.load();
             replaceContentArea(view);
         } catch (Exception e) { e.printStackTrace(); }
@@ -266,7 +289,7 @@ public class SeasonsAdminController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Season");
         alert.setHeaderText("Delete Season " + season.getSeasonNum() + "?");
-        alert.setContentText("All episodes in this season will be removed.");
+        alert.setContentText("All episodes in this season will be permanently removed.");
         alert.getDialogPane().setStyle("-fx-background-color: #080d1a;");
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -280,30 +303,36 @@ public class SeasonsAdminController {
     // ── Validation ────────────────────────────────────────────────────────────
     private boolean validateForm() {
         List<String> errors = new ArrayList<>();
-        if (seasonNumField.getText().isBlank()) errors.add("Season number required");
-        else {
-            try { Integer.parseInt(seasonNumField.getText()); }
+
+        if (seasonNumField.getText().isBlank()) {
+            errors.add("Season number required");
+        } else {
+            try { Integer.parseInt(seasonNumField.getText().trim()); }
             catch (NumberFormatException e) { errors.add("Season number must be an integer"); }
         }
         if (!plannedEpisodesField.getText().isBlank()) {
-            try { Integer.parseInt(plannedEpisodesField.getText()); }
+            try { Integer.parseInt(plannedEpisodesField.getText().trim()); }
             catch (NumberFormatException e) { errors.add("Planned episodes must be an integer"); }
         }
         if (!ratingField.getText().isBlank()) {
             try {
-                int r = Integer.parseInt(ratingField.getText());
+                int r = Integer.parseInt(ratingField.getText().trim());
                 if (r < 1 || r > 5) errors.add("Rating must be between 1 and 5");
-            } catch (NumberFormatException e) { errors.add("Rating must be a number"); }
+            } catch (NumberFormatException e) { errors.add("Rating must be a number (1–5)"); }
         }
 
         if (!errors.isEmpty()) {
             showValidation("⚠  " + String.join("  ·  ", errors));
-            TranslateTransition shake = new TranslateTransition(Duration.millis(60), formPanel);
-            shake.setFromX(-6); shake.setToX(6); shake.setCycleCount(4); shake.setAutoReverse(true);
-            shake.play();
+            shakeForm();
             return false;
         }
         return true;
+    }
+
+    private void shakeForm() {
+        TranslateTransition shake = new TranslateTransition(Duration.millis(60), formPanel);
+        shake.setFromX(-6); shake.setToX(6); shake.setCycleCount(4); shake.setAutoReverse(true);
+        shake.play();
     }
 
     private void showValidation(String msg) { validationLabel.setText(msg); validationLabel.setVisible(true); }
@@ -325,9 +354,9 @@ public class SeasonsAdminController {
         s.setTitleUrl(titleUrlField.getText().trim());
         s.setImageUrl(imageUrlField.getText().trim());
         s.setStatus(statusComboBox.getValue());
-        try { s.setSeasonNum(Integer.parseInt(seasonNumField.getText())); } catch (Exception ignored) {}
-        try { s.setPlannedEpisodes(Integer.parseInt(plannedEpisodesField.getText())); } catch (Exception ignored) {}
-        try { s.setRating(Integer.parseInt(ratingField.getText())); } catch (Exception ignored) {}
+        try { s.setSeasonNum(Integer.parseInt(seasonNumField.getText().trim())); }      catch (Exception ignored) {}
+        try { s.setPlannedEpisodes(Integer.parseInt(plannedEpisodesField.getText().trim())); } catch (Exception ignored) {}
+        try { s.setRating(Integer.parseInt(ratingField.getText().trim())); }             catch (Exception ignored) {}
     }
 
     private void clearFields() {

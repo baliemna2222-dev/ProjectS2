@@ -71,9 +71,9 @@ public class AdminHomeController {
 
               javafx.stage.Stage stage = (javafx.stage.Stage) logoutBtn.getScene().getWindow();
               
-              // ✅ Reuse existing scene instead of creating a new one
+              /**Reuse existing scene instead of creating a new one*/
               stage.getScene().setRoot(root);
-              stage.setMaximized(true);
+              // Ne pas forcer le mode maximisé - maintenir l'état du stage
 
               // ✅ Bind login root to stage size
               ((Region) root).prefWidthProperty().bind(stage.widthProperty());

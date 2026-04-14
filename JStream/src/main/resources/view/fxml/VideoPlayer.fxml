@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
@@ -11,73 +10,159 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.media.MediaView?>
 
-<StackPane fx:id="rootPane" prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: black;" stylesheets="@/view/css/player.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.VideoPlayerController">
-    
-    <MediaView fx:id="mediaView" StackPane.alignment="CENTER" />
-    
-    <Region pickOnBounds="false" style="-fx-background-color: linear-gradient( to bottom, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.0) 18%, rgba(0,0,0,0.0) 72%, rgba(0,0,0,0.85) 100% );" />
-    
-    <ProgressIndicator fx:id="loadingSpinner" maxHeight="72.0" maxWidth="72.0" style="-fx-progress-color: #00d4ff;" visible="false" StackPane.alignment="CENTER" />
-    <VBox pickOnBounds="false" prefHeight="720.0" prefWidth="1280.0" StackPane.alignment="TOP_LEFT">
-        
-        <HBox fx:id="topBar" alignment="CENTER_LEFT" prefHeight="80.0" spacing="16.0">
-            <padding>
-                <Insets left="36.0" right="36.0" top="4.0" />
-            </padding>
-            <Button fx:id="btnClose" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 28px; -fx-cursor: hand;" text="←" />
-            <Label fx:id="titleLabel" style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-family: 'Segoe UI Semibold'; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.9), 8, 0, 0, 2);" text="Movie Title" />
+<StackPane fx:id="rootPane"
+           prefHeight="720.0" prefWidth="1280.0"
+           style="-fx-background-color: black;"
+           stylesheets="@/view/css/player.css"
+           xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="JStream.controller.VideoPlayerController">
+
+    <MediaView fx:id="mediaView" StackPane.alignment="CENTER"/>
+
+    <!-- Cinematic vignette -->
+    <Region mouseTransparent="true"
+            style="-fx-background-color:
+                linear-gradient(to bottom,
+                    rgba(0,0,0,0.70) 0%,
+                    rgba(0,0,0,0.00) 15%,
+                    rgba(0,0,0,0.00) 68%,
+                    rgba(0,0,0,0.90) 100%);"/>
+
+    <ProgressIndicator fx:id="loadingSpinner"
+                       maxHeight="68.0" maxWidth="68.0"
+                       style="-fx-progress-color: #00c8f0;"
+                       visible="false"
+                       StackPane.alignment="CENTER"/>
+
+    <VBox pickOnBounds="false" prefHeight="720.0" prefWidth="1280.0"
+          StackPane.alignment="TOP_LEFT">
+
+        <!-- Top bar -->
+        <HBox fx:id="topBar" alignment="CENTER_LEFT" prefHeight="72.0" spacing="14.0">
+            <padding><Insets left="36.0" right="36.0" top="8.0"/></padding>
+
+            <Button fx:id="btnClose" text="←"
+                    style="-fx-background-color: rgba(255,255,255,0.08);
+                           -fx-text-fill: white; -fx-font-size: 18px;
+                           -fx-background-radius: 50%;
+                           -fx-border-color: rgba(255,255,255,0.14);
+                           -fx-border-radius: 50%;
+                           -fx-min-width: 38px; -fx-min-height: 38px;
+                           -fx-cursor: hand;"/>
+
+            <Label fx:id="titleLabel" text="Movie Title"
+                   style="-fx-text-fill: white; -fx-font-size: 19px;
+                          -fx-font-weight: bold;
+                          -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.9),6,0,0,2);"/>
         </HBox>
-        
-        <Region VBox.vgrow="ALWAYS" />
-        
+
+        <Region VBox.vgrow="ALWAYS"/>
+
+        <!-- Bottom controls -->
         <VBox fx:id="bottomControls" pickOnBounds="true" spacing="8.0">
-            <padding>
-                <Insets bottom="36.0" left="36.0" right="36.0" top="16.0" />
-            </padding>
-        <Button fx:id="btnNextEpisode"
-        style="-fx-background-color: rgba(0,212,255,0.15);
-               -fx-text-fill: #00d4ff; -fx-font-size: 15px; -fx-cursor: hand;
-               -fx-border-color: #00d4ff; -fx-border-radius: 20;
-               -fx-background-radius: 20; -fx-padding: 8 22;
-               -fx-font-family: 'Segoe UI Semibold';"
-        text="Next Episode  ▶▶"
-        visible="false"
-        managed="false"
-        StackPane.alignment="BOTTOM_RIGHT">
-    <StackPane.margin>
-        <Insets bottom="100.0" right="40.0" />
-    </StackPane.margin>
-</Button>
-            
+            <padding><Insets bottom="32.0" left="36.0" right="36.0" top="12.0"/></padding>
+
+            <!-- Next-episode chip -->
+            <Button fx:id="btnNextEpisode" text="▶  Next Episode"
+                    visible="false" managed="false"
+                    style="-fx-background-color: rgba(0,200,240,0.12);
+                           -fx-text-fill: #00c8f0; -fx-font-size: 13px;
+                           -fx-font-weight: bold; -fx-cursor: hand;
+                           -fx-border-color: rgba(0,200,240,0.40);
+                           -fx-border-radius: 20; -fx-background-radius: 20;
+                           -fx-padding: 7 20;"/>
+
+            <!-- ── Seek bar ── -->
             <VBox spacing="4.0">
-                <Slider fx:id="seekBar" style="-fx-cursor: hand;" styleClass="jstream-slider" />
+                <!--
+                    StackPane trick:
+                    Layer 1 (bottom): seekFill — cyan Region, width set from Java
+                    Layer 2 (top):    Slider   — track is semi-transparent dim rail
+                                                 thumb is the cyan dot
+                    Both layers share CENTER alignment so they sit on the same
+                    vertical axis; the Region is mouse-transparent.
+                -->
+                <StackPane fx:id="seekBarWrapper" prefHeight="20.0" alignment="CENTER_LEFT">
+                    <Region fx:id="seekFill"
+                            prefHeight="5.0" maxHeight="5.0"
+                            mouseTransparent="true"
+                            style="-fx-background-color: #00c8f0;
+                                   -fx-background-radius: 3px;"
+                            StackPane.alignment="CENTER_LEFT"/>
+                    <Slider fx:id="seekBar" styleClass="jstream-slider"
+                            style="-fx-cursor: hand; -fx-background-color: transparent;"
+                            StackPane.alignment="CENTER"/>
+                </StackPane>
+
                 <HBox alignment="CENTER_RIGHT">
-                    <Label fx:id="timeLabel" style="-fx-text-fill: rgba(255,255,255,0.75); -fx-font-size: 13px; -fx-font-family: 'Consolas';" text="0:00 / 0:00" />
+                    <Label fx:id="timeLabel" text="0:00 / 0:00"
+                           style="-fx-text-fill: rgba(255,255,255,0.45);
+                                  -fx-font-size: 11px;
+                                  -fx-font-family: 'Consolas';"/>
                 </HBox>
             </VBox>
-            
+
+            <!-- ── Playback row ── -->
             <HBox alignment="CENTER_LEFT" spacing="0.0">
-                <HBox alignment="CENTER_LEFT" spacing="4.0">
-                    <Button fx:id="btnPlay" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 26px; -fx-cursor: hand;" text="⏸" />
-                    <Button fx:id="btnRewind" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 20px; -fx-cursor: hand;" text="⟲₁₀" />
-                    <Button fx:id="btnForward" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 20px; -fx-cursor: hand;" text="⟳₁₀" />
-                    
-                    <HBox alignment="CENTER" spacing="8.0">
-                        <padding>
-                            <Insets left="10.0" />
-                        </padding>
-                        <Button fx:id="btnMute" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 20px; -fx-cursor: hand;" text="🔊" />
-                        <Slider fx:id="volumeSlider" prefWidth="110.0" style="-fx-cursor: hand;" styleClass="jstream-slider" value="50.0" />
+
+                <HBox alignment="CENTER_LEFT" spacing="2.0">
+
+                    <Button fx:id="btnPlay" text="⏸"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: white; -fx-font-size: 26px;
+                                   -fx-cursor: hand; -fx-padding: 4 8;"/>
+
+                    <Button fx:id="btnRewind" text="⟲ 10"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: rgba(255,255,255,0.75);
+                                   -fx-font-size: 15px; -fx-cursor: hand;
+                                   -fx-padding: 4 8;"/>
+
+                    <Button fx:id="btnForward" text="10 ⟳"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: rgba(255,255,255,0.75);
+                                   -fx-font-size: 15px; -fx-cursor: hand;
+                                   -fx-padding: 4 8;"/>
+
+                    <!-- Volume -->
+                    <HBox alignment="CENTER" spacing="6.0">
+                        <padding><Insets left="10.0"/></padding>
+                        <Button fx:id="btnMute" text="🔊"
+                                style="-fx-background-color: transparent;
+                                       -fx-text-fill: rgba(255,255,255,0.75);
+                                       -fx-font-size: 17px; -fx-cursor: hand;
+                                       -fx-padding: 4 6;"/>
+
+                        <!-- Same StackPane pattern for volume -->
+                        <StackPane fx:id="volumeSliderWrapper"
+                                   prefWidth="90.0" prefHeight="20.0"
+                                   alignment="CENTER_LEFT">
+                            <Region fx:id="volumeFill"
+                                    prefHeight="4.0" maxHeight="4.0"
+                                    mouseTransparent="true"
+                                    style="-fx-background-color: #00c8f0;
+                                           -fx-background-radius: 3px;"
+                                    StackPane.alignment="CENTER_LEFT"/>
+                            <Slider fx:id="volumeSlider"
+                                    prefWidth="90.0" value="62.0"
+                                    styleClass="jstream-slider"
+                                    style="-fx-cursor: hand; -fx-background-color: transparent;"
+                                    StackPane.alignment="CENTER"/>
+                        </StackPane>
                     </HBox>
                 </HBox>
-                
-                <Region HBox.hgrow="ALWAYS" />
-                
-                <HBox alignment="CENTER_RIGHT" spacing="16.0">
-                    <Button fx:id="btnMiniPlayer" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 20px; -fx-cursor: hand;" text="🗗" />
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <HBox alignment="CENTER_RIGHT" spacing="12.0">
+                    <Button fx:id="btnMiniPlayer" text="⛶"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: rgba(255,255,255,0.6);
+                                   -fx-font-size: 17px; -fx-cursor: hand;
+                                   -fx-padding: 4 6;"/>
                 </HBox>
             </HBox>
         </VBox>
     </VBox>
-    
 </StackPane>

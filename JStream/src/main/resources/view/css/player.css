@@ -1,43 +1,45 @@
+.jstream-slider {
+    -fx-background-color: transparent;
+    -fx-padding: 7 0;
+}
+
 .jstream-slider .track {
-    -fx-background-color: rgba(255, 255, 255, 0.22);
-    -fx-background-radius: 3px;
-    -fx-pref-height: 4px;
+    -fx-background-color: rgba(255,255,255,0.18);
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+    -fx-pref-height: 4;
 }
 
-.jstream-slider .track:hover {
-    -fx-background-color: rgba(255, 255, 255, 0.35);
-}
+#seekBar .track { -fx-pref-height: 5; }
 
-/* Flattened track-progress selector */
-.track-progress {
-    -fx-background-color: #00d4ff;
-    -fx-background-radius: 3px;
-}
-
+/* Thumb: solid cyan dot with glow */
 .jstream-slider .thumb {
-    -fx-background-color: #ffffff;
+    -fx-background-color: #00c8f0;
     -fx-background-radius: 50%;
-    -fx-pref-width: 14px;
-    -fx-pref-height: 14px;
-    -fx-effect: dropshadow(gaussian, rgba(0,212,255,0.55), 6, 0, 0, 0);
+    -fx-background-insets: 0;
+    -fx-pref-width: 13;
+    -fx-pref-height: 13;
+    -fx-effect: dropshadow(gaussian, rgba(0,200,240,0.80), 9, 0.5, 0, 0);
     -fx-cursor: hand;
-    -fx-opacity: 0; /* hidden until hover */
 }
 
-/* Show thumb on hover */
 .jstream-slider:hover .thumb {
-    -fx-opacity: 1;
+    -fx-pref-width: 16;
+    -fx-pref-height: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0,200,240,1.0), 14, 0.65, 0, 0);
 }
 
-.jstream-slider#seekBar:hover .track {
-    -fx-pref-height: 5px;
+.jstream-slider:focused        { -fx-background-color: transparent; }
+.jstream-slider .thumb:focused { -fx-background-color: #00c8f0; }
+
+.jstream-slider .axis {
+    -fx-tick-mark-visible: false;
+    -fx-minor-tick-visible: false;
 }
 
 .button {
-    -fx-focus-color: transparent;
-    -fx-faint-focus-color: transparent;
-}
-
-.progress-indicator > .indicator {
     -fx-background-color: transparent;
+    -fx-border-color:     transparent;
+    -fx-focus-color:      transparent;
+    -fx-faint-focus-color: transparent;
 }

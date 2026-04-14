@@ -5,12 +5,15 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
+
 import JStream.entity.Episode;
 import JStream.entity.Serie;
 import JStream.entity.Season;
 import JStream.service.EpisodeService;
 
+import java.io.File;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -53,7 +56,7 @@ public class EpisodesAdminController {
         cancelEditBtn.setVisible(false);
 
         numEpisodeField.textProperty().addListener((obs, o, n) -> clearValidation());
-        titleField.textProperty().addListener((obs, o, n) -> clearValidation());
+        titleField.textProperty().addListener((obs, o, n)      -> clearValidation());
     }
 
     public void initData(Season season, Serie serie) {
@@ -93,10 +96,10 @@ public class EpisodesAdminController {
         covertUrlField.setText(nvl(ep.getCovertUrl()));
         durationField.setText(ep.getDuration() > 0 ? String.valueOf(ep.getDuration()) : "");
         ratingField.setText(ep.getRating() > 0 ? String.valueOf(ep.getRating()) : "");
-        if (ep.getReleasedAt() != null)
-            releasedAtPicker.setValue(ep.getReleasedAt().toLocalDateTime().toLocalDate());
-        else
-            releasedAtPicker.setValue(null);
+        releasedAtPicker.setValue(
+            ep.getReleasedAt() != null ? ep.getReleasedAt().toLocalDateTime().toLocalDate() : null
+        );
+
         clearValidation();
         animateFormHighlight();
     }
@@ -113,7 +116,6 @@ public class EpisodesAdminController {
     private void cancelEdit() { setAddMode(); }
 
     private void doAddEpisode() {
-        clearValidation();
         Episode ep = buildEpisodeFromForm();
         episodeService.addEpisode(ep);
         clearFields();
@@ -123,12 +125,27 @@ public class EpisodesAdminController {
     }
 
     private void doUpdateEpisode() {
-        clearValidation();
         populateEpisodeFromForm(editingEpisode);
         episodeService.updateEpisode(editingEpisode);
         loadEpisodes();
         setAddMode();
         showToast("Episode updated successfully ✓");
+    }
+
+    // ── File choosers ─────────────────────────────────────────────────────────
+    @FXML private void chooseVideoFile()  { chooseFile(videoUrlField,  "Choose Video File",
+            new FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi", "*.mov", "*.webm", "*.flv")); }
+    @FXML private void chooseCoverFile()  { chooseFile(covertUrlField, "Choose Cover Image",
+            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.bmp")); }
+
+    private void chooseFile(TextField target, String title, FileChooser.ExtensionFilter filter) {
+        if (target == null || target.getScene() == null) return;
+        FileChooser fc = new FileChooser();
+        fc.setTitle(title);
+        fc.setInitialDirectory(new File(System.getProperty("user.home")));
+        fc.getExtensionFilters().add(filter);
+        File f = fc.showOpenDialog(target.getScene().getWindow());
+        if (f != null) target.setText(f.getAbsolutePath());
     }
 
     // ── Load episodes ─────────────────────────────────────────────────────────
@@ -164,7 +181,6 @@ public class EpisodesAdminController {
 
     // ── Episode card ──────────────────────────────────────────────────────────
     private VBox createEpisodeCard(Episode ep) {
-        // Number badge
         Label badge = new Label("E" + ep.getNumEpisode());
         badge.setStyle("""
             -fx-background-color: linear-gradient(to bottom right, #0ea5e9, #1d4ed8);
@@ -175,24 +191,27 @@ public class EpisodesAdminController {
         Label lblTitle = new Label(nvl(ep.getTitle()).isEmpty() ? "Untitled Episode" : ep.getTitle());
         lblTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-        Label lblMeta = new Label(
-            (ep.getDuration() > 0 ? ep.getDuration() + " min" : "") +
-            (ep.getRating() > 0 ? "  ·  ★ " + ep.getRating() + "/5" : "") +
-            (ep.getReleasedAt() != null ? "  ·  " + ep.getReleasedAt().toLocalDateTime().toLocalDate() : "")
-        );
+        // Build meta line
+        StringBuilder meta = new StringBuilder();
+        if (ep.getDuration() > 0)      meta.append(ep.getDuration()).append(" min");
+        if (ep.getRating() > 0)        meta.append(meta.isEmpty() ? "" : "  ·  ").append("★ ").append(ep.getRating()).append("/5");
+        if (ep.getReleasedAt() != null) meta.append(meta.isEmpty() ? "" : "  ·  ").append(ep.getReleasedAt().toLocalDateTime().toLocalDate());
+
+        Label lblMeta = new Label(meta.toString());
         lblMeta.setStyle("-fx-text-fill: #6b7280; -fx-font-size: 11px;");
 
         Label lblResume = new Label(nvl(ep.getResume()));
         lblResume.setStyle("-fx-text-fill: #9ca3af; -fx-font-size: 11px; -fx-wrap-text: true;");
         lblResume.setMaxWidth(500);
+        lblResume.setVisible(!nvl(ep.getResume()).isEmpty());
+        lblResume.setManaged(!nvl(ep.getResume()).isEmpty());
 
         VBox info = new VBox(3, lblTitle, lblMeta, lblResume);
         info.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(info, Priority.ALWAYS);
 
-        // Actions
-        Button editBtn = smallBtn("✎ Edit",  "#0ea5e9");
-        Button delBtn  = smallBtn("✕",       "#374151");
+        Button editBtn = smallBtn("✎ Edit", "#0ea5e9");
+        Button delBtn  = smallBtn("✕",      "#374151");
 
         editBtn.setOnAction(e -> setEditMode(ep));
         delBtn.setOnAction(e  -> confirmDelete(ep));
@@ -204,17 +223,17 @@ public class EpisodesAdminController {
         row.setAlignment(Pos.CENTER_LEFT);
 
         VBox card = new VBox(row);
-        card.setStyle("""
+        final String baseStyle = """
             -fx-background-color: #080d1a;
             -fx-padding: 16 18;
             -fx-background-radius: 12;
             -fx-border-color: rgba(14,165,233,0.14);
             -fx-border-radius: 12;
             -fx-cursor: hand;
-            """);
-
-        card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + "-fx-effect: dropshadow(gaussian, rgba(14,165,233,0.28), 16, 0, 0, 3);"));
-        card.setOnMouseExited(e  -> card.setStyle(card.getStyle().replace("-fx-effect: dropshadow(gaussian, rgba(14,165,233,0.28), 16, 0, 0, 3);", "")));
+            """;
+        card.setStyle(baseStyle);
+        card.setOnMouseEntered(e -> card.setStyle(baseStyle + "-fx-effect: dropshadow(gaussian, rgba(14,165,233,0.28), 16, 0, 0, 3);"));
+        card.setOnMouseExited(e  -> card.setStyle(baseStyle));
 
         return card;
     }
@@ -246,7 +265,7 @@ public class EpisodesAdminController {
     private void confirmDelete(Episode ep) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Episode");
-        alert.setHeaderText("Delete Episode " + ep.getNumEpisode() + "?");
+        alert.setHeaderText("Delete Episode " + ep.getNumEpisode() + " — " + nvl(ep.getTitle()) + "?");
         alert.setContentText("This cannot be undone.");
         alert.getDialogPane().setStyle("-fx-background-color: #080d1a;");
         Optional<ButtonType> result = alert.showAndWait();
@@ -262,32 +281,38 @@ public class EpisodesAdminController {
     private boolean validateForm() {
         List<String> errors = new ArrayList<>();
 
-        if (numEpisodeField.getText().isBlank()) errors.add("Episode number required");
-        else {
-            try { Integer.parseInt(numEpisodeField.getText()); }
+        if (numEpisodeField.getText().isBlank()) {
+            errors.add("Episode number required");
+        } else {
+            try { Integer.parseInt(numEpisodeField.getText().trim()); }
             catch (NumberFormatException e) { errors.add("Episode number must be an integer"); }
         }
         if (titleField.getText().isBlank()) errors.add("Title required");
+
         if (!durationField.getText().isBlank()) {
-            try { Integer.parseInt(durationField.getText()); }
+            try { Integer.parseInt(durationField.getText().trim()); }
             catch (NumberFormatException e) { errors.add("Duration must be an integer (minutes)"); }
         }
         if (!ratingField.getText().isBlank()) {
             try {
-                int r = Integer.parseInt(ratingField.getText());
+                int r = Integer.parseInt(ratingField.getText().trim());
                 if (r < 1 || r > 5) errors.add("Rating must be 1–5");
-            } catch (NumberFormatException e) { errors.add("Rating must be a number"); }
+            } catch (NumberFormatException e) { errors.add("Rating must be a number (1–5)"); }
         }
-        if (videoUrlField.getText().isBlank()) errors.add("Video URL required");
+        if (videoUrlField.getText().isBlank()) errors.add("Video file is required");
 
         if (!errors.isEmpty()) {
             showValidation("⚠  " + String.join("  ·  ", errors));
-            TranslateTransition shake = new TranslateTransition(Duration.millis(60), formPanel);
-            shake.setFromX(-6); shake.setToX(6); shake.setCycleCount(4); shake.setAutoReverse(true);
-            shake.play();
+            shakeForm();
             return false;
         }
         return true;
+    }
+
+    private void shakeForm() {
+        TranslateTransition shake = new TranslateTransition(Duration.millis(60), formPanel);
+        shake.setFromX(-6); shake.setToX(6); shake.setCycleCount(4); shake.setAutoReverse(true);
+        shake.play();
     }
 
     private void showValidation(String msg) { validationLabel.setText(msg); validationLabel.setVisible(true); }
@@ -306,11 +331,11 @@ public class EpisodesAdminController {
         ep.setResume(resumeField.getText().trim());
         ep.setVideoUrl(videoUrlField.getText().trim());
         ep.setCovertUrl(covertUrlField.getText().trim());
-        try { ep.setNumEpisode(Integer.parseInt(numEpisodeField.getText())); }  catch (Exception ignored) {}
-        try { ep.setDuration(Integer.parseInt(durationField.getText())); }       catch (Exception ignored) {}
-        try { ep.setRating(Integer.parseInt(ratingField.getText())); }           catch (Exception ignored) {}
+        try { ep.setNumEpisode(Integer.parseInt(numEpisodeField.getText().trim())); } catch (Exception ignored) {}
+        try { ep.setDuration(Integer.parseInt(durationField.getText().trim())); }     catch (Exception ignored) {}
+        try { ep.setRating(Integer.parseInt(ratingField.getText().trim())); }          catch (Exception ignored) {}
         LocalDate d = releasedAtPicker.getValue();
-        if (d != null) ep.setReleasedAt(Timestamp.valueOf(d.atStartOfDay()));
+        ep.setReleasedAt(d != null ? Timestamp.valueOf(d.atStartOfDay()) : null);
     }
 
     private void clearFields() {

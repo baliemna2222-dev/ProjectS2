@@ -7,8 +7,10 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import JStream.entity.Episode;
 import JStream.entity.FeaturedItem;
@@ -105,7 +107,7 @@ public class HeaderController {
     private final VBox   suggestionsContent = new VBox();
 
     // Track current page for restoration
-    private static String lastActiveFxml = "/view/fxml/HomePage.fxml";
+    public static String lastActiveFxml = "/view/fxml/HomePage.fxml";
 
     // ── SERVICES ─────────────────────────────────────────────────────────────
     private final FeaturedService        featuredService        = new FeaturedService();
@@ -159,7 +161,17 @@ public class HeaderController {
             }
         });
     }
+    public class NavigationState {
+        private static String lastActiveFxml = "/view/fxml/HomePage.fxml";
 
+        public static String getLastActiveFxml() {
+            return lastActiveFxml;
+        }
+
+        public static void setLastActiveFxml(String path) {
+            lastActiveFxml = path;
+        }
+    }
     private void updateResponsiveLayout(double width) {
         boolean collapsed = width < COLLAPSE_WIDTH;
         buttonsBox.setVisible(!collapsed);
@@ -802,21 +814,35 @@ public class HeaderController {
 	    unreadCount = notificationService.getUnreadCount(userId);
 	    updateBadge();
 	}
-
+	private final Set<Integer> notifiedEpisodes = new HashSet<>();
 	private void checkNewEpisodeNotifications(int userId) {
 	    try {
 	        List<NewEpisodeInfo> newEps = notificationService.getNewEpisodesForUser(userId);
 
-	        if (!newEps.isEmpty()) {
-	            for (NewEpisodeInfo info : newEps) {
-	                notificationService.addNotification(userId,
-	                    "🎬 New episode: " + info.getSerieTitle(),
-	                    "Season " + info.getSeasonNum() + ", Episode " + info.getEpNum() +
-	                    " — \"" + info.getEpTitle() + "\" is now available!",
-	                    "NEW_EPISODE"
-	                );
+	        boolean hasNew = false;
+
+	        for (NewEpisodeInfo info : newEps) {
+
+	            // 🔥 CHECK DB OR HASHSET HERE
+	            if (notificationService.isAlreadyNotified(userId, info.getEpId())) {
+	                continue;
 	            }
 
+	            notificationService.addNotification(
+	                userId,
+	                "🎬 New episode: " + info.getSerieTitle(),
+	                "Season " + info.getSeasonNum() +
+	                ", Episode " + info.getEpNum() +
+	                " — \"" + info.getEpTitle() + "\" is now available!",
+	                "NEW_EPISODE"
+	            );
+
+	            notificationService.markEpisodeAsNotified(userId, info.getEpId());
+
+	            hasNew = true;
+	        }
+
+	        if (hasNew) {
 	            Platform.runLater(() -> {
 	                playBellSound();
 	                shakeBell();
@@ -827,7 +853,6 @@ public class HeaderController {
 
 	    } catch (Exception ignored) {}
 	}
-
 	private void refreshNotificationPanel() {
 	    notificationListBox.getChildren().clear();
 	    List<Notification> list = notificationService.getNotifications(Session.getUserId());
