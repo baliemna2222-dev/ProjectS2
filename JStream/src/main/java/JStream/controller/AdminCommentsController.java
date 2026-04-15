@@ -86,22 +86,27 @@ public class AdminCommentsController {
         StackPane avatarPane = new StackPane();
         Circle avatarBg = new Circle(24);
         avatarBg.setFill(Color.web("#1e88e5"));
-        Label initials = new Label("U" + (c.getUserID() % 100));
-        initials.setStyle(
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-font-size: 13px;"
-        );
-        avatarPane.getChildren().addAll(avatarBg, initials);
-
+      
         // Colonne meta
         VBox metaCol = new VBox(3);
-        Label userLabel = new Label("User #" + c.getUserID());
-        userLabel.setStyle(
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-font-size: 14px;"
-        );
+     // ── CHANGE 1: replace "User #ID" with the actual username ─────────────────
+     // Old:
+    
+     // New — assumes Comment exposes getUsername() (add this field/getter):
+     Label userLabel = new Label(
+         c.getUsername() != null && !c.getUsername().isBlank()
+             ? c.getUsername()
+             : "User #" + c.getUserID()   // graceful fallback if username is null
+     );
+
+     // ── CHANGE 2: update the avatar initials too ──────────────────────────────
+     
+     // New:
+     String uname = c.getUsername();
+     String avatarText = (uname != null && uname.length() >= 2)
+         ? uname.substring(0, 2).toUpperCase()
+         : "U" + (c.getUserID() % 100);
+     Label initials = new Label(avatarText);
 
         String targetText = c.isForFilm()
             ? "🎬  Film ID: " + c.getFilmID()

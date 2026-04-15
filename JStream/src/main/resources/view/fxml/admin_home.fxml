@@ -46,6 +46,6 @@
     </left>
 
     <center>
-        <StackPane fx:id="contentArea" style="-fx-background-color: transparent;"/>
+        <StackPane fx:id="contentArea" style="-fx-background-color: blue;"/>
     </center>
 </BorderPane>

@@ -1003,27 +1003,85 @@ public class HeaderController {
             setupButton(btnHistory, lineHistory, this::goToMyHistoryView, "/view/fxml/MyHistory.fxml");
     }
 
+ // ─── REPLACE restoreActiveTab ─────────────────────────────────────────────
     private void restoreActiveTab(String fxmlPath) {
-        switch (fxmlPath) {
-            case "/view/fxml/FilmView.fxml"    -> activate(btnMovies,  lineMovies);
-            case "/view/fxml/SeriesView.fxml"  -> activate(btnSeries,  lineSeries);
-            case "/view/fxml/MyList.fxml"      -> activate(btnMyList,  lineMyList);
-            case "/view/fxml/MyHistory.fxml"   -> { if (btnHistory != null) activate(btnHistory, lineHistory); }
-            default                            -> activate(btnHome,    lineHome);
-        }
+        Button btn  = switch (fxmlPath) {
+            case "/view/fxml/FilmView.fxml"   -> btnMovies;
+            case "/view/fxml/SeriesView.fxml" -> btnSeries;
+            case "/view/fxml/MyList.fxml"     -> btnMyList;
+            case "/view/fxml/MyHistory.fxml"  -> btnHistory != null ? btnHistory : btnHome;
+            default                           -> btnHome;
+        };
+        Rectangle line = switch (fxmlPath) {
+            case "/view/fxml/FilmView.fxml"   -> lineMovies;
+            case "/view/fxml/SeriesView.fxml" -> lineSeries;
+            case "/view/fxml/MyList.fxml"     -> lineMyList;
+            case "/view/fxml/MyHistory.fxml"  -> lineHistory != null ? lineHistory : lineHome;
+            default                           -> lineHome;
+        };
+
+        if (btn == null || line == null) return;
+
+        // Mark button as active immediately (color)
+        activeButton = btn;
+        activeLine   = line;
+        setButtonActive(btn);
+        line.setWidth(0); // start at 0 until layout is ready
+
+        // Wait for the scene AND layout to be fully complete before reading btn.getWidth()
+        waitForLayoutThenShowLine(btn, line);
     }
 
+    // ─── ADD THIS NEW HELPER ──────────────────────────────────────────────────
+    private void waitForLayoutThenShowLine(Button btn, Rectangle line) {
+        // If scene not yet attached, wait for it
+        if (btn.getScene() == null) {
+            btn.sceneProperty().addListener(new javafx.beans.value.ChangeListener<>() {
+                @Override
+                public void changed(javafx.beans.value.ObservableValue<? extends javafx.scene.Scene> obs,
+                                    javafx.scene.Scene o, javafx.scene.Scene scene) {
+                    if (scene != null) {
+                        btn.sceneProperty().removeListener(this);
+                        waitForLayoutThenShowLine(btn, line);
+                    }
+                }
+            });
+            return;
+        }
+
+        // Scene is attached – wait for a pulse where width > 0
+        javafx.animation.AnimationTimer timer = new javafx.animation.AnimationTimer() {
+            private int attempts = 0;
+            @Override
+            public void handle(long now) {
+                attempts++;
+                double w = btn.getWidth();
+                if (w > 0 || attempts > 120) {  // give up after ~2 seconds
+                    stop();
+                    if (w > 0) {
+                        line.setWidth(0);
+                        new Timeline(new KeyFrame(
+                            Duration.millis(300),
+                            new KeyValue(line.widthProperty(), w, Interpolator.EASE_OUT)
+                        )).play();
+                    }
+                }
+            }
+        };
+        timer.start();
+    }
+
+ // ─── REPLACE activate ─────────────────────────────────────────────────────
     private void activate(Button btn, Rectangle line) {
         if (activeButton != null && activeButton != btn) {
             setButtonInactive(activeButton);
-            animateLine(activeLine, 0);
+            if (activeLine != null) activeLine.setWidth(0);
         }
         activeButton = btn;
         activeLine   = line;
         setButtonActive(btn);
-        Platform.runLater(() -> animateLine(line, btn.getWidth()));
+        waitForLayoutThenShowLine(btn, line);
     }
-
     private void setupButton(Button btn, Rectangle line, Runnable action, String fxmlPath) {
         if (btn == null) return;
         if (line != null) {

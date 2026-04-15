@@ -133,17 +133,33 @@ public class CommentDAO {
    
  // ===== GET ALL FLAGGED WITH USER INFO (admin moderation) =====
     public List<Comment> getSignaledComments() {
-        List<Comment> list = new ArrayList<>(); 
-        String sql = "SELECT * FROM comments WHERE flagged = 1 ORDER BY created_at DESC";
+        List<Comment> list = new ArrayList<>();
+
+        String sql =
+            "SELECT c.*, u.username " +
+            "FROM comments c " +
+            "JOIN users u ON u.user_id = c.user_id " +
+            "WHERE c.flagged = 1 " +
+            "ORDER BY c.created_at DESC";
+
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ResultSet rs = ps.executeQuery();
-            while (rs.next()) list.add(mapRow(rs));
+
+            while (rs.next()) {
+                Comment comment = mapRow(rs);
+
+                // 🔥 NEW: set username
+                comment.setUsername(rs.getString("username"));
+
+                list.add(comment);
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         return list;
     }
     

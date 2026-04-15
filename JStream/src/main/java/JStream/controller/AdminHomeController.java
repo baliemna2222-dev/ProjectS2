@@ -25,6 +25,7 @@ public class AdminHomeController {
     @FXML
     public void initialize() {
         openDashboard();
+        
     }
 
     @FXML

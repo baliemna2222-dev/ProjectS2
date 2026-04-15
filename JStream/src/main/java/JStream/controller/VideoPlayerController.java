@@ -147,7 +147,7 @@ public class VideoPlayerController {
     public void setParentController(LecturePageController c) { parentController = c; }
 
     public void loadVideo(String url, String title) {
-        pendingUrl   = url;
+        pendingUrl = resolveUrl(url);   // 🔥 FIX HERE
         pendingTitle = title != null ? title : "";
     }
 
@@ -189,7 +189,21 @@ public class VideoPlayerController {
             mediaPlayer = null; videoReady = false;
         }
 
-        Media media = new Media(resolveUrl(pendingUrl));
+        String finalUrl = resolveUrl(pendingUrl);
+
+        if (finalUrl == null || !finalUrl.contains(":")) {
+            
+            return;
+        }
+
+        Media media;
+        try {
+            media = new Media(finalUrl);
+        } catch (Exception e) {
+            
+            e.printStackTrace();
+            return;
+        }
         mediaPlayer  = new MediaPlayer(media);
         mediaView.setMediaPlayer(mediaPlayer);
         mediaView.setPreserveRatio(true);

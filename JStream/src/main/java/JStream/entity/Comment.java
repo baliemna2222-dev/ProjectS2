@@ -11,7 +11,10 @@ public class Comment {
     private boolean flagged;
     private Timestamp creates_at;
     private Timestamp updated_at;
+    private String username;   // populated by a JOIN in CommentService
 
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
     public Comment() {}
 
     public Comment(int comment_id, int userID, int filmID, int epID,
