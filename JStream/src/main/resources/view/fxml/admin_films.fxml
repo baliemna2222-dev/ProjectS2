@@ -4,7 +4,7 @@
 <?import javafx.scene.image.*?>
 <?import javafx.geometry.Insets?>
 
-<VBox xmlns="http://javafx.com/javafx/17"
+<VBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="JStream.controller.FilmAdminController"
       fx:id="rootContainer"
@@ -167,18 +167,18 @@
                 </HBox>
 
                 <!-- ── CATEGORIES ── -->
-                <Separator style="-fx-background-color: rgba(255,255,255,0.08);"/>
-                <Label text="CATEGORIES" styleClass="admin-section-title"/>
-                <Label text="Hold Ctrl / ⌘ to select multiple"
-                       style="-fx-text-fill: #6b7280; -fx-font-size: 11px;"/>
+               <!-- ── CATEGORIES ── -->
+<Separator style="-fx-background-color: rgba(255,255,255,0.08);"/>
+<Label text="CATEGORIES" styleClass="admin-section-title"/>
+<Label text="Click to toggle categories"
+       style="-fx-text-fill: #6b7280; -fx-font-size: 11px;"/>
 
-                <ListView fx:id="categoryListView" prefHeight="120"
-                          style="-fx-background-color: rgba(255,255,255,0.05);
-                                 -fx-control-inner-background: rgba(255,255,255,0.05);
-                                 -fx-border-color: rgba(255,255,255,0.10);
-                                 -fx-border-radius: 8; -fx-background-radius: 8;
-                                 -fx-text-fill: white;"/>
-
+<FlowPane fx:id="categoryChipPane"
+          hgap="8" vgap="8"
+          style="-fx-background-color: rgba(255,255,255,0.03);
+                 -fx-border-color: rgba(255,255,255,0.08);
+                 -fx-border-radius: 8; -fx-background-radius: 8;
+                 -fx-padding: 12;"/>
                 <!-- ── ACTION BUTTONS ── -->
                 <Separator style="-fx-background-color: rgba(255,255,255,0.08);"/>
 

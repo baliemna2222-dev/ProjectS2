@@ -13,7 +13,7 @@
 <?import javafx.scene.media.MediaView?>
 <?import javafx.scene.shape.Rectangle?>
 
-<StackPane fx:id="rootPane" style="-fx-background-color: #0a0a0f;" stylesheets="@/view/css/scrollbar.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.RakshaController">
+<StackPane fx:id="rootPane" style="-fx-background-color: #0a0a0f;" stylesheets="@/view/css/scrollbar.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JStream.controller.RakshaController">
 	
     <!-- FULL-PAGE SCROLL CONTAINER -->
     <ScrollPane fx:id="scrollPane" fitToWidth="true" fitToHeight="false" hbarPolicy="NEVER" pannable="false" style="-fx-background: transparent;                        -fx-background-color: transparent;                        -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">

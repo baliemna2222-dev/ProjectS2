@@ -2,10 +2,15 @@ package JStream.controller;
 
 import javafx.animation.*;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
 import JStream.entity.Episode;
@@ -263,18 +268,89 @@ public class EpisodesAdminController {
 
     // ── Delete ────────────────────────────────────────────────────────────────
     private void confirmDelete(Episode ep) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Delete Episode");
-        alert.setHeaderText("Delete Episode " + ep.getNumEpisode() + " — " + nvl(ep.getTitle()) + "?");
-        alert.setContentText("This cannot be undone.");
-        alert.getDialogPane().setStyle("-fx-background-color: #080d1a;");
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
+        Stage popup = new Stage();
+        popup.initOwner(episodeListContainer.getScene().getWindow());
+        popup.initModality(Modality.APPLICATION_MODAL);
+        popup.initStyle(StageStyle.TRANSPARENT);
+
+        VBox backdrop = new VBox();
+        backdrop.setAlignment(Pos.CENTER);
+        backdrop.setStyle("-fx-background-color: rgba(0,0,0,0.60);");
+
+        VBox card = new VBox(22);
+        card.setAlignment(Pos.CENTER);
+        card.setMaxWidth(400);
+        card.setPadding(new Insets(34, 38, 34, 38));
+        card.setStyle("""
+            -fx-background-color: #0f172a;
+            -fx-background-radius: 20;
+            -fx-border-color: rgba(239,68,68,0.25);
+            -fx-border-radius: 20; -fx-border-width: 1;
+            """);
+
+        Label icon = new Label("✕");
+        icon.setStyle("""
+            -fx-background-color: rgba(239,68,68,0.12);
+            -fx-text-fill: #f87171; -fx-font-size: 20px; -fx-font-weight: bold;
+            -fx-min-width: 58; -fx-min-height: 58; -fx-background-radius: 29;
+            """);
+        icon.setAlignment(Pos.CENTER);
+
+        String epLabel = "Episode " + ep.getNumEpisode() +
+                         (nvl(ep.getTitle()).isEmpty() ? "" : " — " + ep.getTitle());
+        Label title = new Label("Delete " + epLabel + "?");
+        title.setStyle("-fx-text-fill: white; -fx-font-size: 17px; -fx-font-weight: bold;");
+        title.setWrapText(true);
+        title.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+
+        Label msg = new Label("This episode will be permanently removed.");
+        msg.setStyle("-fx-text-fill: #64748b; -fx-font-size: 13px; -fx-text-alignment: center;");
+        msg.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+
+        Button cancelBtn = styledBtn("Cancel", "rgba(255,255,255,0.07)", "#94a3b8");
+        Button deleteBtn = styledBtn("Delete", "#dc2626",                "white");
+
+        deleteBtn.setOnMouseEntered(e -> deleteBtn.setStyle(deleteBtn.getStyle().replace("#dc2626","#b91c1c")));
+        deleteBtn.setOnMouseExited(e  -> deleteBtn.setStyle(deleteBtn.getStyle().replace("#b91c1c","#dc2626")));
+
+        HBox btns = new HBox(12, cancelBtn, deleteBtn);
+        btns.setAlignment(Pos.CENTER);
+        card.getChildren().addAll(icon, title, msg, btns);
+
+        card.setScaleX(0.88); card.setScaleY(0.88); card.setOpacity(0);
+        backdrop.getChildren().add(card);
+
+        javafx.stage.Window owner = episodeListContainer.getScene().getWindow();
+        backdrop.setPrefWidth(owner.getWidth());
+        backdrop.setPrefHeight(owner.getHeight());
+
+        Scene scene = new Scene(backdrop);
+        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        popup.setScene(scene);
+        popup.setX(owner.getX()); popup.setY(owner.getY());
+
+        FadeTransition fi = new FadeTransition(Duration.millis(180), card);
+        ScaleTransition si = new ScaleTransition(Duration.millis(180), card);
+        fi.setToValue(1); si.setToX(1); si.setToY(1);
+        new ParallelTransition(fi, si).play();
+
+        cancelBtn.setOnAction(e -> popup.close());
+        deleteBtn.setOnAction(e -> {
             episodeService.deleteEpisode(ep.getEpId());
             loadEpisodes();
-            if (editingEpisode != null && editingEpisode.getEpId() == ep.getEpId())
-                setAddMode();
-        }
+            if (editingEpisode != null && editingEpisode.getEpId() == ep.getEpId()) setAddMode();
+            popup.close();
+        });
+        popup.showAndWait();
+    }
+
+    // add this helper alongside smallBtn():
+    private Button styledBtn(String text, String bg, String fg) {
+        Button b = new Button(text);
+        b.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: " + fg + "; " +
+                   "-fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 11 28; " +
+                   "-fx-background-radius: 12; -fx-cursor: hand; -fx-border-width: 0;");
+        return b;
     }
 
     // ── Validation ────────────────────────────────────────────────────────────

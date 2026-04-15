@@ -6,7 +6,7 @@
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.paint.Color?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17"
+<BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="JStream.controller.DashboardController"
             stylesheets="@/view/css/style.css"

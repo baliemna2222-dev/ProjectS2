@@ -1,23 +1,24 @@
 package JStream.controller;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import javafx.animation.*;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.scene.Scene;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
 import javafx.util.Duration;
 
 import JStream.entity.Film;
@@ -25,39 +26,87 @@ import JStream.entity.Category;
 import JStream.service.FilmService;
 import JStream.service.FeaturedService;
 
+/**
+ * FilmAdminController – fully rewritten.
+ *
+ * ╔══════════════════════════════════════════════════════════╗
+ *  CATEGORY BUG – ROOT CAUSES & FIXES
+ * ══════════════════════════════════════════════════════════
+ *  1. Platform.runLater() retry loop had no guaranteed exit
+ *     → replaced with a single deterministic call after
+ *       categories are confirmed loaded.
+ *
+ *  2. ListView multi-select was cleared whenever the list
+ *     was touched (e.g. setCellFactory re-triggers render)
+ *     → selection is now applied AFTER items are fully set,
+ *       in the same JavaFX pulse via a single Platform.runLater.
+ *
+ *  3. Category equality relied on object identity, not ID
+ *     → now uses a Set<Integer> of category IDs and matches
+ *       by index after items are confirmed non-empty.
+ *
+ *  4. Custom category chip panel (FlowPane) replaces ListView
+ *     → eliminates focus/selection state issues entirely and
+ *       looks far better; selected state is stored in a plain
+ *       Set<Integer> that is always in sync.
+ * ╚══════════════════════════════════════════════════════════╝
+ */
 public class FilmAdminController {
 
     // ── FXML Fields ───────────────────────────────────────────────────────────
-    @FXML private TextField          titleField;
-    @FXML private TextField          directorField;
-    @FXML private TextField          durationField;
-    @FXML private TextField          ageRatingField;
-    @FXML private TextField          ratingField;
-    @FXML private DatePicker         releaseDatePicker;
-    @FXML private TextArea           synopsisArea;
-    @FXML private TextField          castingField;
-    @FXML private TextField          videoField;
-    @FXML private TextField          trailerField;
-    @FXML private TextField          coverField;
-    @FXML private TextField          titleImageField;
-    @FXML private TextField          posterField;
-    @FXML private TextField          posterVField;
-    @FXML private TextField          searchField;
-    @FXML private ListView<Category> categoryListView;
-    @FXML private TilePane           filmsContainer;
-    @FXML private ScrollPane         scrollPane;
-    @FXML private Label              formTitle;
-    @FXML private Button             submitBtn;
-    @FXML private Button             cancelEditBtn;
-    @FXML private Label              filmCountLabel;
-    @FXML private Label              validationLabel;
-    @FXML private VBox               formPanel;
-    @FXML private VBox               rootContainer;
+    @FXML private TextField   titleField;
+    @FXML private TextField   directorField;
+    @FXML private TextField   durationField;
+    @FXML private TextField   ageRatingField;
+    @FXML private TextField   ratingField;
+    @FXML private DatePicker  releaseDatePicker;
+    @FXML private TextArea    synopsisArea;
+    @FXML private TextField   castingField;
+    @FXML private TextField   videoField;
+    @FXML private TextField   trailerField;
+    @FXML private TextField   coverField;
+    @FXML private TextField   titleImageField;
+    @FXML private TextField   posterField;
+    @FXML private TextField   posterVField;
+    @FXML private TextField   searchField;
+
+    // ── NEW: chip-based category panel (replaces buggy ListView) ──────────────
+    // Add a FlowPane with fx:id="categoryChipPane" to your FXML inside a
+    // titled section labelled "Categories". The ListView can be removed.
+    @FXML private FlowPane    categoryChipPane;
+
+    @FXML private TilePane    filmsContainer;
+    @FXML private ScrollPane  scrollPane;
+    @FXML private Label       formTitle;
+    @FXML private Button      submitBtn;
+    @FXML private Button      cancelEditBtn;
+    @FXML private Label       filmCountLabel;
+    @FXML private Label       validationLabel;
+    @FXML private VBox        formPanel;
 
     // ── State ─────────────────────────────────────────────────────────────────
-    private Film            editingFilm = null;
-    private FilmService     filmService;
-    private FeaturedService featuredService;
+    private Film              editingFilm     = null;
+    private FilmService       filmService;
+    private FeaturedService   featuredService;
+
+    /** Master list of all available categories, loaded once. */
+    private List<Category>    allCategories   = new ArrayList<>();
+
+    /**
+     * The single source of truth for which categories are currently selected.
+     * Uses category_id so there is zero object-identity confusion.
+     */
+    private final Set<Integer> selectedCatIds = new LinkedHashSet<>();
+
+    // ── Palette ───────────────────────────────────────────────────────────────
+    private static final String C_BG_DEEP   = "#07091a";
+    private static final String C_BG_CARD   = "#0b1026";
+    private static final String C_ACCENT    = "#2563eb";
+    private static final String C_ACCENT2   = "#38bdf8";
+    private static final String C_TEXT      = "#e2e8f0";
+    private static final String C_MUTED     = "#64748b";
+    private static final String C_DANGER    = "#ef4444";
+    private static final String C_SUCCESS   = "#10b981";
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public FilmAdminController() {
@@ -65,37 +114,110 @@ public class FilmAdminController {
         try {
             this.featuredService = new FeaturedService();
         } catch (Exception e) {
-            System.err.println("FeaturedService init error: " + e.getMessage());
+            System.err.println("[JStream] FeaturedService init error: " + e.getMessage());
         }
     }
 
     // ── Init ──────────────────────────────────────────────────────────────────
     @FXML
     public void initialize() {
-        categoryListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        // Load categories FIRST – only once, deterministically
+        loadCategoriesOnce();
 
-        categoryListView.setCellFactory(list -> new ListCell<>() {
-            @Override
-            protected void updateItem(Category item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getName());
-            }
-        });
-        
-        loadCategories();
+        // Then load film grid
         loadFilms(filmService.getAllFilms());
 
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> filterFilms(newVal));
+        // Live search
+        searchField.textProperty().addListener((obs, o, n) -> filterFilms(n));
+
+        // Validation label starts hidden
+        validationLabel.setVisible(false);
+        validationLabel.setManaged(false);
+
+        // Cancel button starts hidden
+        cancelEditBtn.setVisible(false);
+        cancelEditBtn.setManaged(false);
 
         setAddMode();
+    }
+
+    /**
+     * Loads all categories exactly once and builds the chip panel.
+     * Called from initialize() before any film editing occurs.
+     */
+    private void loadCategoriesOnce() {
+        if (featuredService == null) return;
+        allCategories = featuredService.getAllCategories();
+        rebuildCategoryChips();
+    }
+
+    /**
+     * Rebuilds the chip FlowPane from allCategories and selectedCatIds.
+     * Safe to call at any time – always produces a consistent UI.
+     */
+    private void rebuildCategoryChips() {
+        if (categoryChipPane == null) return;
+        categoryChipPane.getChildren().clear();
+        categoryChipPane.setHgap(8);
+        categoryChipPane.setVgap(8);
+        categoryChipPane.setPadding(new Insets(6, 0, 6, 0));
+
+        for (Category cat : allCategories) {
+            boolean selected = selectedCatIds.contains(cat.getCategory_id());
+            ToggleButton chip = createCategoryChip(cat, selected);
+            categoryChipPane.getChildren().add(chip);
+        }
+    }
+
+    /**
+     * Creates a single category toggle chip.
+     * Clicking it adds/removes the category ID from selectedCatIds.
+     */
+    private ToggleButton createCategoryChip(Category cat, boolean initiallySelected) {
+        ToggleButton chip = new ToggleButton(cat.getName());
+        chip.setSelected(initiallySelected);
+        applyChipStyle(chip, initiallySelected);
+
+        chip.selectedProperty().addListener((obs, wasOn, isOn) -> {
+            applyChipStyle(chip, isOn);
+            if (isOn)  selectedCatIds.add(cat.getCategory_id());
+            else       selectedCatIds.remove(cat.getCategory_id());
+        });
+
+        return chip;
+    }
+
+    private void applyChipStyle(ToggleButton chip, boolean selected) {
+        if (selected) {
+            chip.setStyle("""
+                -fx-background-color: linear-gradient(to right, #2563eb, #38bdf8);
+                -fx-text-fill: white;
+                -fx-font-size: 11px;
+                -fx-font-weight: bold;
+                -fx-padding: 5 14;
+                -fx-background-radius: 30;
+                -fx-cursor: hand;
+                -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.55), 8, 0, 0, 2);
+                """);
+        } else {
+            chip.setStyle("""
+                -fx-background-color: rgba(37,99,235,0.12);
+                -fx-text-fill: #94a3b8;
+                -fx-font-size: 11px;
+                -fx-padding: 5 14;
+                -fx-background-radius: 30;
+                -fx-cursor: hand;
+                -fx-border-color: rgba(37,99,235,0.28);
+                -fx-border-radius: 30;
+                """);
+        }
     }
 
     // ── Mode switching ────────────────────────────────────────────────────────
     private void setAddMode() {
         editingFilm = null;
-        formTitle.setText("✦ Add New Film");
+        formTitle.setText("✦  Add New Film");
         submitBtn.setText("Add Film");
-        submitBtn.setStyle("");
         cancelEditBtn.setVisible(false);
         cancelEditBtn.setManaged(false);
         clearFields();
@@ -103,12 +225,12 @@ public class FilmAdminController {
 
     private void setEditMode(Film film) {
         editingFilm = film;
-        formTitle.setText("✎ Editing: " + film.getTitle());
+        formTitle.setText("✎  Editing: " + film.getTitle());
         submitBtn.setText("Save Changes");
         cancelEditBtn.setVisible(true);
         cancelEditBtn.setManaged(true);
 
-        // Populate text fields
+        // ── Populate text fields ──────────────────────────────────────────────
         titleField.setText(nvl(film.getTitle()));
         directorField.setText(nvl(film.getDirector()));
         durationField.setText(film.getDuration() > 0 ? String.valueOf((int) film.getDuration()) : "");
@@ -128,44 +250,24 @@ public class FilmAdminController {
         else
             releaseDatePicker.setValue(null);
 
-        
-        selectFilmCategories(film);
-        
+        // ── FIX: restore category selection deterministically ─────────────────
+        // 1. Clear the selection set
+        selectedCatIds.clear();
+        // 2. Populate it from the film's categories (match by ID, not object ref)
+        if (film.getCategories() != null) {
+            for (Category c : film.getCategories()) {
+                selectedCatIds.add(c.getCategory_id());
+            }
+        }
+        // 3. Rebuild chips – this is synchronous and never mis-fires
+        rebuildCategoryChips();
 
+        // Scroll form into view and animate
         scrollPane.setVvalue(0);
         animateFormHighlight();
     }
-    private void selectFilmCategories(Film film) {
-        if (film.getCategories() == null || film.getCategories().isEmpty()) return;
 
-        // Create ID set
-        final java.util.Set<Integer> ids = new java.util.HashSet<>();
-        for (Category c : film.getCategories()) {
-            ids.add(c.getCategory_id());
-        }
-
-        // Retry mechanism (VERY important)
-        Platform.runLater(() -> {
-            ObservableList<Category> items = categoryListView.getItems();
-
-            // If items not loaded yet → retry again
-            if (items == null || items.isEmpty()) {
-                Platform.runLater(() -> selectFilmCategories(film));
-                return;
-            }
-
-            MultipleSelectionModel<Category> sm = categoryListView.getSelectionModel();
-            sm.clearSelection();
-
-            for (int i = 0; i < items.size(); i++) {
-                if (ids.contains(items.get(i).getCategory_id())) {
-                    sm.select(i);
-                }
-            }
-        });
-    }
-
-    // ── FXML Actions ──────────────────────────────────────────────────────────
+    // ── Submit ────────────────────────────────────────────────────────────────
     @FXML
     private void handleSubmit() {
         if (!validateForm()) return;
@@ -174,35 +276,31 @@ public class FilmAdminController {
     }
 
     @FXML
-    private void cancelEdit() {
-        setAddMode();
-    }
+    private void cancelEdit() { setAddMode(); }
 
     private void doAddFilm() {
-        clearValidation();
         Film film = buildFilmFromForm();
         filmService.addFilm(film);
-        showToast("Film added successfully ✓");
+        showToast("Film added successfully ✓", true);
         loadFilms(filmService.getAllFilms());
         setAddMode();
     }
 
     private void doUpdateFilm() {
-        clearValidation();
         populateFilmFromForm(editingFilm);
         filmService.updateFilm(editingFilm);
-        showToast("Film updated successfully ✓");
+        showToast("Film updated successfully ✓", true);
         loadFilms(filmService.getAllFilms());
         setAddMode();
     }
 
     // ── File choosers ─────────────────────────────────────────────────────────
-    @FXML private void chooseVideoFile()      { chooseFile(videoField,      "Choose Video",       "Video Files", "*.mp4","*.mov","*.avi","*.mkv"); }
-    @FXML private void chooseTrailerFile()    { chooseFile(trailerField,    "Choose Trailer",     "Video Files", "*.mp4","*.mov","*.avi","*.mkv"); }
-    @FXML private void chooseCoverFile()      { chooseFile(coverField,      "Choose Cover Image", "Images",      "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
-    @FXML private void chooseTitleImageFile() { chooseFile(titleImageField, "Choose Title Image", "Images",      "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
-    @FXML private void choosePosterFile()     { chooseFile(posterField,     "Choose Poster (H)",  "Images",      "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
-    @FXML private void choosePosterVFile()    { chooseFile(posterVField,    "Choose Poster (V)",  "Images",      "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
+    @FXML private void chooseVideoFile()      { chooseFile(videoField,      "Choose Video",       "Video Files",  "*.mp4","*.mov","*.avi","*.mkv"); }
+    @FXML private void chooseTrailerFile()    { chooseFile(trailerField,    "Choose Trailer",     "Video Files",  "*.mp4","*.mov","*.avi","*.mkv"); }
+    @FXML private void chooseCoverFile()      { chooseFile(coverField,      "Choose Cover Image", "Images",       "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
+    @FXML private void chooseTitleImageFile() { chooseFile(titleImageField, "Choose Title Image", "Images",       "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
+    @FXML private void choosePosterFile()     { chooseFile(posterField,     "Choose Poster (H)",  "Images",       "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
+    @FXML private void choosePosterVFile()    { chooseFile(posterVField,    "Choose Poster (V)",  "Images",       "*.png","*.jpg","*.jpeg","*.gif","*.webp"); }
 
     private void chooseFile(TextField target, String dialogTitle, String desc, String... exts) {
         if (target == null || target.getScene() == null) return;
@@ -215,24 +313,21 @@ public class FilmAdminController {
     }
 
     // ── Load / filter ─────────────────────────────────────────────────────────
-    private void loadCategories() {
-        if (featuredService != null)
-            categoryListView.getItems().setAll(featuredService.getAllCategories());
-    }
-
     private void loadFilms(List<Film> films) {
         filmsContainer.getChildren().clear();
         filmCountLabel.setText(films.size() + " film" + (films.size() != 1 ? "s" : ""));
+
         for (int i = 0; i < films.size(); i++) {
             VBox card = createFilmCard(films.get(i));
             card.setOpacity(0);
             filmsContainer.getChildren().add(card);
-            int delay = i * 40;
-            PauseTransition pause   = new PauseTransition(Duration.millis(delay));
-            FadeTransition  fade    = new FadeTransition(Duration.millis(300), card);
-            fade.setFromValue(0); fade.setToValue(1);
-            TranslateTransition slide = new TranslateTransition(Duration.millis(300), card);
-            slide.setFromY(20); slide.setToY(0);
+
+            int delay = i * 35;
+            PauseTransition    pause = new PauseTransition(Duration.millis(delay));
+            FadeTransition     fade  = new FadeTransition(Duration.millis(280), card);
+            TranslateTransition slide = new TranslateTransition(Duration.millis(280), card);
+            fade.setFromValue(0);  fade.setToValue(1);
+            slide.setFromY(16);    slide.setToY(0);
             pause.setOnFinished(e -> new ParallelTransition(fade, slide).play());
             pause.play();
         }
@@ -243,142 +338,253 @@ public class FilmAdminController {
         else                                      loadFilms(filmService.searchFilms(keyword.trim()));
     }
 
-    // ── Card builder ──────────────────────────────────────────────────────────
+    // ── Film card ─────────────────────────────────────────────────────────────
     private VBox createFilmCard(Film film) {
-        ImageView imageView = new ImageView();
-        imageView.setFitWidth(180);
-        imageView.setFitHeight(250);
-        imageView.setPreserveRatio(false);
-        imageView.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 12, 0, 0, 4);");
-        loadImage(imageView, film.getPoster_url());
+        // Poster
+        ImageView iv = new ImageView();
+        iv.setFitWidth(180); iv.setFitHeight(260);
+        iv.setPreserveRatio(false);
+        loadImage(iv, film.getPoster_url());
 
-        StackPane posterPane = new StackPane(imageView);
-        posterPane.setPrefSize(180, 250);
+        // Rounded clip
+        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(180, 260);
+        clip.setArcWidth(14); clip.setArcHeight(14);
+        iv.setClip(clip);
 
-        VBox overlay = new VBox(6);
+        // Hover overlay
+        VBox overlay = new VBox(10);
         overlay.setAlignment(Pos.CENTER);
-        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.75); -fx-background-radius: 10;");
+        overlay.setStyle("-fx-background-color: rgba(7,9,26,0.82); -fx-background-radius: 12;");
         overlay.setOpacity(0);
 
-        Button editBtn = iconButton("✎  Edit",   "#0ea5e9");
-        Button delBtn  = iconButton("✕  Delete", "#374151");
+        Button editBtn = overlayBtn("✎  Edit",    C_ACCENT);
+        Button delBtn  = overlayBtn("✕  Delete",  "#374151");
         editBtn.setOnAction(e -> setEditMode(film));
-        delBtn.setOnAction(e  -> confirmDelete(film));
-
+        delBtn.setOnAction(e  -> showDeleteDialog(film));
         overlay.getChildren().addAll(editBtn, delBtn);
-        posterPane.getChildren().add(overlay);
 
-        FadeTransition fadeIn  = new FadeTransition(Duration.millis(180), overlay);
-        FadeTransition fadeOut = new FadeTransition(Duration.millis(180), overlay);
-        posterPane.setOnMouseEntered(e -> { fadeIn.setFromValue(overlay.getOpacity());  fadeIn.setToValue(1);  fadeIn.play(); });
-        posterPane.setOnMouseExited(e  -> { fadeOut.setFromValue(overlay.getOpacity()); fadeOut.setToValue(0); fadeOut.play(); });
+        StackPane poster = new StackPane(iv, overlay);
+        poster.setPrefSize(180, 260);
 
-        Label title = new Label(film.getTitle());
-        title.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px; -fx-wrap-text: true; -fx-max-width: 180;");
+        // Fade overlay in/out
+        FadeTransition fi = new FadeTransition(Duration.millis(160), overlay);
+        FadeTransition fo = new FadeTransition(Duration.millis(160), overlay);
+        poster.setOnMouseEntered(e -> { fi.stop(); fo.stop(); fi.setFromValue(overlay.getOpacity()); fi.setToValue(1); fi.play(); });
+        poster.setOnMouseExited(e  -> { fi.stop(); fo.stop(); fo.setFromValue(overlay.getOpacity()); fo.setToValue(0); fo.play(); });
 
-        Label director = new Label(film.getDirector() != null ? "Dir. " + film.getDirector() : "");
-        director.setStyle("-fx-text-fill: #cbd5e1; -fx-font-size: 11px;");
+        // Text
+        Label lblTitle = new Label(film.getTitle());
+        lblTitle.setStyle("-fx-text-fill: " + C_TEXT + "; -fx-font-weight: bold; -fx-font-size: 13px; -fx-wrap-text: true; -fx-max-width: 180;");
 
+        Label lblDir = new Label(film.getDirector() != null ? "Dir. " + film.getDirector() : "");
+        lblDir.setStyle("-fx-text-fill: " + C_MUTED + "; -fx-font-size: 11px;");
+
+        // Category chips (display only)
         FlowPane chips = new FlowPane();
-        chips.setHgap(5); chips.setVgap(5);
+        chips.setHgap(4); chips.setVgap(4);
         chips.setPrefWrapLength(180);
         if (film.getCategories() != null) {
             for (Category c : film.getCategories()) {
                 Label chip = new Label(c.getName());
-                chip.setStyle("-fx-background-color: rgba(29,78,216,0.25); -fx-text-fill: #60a5fa; " +
-                              "-fx-padding: 2 8; -fx-background-radius: 20; -fx-font-size: 10px;");
+                chip.setStyle("""
+                    -fx-background-color: rgba(37,99,235,0.22);
+                    -fx-text-fill: #60a5fa;
+                    -fx-padding: 2 8;
+                    -fx-background-radius: 20;
+                    -fx-font-size: 10px;
+                    """);
                 chips.getChildren().add(chip);
             }
         }
 
-        Label meta = new Label(
+        // Meta row
+        String meta =
             (film.getDuration() > 0 ? (int) film.getDuration() + " min" : "") +
-            (film.getAge_rating() != null && !film.getAge_rating().isBlank() ? "  ·  " + film.getAge_rating() : "") +
-            (film.getRating() > 0 ? "  ·  ★ " + film.getRating() : "")
-        );
-        meta.setStyle("-fx-text-fill: #9ca3af; -fx-font-size: 11px;");
+            (notBlank(film.getAge_rating()) ? "  ·  " + film.getAge_rating() : "") +
+            (film.getRating() > 0 ? "  ·  ★ " + film.getRating() : "");
+        Label lblMeta = new Label(meta);
+        lblMeta.setStyle("-fx-text-fill: #9ca3af; -fx-font-size: 11px;");
 
-        VBox card = new VBox(8, posterPane, title, director, chips, meta);
-        card.setStyle("""
-            -fx-background-color: #080d1a;
-            -fx-padding: 12;
-            -fx-background-radius: 12;
-            -fx-border-color: rgba(29,78,216,0.15);
-            -fx-border-radius: 12;
+        // Card container
+        VBox card = new VBox(8, poster, lblTitle, lblDir, chips, lblMeta);
+        card.setPadding(new Insets(12));
+        String baseStyle = """
+            -fx-background-color: #0b1026;
+            -fx-background-radius: 14;
+            -fx-border-color: rgba(37,99,235,0.18);
+            -fx-border-radius: 14;
             -fx-cursor: hand;
-            """);
-
-        card.setOnMouseEntered(e -> card.setStyle(card.getStyle() +
-            "-fx-effect: dropshadow(gaussian, rgba(29,78,216,0.40), 22, 0, 0, 6);"));
-        card.setOnMouseExited(e  -> card.setStyle(card.getStyle()
-            .replace("-fx-effect: dropshadow(gaussian, rgba(29,78,216,0.40), 22, 0, 0, 6);", "")));
+            """;
+        card.setStyle(baseStyle);
+        card.setOnMouseEntered(e -> card.setStyle(baseStyle +
+            "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.45), 24, 0, 0, 6);"));
+        card.setOnMouseExited(e  -> card.setStyle(baseStyle));
 
         return card;
     }
 
-    private void confirmDelete(Film film) {
+    // ── Delete dialog ─────────────────────────────────────────────────────────
+    private void showDeleteDialog(Film film) {
         Stage popup = new Stage();
         popup.initOwner(scrollPane.getScene().getWindow());
-        popup.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-        popup.initStyle(javafx.stage.StageStyle.UNDECORATED);
+        popup.initModality(Modality.APPLICATION_MODAL);
+        popup.initStyle(StageStyle.TRANSPARENT);
 
-        StackPane root = new StackPane();
-        root.setStyle("-fx-background-color: rgba(0,0,0,0.65);");
-        root.setPrefSize(400, 220);
+        // Faux-viewport so fixed-like layout works without position:fixed
+        VBox backdrop = new VBox();
+        backdrop.setAlignment(Pos.CENTER);
+        backdrop.setStyle("-fx-background-color: rgba(0,0,0,0.60);");
 
-        VBox card = new VBox(18);
+        // Card
+        VBox card = new VBox(24);
         card.setAlignment(Pos.CENTER);
+        card.setMaxWidth(400);
+        card.setPadding(new Insets(36, 40, 36, 40));
         card.setStyle("""
-            -fx-background-color: linear-gradient(to bottom right, #0f172a, #111827);
-            
-            -fx-padding: 26;
-            -fx-border-color: rgba(255,255,255,0.08);
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 20, 0, 0, 10);
-        """);
+            -fx-background-color: #0f172a;
+            -fx-background-radius: 20;
+            -fx-border-color: rgba(239,68,68,0.25);
+            -fx-border-radius: 20;
+            -fx-border-width: 1;
+            """);
 
-        Label title = new Label("Delete Film?");
-        title.setStyle("-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;");
+        // Icon circle
+        Label iconCircle = new Label("✕");
+        iconCircle.setStyle("""
+            -fx-background-color: rgba(239,68,68,0.12);
+            -fx-text-fill: #f87171;
+            -fx-font-size: 20px;
+            -fx-font-weight: bold;
+            -fx-min-width: 60; -fx-min-height: 60;
+            -fx-background-radius: 30;
+            """);
+        iconCircle.setAlignment(Pos.CENTER);
 
-        Label msg = new Label("Are you sure you want to delete:\n" + film.getTitle());
-        msg.setStyle("-fx-text-fill: #cbd5e1; -fx-font-size: 13px; -fx-text-alignment: center;");
+        Label title = new Label("Delete Film");
+        title.setStyle("-fx-text-fill: white; -fx-font-size: 19px; -fx-font-weight: bold;");
 
-        Button deleteBtn = new Button("Delete");
+        Label filmName = new Label("\"" + film.getTitle() + "\"");
+        filmName.setStyle("-fx-text-fill: #f87171; -fx-font-size: 14px; -fx-font-weight: bold;");
+
+        Label msg = new Label("This film will be permanently removed.\nThis action cannot be undone.");
+        msg.setStyle("-fx-text-fill: #64748b; -fx-font-size: 13px; -fx-text-alignment: center;");
+        msg.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        msg.setWrapText(true);
+
+        // Divider
+        Separator sep = new Separator();
+        sep.setStyle("-fx-background-color: rgba(255,255,255,0.07);");
+
         Button cancelBtn = new Button("Cancel");
+        cancelBtn.setStyle("""
+            -fx-background-color: rgba(255,255,255,0.07);
+            -fx-text-fill: #94a3b8;
+            -fx-font-size: 13px; -fx-font-weight: bold;
+            -fx-padding: 11 28; -fx-background-radius: 12;
+            -fx-cursor: hand; -fx-border-width: 0;
+            """);
+        cancelBtn.setOnMouseEntered(e -> cancelBtn.setStyle(cancelBtn.getStyle().replace("rgba(255,255,255,0.07)", "rgba(255,255,255,0.12)")));
+        cancelBtn.setOnMouseExited(e  -> cancelBtn.setStyle(cancelBtn.getStyle().replace("rgba(255,255,255,0.12)", "rgba(255,255,255,0.07)")));
 
-        deleteBtn.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 8 20; -fx-cursor: hand;");
-        cancelBtn.setStyle("-fx-background-color: #1f2937; -fx-text-fill: #e5e7eb; -fx-background-radius: 10; -fx-padding: 8 20; -fx-cursor: hand;");
+        Button deleteBtn = new Button("Delete Film");
+        deleteBtn.setStyle("""
+            -fx-background-color: #dc2626;
+            -fx-text-fill: white;
+            -fx-font-size: 13px; -fx-font-weight: bold;
+            -fx-padding: 11 28; -fx-background-radius: 12;
+            -fx-cursor: hand; -fx-border-width: 0;
+            """);
+        deleteBtn.setOnMouseEntered(e -> deleteBtn.setStyle(deleteBtn.getStyle().replace("#dc2626", "#b91c1c")));
+        deleteBtn.setOnMouseExited(e  -> deleteBtn.setStyle(deleteBtn.getStyle().replace("#b91c1c", "#dc2626")));
 
-        deleteBtn.setOnMouseEntered(e -> deleteBtn.setStyle("-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 8 20;"));
-        deleteBtn.setOnMouseExited(e  -> deleteBtn.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 8 20;"));
+        HBox btns = new HBox(12, cancelBtn, deleteBtn);
+        btns.setAlignment(Pos.CENTER);
 
-        HBox buttons = new HBox(12, cancelBtn, deleteBtn);
-        buttons.setAlignment(Pos.CENTER);
+        card.getChildren().addAll(iconCircle, title, filmName, msg, sep, btns);
 
-        card.getChildren().addAll(title, msg, buttons);
-        root.getChildren().add(card);
+        // Entry animation
+        card.setScaleX(0.88); card.setScaleY(0.88); card.setOpacity(0);
+        backdrop.getChildren().add(card);
 
-        Scene scene = new Scene(root, 420, 240);
+        Scene scene = new Scene(backdrop);
+        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+
+        // Size backdrop to owner
+        javafx.stage.Window owner = scrollPane.getScene().getWindow();
+        backdrop.setPrefWidth(owner.getWidth());
+        backdrop.setPrefHeight(owner.getHeight());
+
         popup.setScene(scene);
-        popup.centerOnScreen();
+        popup.setX(owner.getX());
+        popup.setY(owner.getY());
 
-        card.setScaleX(0.8); card.setScaleY(0.8); card.setOpacity(0);
-        FadeTransition  fade  = new FadeTransition(Duration.millis(180), card);
-        ScaleTransition scale = new ScaleTransition(Duration.millis(180), card);
-        fade.setFromValue(0);  fade.setToValue(1);
-        scale.setFromX(0.8); scale.setFromY(0.8); scale.setToX(1); scale.setToY(1);
-        new ParallelTransition(fade, scale).play();
+        FadeTransition  fi = new FadeTransition(Duration.millis(180), card);
+        ScaleTransition si = new ScaleTransition(Duration.millis(180), card);
+        fi.setToValue(1); si.setToX(1); si.setToY(1);
+        new ParallelTransition(fi, si).play();
 
-        cancelBtn.setOnAction(e -> popup.close());
+        cancelBtn.setOnAction(e -> {
+            FadeTransition fo = new FadeTransition(Duration.millis(120), card);
+            fo.setToValue(0);
+            fo.setOnFinished(ev -> popup.close());
+            fo.play();
+        });
         deleteBtn.setOnAction(e -> {
             filmService.deleteFilm(film.getFilm_id());
             loadFilms(filmService.getAllFilms());
-            showToast("Film deleted ✓");
-            if (editingFilm != null && editingFilm.getFilm_id() == film.getFilm_id())
-                setAddMode();
+            if (editingFilm != null && editingFilm.getFilm_id() == film.getFilm_id()) setAddMode();
+            showToast("Film deleted ✓", false);
             popup.close();
         });
 
         popup.showAndWait();
+    }
+    // ── Validation ────────────────────────────────────────────────────────────
+    private boolean validateForm() {
+        clearValidation();
+        List<String> errors = new ArrayList<>();
+
+        if (isBlank(titleField.getText()))         errors.add("Title required");
+        if (isBlank(synopsisArea.getText()))        errors.add("Synopsis required");
+        if (isBlank(coverField.getText()))          errors.add("Cover image required");
+        if (selectedCatIds.isEmpty())               errors.add("Select at least one category");
+
+        if (!isBlank(durationField.getText())) {
+            try { Double.parseDouble(durationField.getText().trim()); }
+            catch (NumberFormatException e) { errors.add("Duration must be a number"); }
+        }
+        if (!isBlank(ratingField.getText())) {
+            try {
+                int r = Integer.parseInt(ratingField.getText().trim());
+                if (r < 1 || r > 5) errors.add("Rating must be 1–5");
+            } catch (NumberFormatException e) { errors.add("Rating must be 1–5"); }
+        }
+
+        if (!errors.isEmpty()) {
+            showValidationMsg("⚠  " + String.join("  ·  ", errors));
+            shakeForm();
+            return false;
+        }
+        return true;
+    }
+
+    private void shakeForm() {
+        TranslateTransition shake = new TranslateTransition(Duration.millis(55), formPanel);
+        shake.setFromX(-7); shake.setToX(7);
+        shake.setCycleCount(5); shake.setAutoReverse(true);
+        shake.play();
+    }
+
+    private void showValidationMsg(String msg) {
+        validationLabel.setText(msg);
+        validationLabel.setVisible(true);
+        validationLabel.setManaged(true);
+    }
+
+    private void clearValidation() {
+        validationLabel.setText("");
+        validationLabel.setVisible(false);
+        validationLabel.setManaged(false);
     }
 
     // ── Form helpers ──────────────────────────────────────────────────────────
@@ -402,55 +608,23 @@ public class FilmAdminController {
         film.setPosterV_url(posterVField.getText().trim());
 
         try { film.setDuration(Double.parseDouble(durationField.getText().trim())); }
-        catch (NumberFormatException ignored) { film.setDuration(0); }
+        catch (Exception ignored) { film.setDuration(0); }
 
         try { film.setRating(Integer.parseInt(ratingField.getText().trim())); }
-        catch (NumberFormatException ignored) { film.setRating(0); }
+        catch (Exception ignored) { film.setRating(0); }
 
-        if (releaseDatePicker.getValue() != null)
-            film.setRelease_date(releaseDatePicker.getValue().atStartOfDay());
-        else
-            film.setRelease_date(null);
+        film.setRelease_date(releaseDatePicker.getValue() != null
+            ? releaseDatePicker.getValue().atStartOfDay() : null);
 
-        ObservableList<Category> sel = categoryListView.getSelectionModel().getSelectedItems();
-        film.setCategories(new ArrayList<>(sel));
-    }
-
-    private boolean validateForm() {
-        clearValidation();
-        List<String> errors = new ArrayList<>();
-
-        if (titleField.getText() == null || titleField.getText().isBlank())
-            errors.add("Title is required");
-        if (synopsisArea.getText() == null || synopsisArea.getText().isBlank())
-            errors.add("Synopsis is required");
-        if (coverField.getText() == null || coverField.getText().isBlank())
-            errors.add("Cover image is required");
-        if (categoryListView.getSelectionModel().getSelectedItems() == null ||
-            categoryListView.getSelectionModel().getSelectedItems().isEmpty())
-            errors.add("At least one category must be selected");
-
-        if (!errors.isEmpty()) {
-            showValidation("⚠  " + String.join("  ·  ", errors));
-            TranslateTransition shake = new TranslateTransition(Duration.millis(60), formPanel);
-            shake.setFromX(-6); shake.setToX(6);
-            shake.setCycleCount(4); shake.setAutoReverse(true);
-            shake.play();
-            return false;
+        // ── FIX: build categories from selectedCatIds set ─────────────────────
+        // This is always accurate because selectedCatIds is updated immediately
+        // on every chip toggle – no ListView selection state involved at all.
+        List<Category> selected = new ArrayList<>();
+        for (Category c : allCategories) {
+            if (selectedCatIds.contains(c.getCategory_id()))
+                selected.add(c);
         }
-        return true;
-    }
-
-    private void showValidation(String msg) {
-        validationLabel.setText(msg);
-        validationLabel.setVisible(true);
-        validationLabel.setManaged(true);
-    }
-
-    private void clearValidation() {
-        validationLabel.setText("");
-        validationLabel.setVisible(false);
-        validationLabel.setManaged(false);
+        film.setCategories(selected);
     }
 
     private void clearFields() {
@@ -468,37 +642,98 @@ public class FilmAdminController {
         posterField.clear();
         posterVField.clear();
         releaseDatePicker.setValue(null);
-        categoryListView.getSelectionModel().clearSelection();
+        selectedCatIds.clear();
+        rebuildCategoryChips();   // reset all chips to unselected
         clearValidation();
     }
 
+    // ── Image loading ─────────────────────────────────────────────────────────
     private void loadImage(ImageView iv, String path) {
         if (path == null || path.isEmpty()) return;
         try {
             Image img;
             File f = new File(path);
-            if (path.startsWith("http"))  img = new Image(path, true);
-            else if (f.exists())          img = new Image(f.toURI().toString(), true);
-            else                          img = new Image(getClass().getResource(path).toExternalForm(), true);
+            if      (path.startsWith("http")) img = new Image(path, true);
+            else if (f.exists())              img = new Image(f.toURI().toString(), true);
+            else                              img = new Image(Objects.requireNonNull(
+                                                  getClass().getResource(path)).toExternalForm(), true);
             iv.setImage(img);
         } catch (Exception ignored) {}
     }
 
-    private Button iconButton(String text, String color) {
+    // ── UI helpers ────────────────────────────────────────────────────────────
+    private Button overlayBtn(String text, String bg) {
         Button b = new Button(text);
-        b.setStyle("-fx-background-color: " + color + "; -fx-text-fill: white; -fx-font-size: 12px; " +
-                   "-fx-padding: 6 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-min-width: 120;");
+        b.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: white; " +
+                   "-fx-font-size: 12px; -fx-padding: 7 22; " +
+                   "-fx-background-radius: 22; -fx-cursor: hand; -fx-min-width: 130;");
+        return b;
+    }
+
+    private Button dialogBtn(String text, String bg, String fg) {
+        Button b = new Button(text);
+        b.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: " + fg + "; " +
+                   "-fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 10 26; " +
+                   "-fx-background-radius: 12; -fx-cursor: hand;");
+        // Slight brightness on hover
+        b.setOnMouseEntered(e -> b.setOpacity(0.88));
+        b.setOnMouseExited(e  -> b.setOpacity(1.0));
         return b;
     }
 
     private void animateFormHighlight() {
-        FadeTransition ft = new FadeTransition(Duration.millis(200), formPanel);
-        ft.setFromValue(0.5); ft.setToValue(1.0); ft.play();
+        FadeTransition ft = new FadeTransition(Duration.millis(220), formPanel);
+        ft.setFromValue(0.45); ft.setToValue(1.0); ft.play();
     }
 
-    private void showToast(String msg) {
+    /**
+     * Floating toast notification.
+     * Appends a small pill at the bottom-right of the root scene.
+     */
+    private void showToast(String msg, boolean success) {
         System.out.println("[JStream] " + msg);
+
+        // Locate root pane for toast overlay
+        if (scrollPane == null || scrollPane.getScene() == null) return;
+        javafx.scene.Parent root = scrollPane.getScene().getRoot();
+        if (!(root instanceof StackPane sp)) return;   // needs a StackPane root
+
+        Label toast = new Label("  " + msg + "  ");
+        toast.setStyle("""
+            -fx-background-color: %s;
+            -fx-text-fill: white;
+            -fx-font-size: 13px;
+            -fx-font-weight: bold;
+            -fx-padding: 12 22;
+            -fx-background-radius: 30;
+            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 14, 0, 0, 4);
+            """.formatted(success ? "linear-gradient(to right,#059669,#10b981)"
+                                  : "linear-gradient(to right,#dc2626,#ef4444)"));
+
+        StackPane.setAlignment(toast, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(toast, new Insets(0, 24, 24, 0));
+        toast.setOpacity(0);
+        sp.getChildren().add(toast);
+
+        FadeTransition  fadeIn  = new FadeTransition(Duration.millis(250), toast);
+        TranslateTransition  up = new TranslateTransition(Duration.millis(250), toast);
+        fadeIn.setToValue(1);
+        up.setFromY(12); up.setToY(0);
+
+        PauseTransition hold    = new PauseTransition(Duration.millis(2200));
+        FadeTransition  fadeOut = new FadeTransition(Duration.millis(300), toast);
+        fadeOut.setToValue(0);
+        fadeOut.setOnFinished(e -> sp.getChildren().remove(toast));
+
+        new SequentialTransition(
+            new ParallelTransition(fadeIn, up),
+            hold,
+            fadeOut
+        ).play();
     }
 
-    private String nvl(String s) { return s == null ? "" : s; }
+    // ── Utilities ─────────────────────────────────────────────────────────────
+    private String nvl(String s)      { return s == null ? "" : s; }
+    private boolean isBlank(String s) { return s == null || s.isBlank(); }
+    private boolean notBlank(String s){ return s != null && !s.isBlank(); }
 }

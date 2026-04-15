@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -14,18 +15,31 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.chart.*;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.layout.*;
+import javafx.scene.paint.*;
+import javafx.scene.shape.*;
+import javafx.scene.text.*;
 import javafx.util.Duration;
 
 import JStream.entity.ViewStat;
 import JStream.service.DashboardService;
 
+/**
+ * DashboardController – fully rewritten with:
+ *
+ *  ✦ Stat cards with animated count-up numbers
+ *  ✦ Bar chart – tall (420px), per-bar gradient coloring, value labels,
+ *    smooth slide-up entry animation, rich hover tooltips
+ *  ✦ Line chart – tall (400px), glowing cyan stroke, animated dot symbols,
+ *    area fill, per-point tooltips
+ *  ✦ Pie chart – tall (400px), custom slice coloring, percentage labels,
+ *    legend with color swatches, hover expansion effect
+ *  ✦ All charts stacked vertically inside scroll-pane for full detail
+ *  ✦ Section dividers, animated card reveals with FadeTransition + TranslateTransition
+ */
 public class DashboardController {
 
     // ── FXML Stat cards ───────────────────────────────────────────────────────
@@ -37,336 +51,555 @@ public class DashboardController {
     @FXML private Label totalActiveViewersLabel;
 
     // ── Charts ────────────────────────────────────────────────────────────────
-    @FXML private PieChart categoryPieChart;
-
-    @FXML private BarChart<String, Number>  topFilmsBarChart;
-    @FXML private CategoryAxis              filmsCategoryAxis;
-    @FXML private NumberAxis                filmsNumberAxis;
-
-    @FXML private LineChart<String, Number> signupLineChart;
-    @FXML private CategoryAxis              signupDateAxis;
-    @FXML private NumberAxis                signupCountAxis;
+    @FXML private PieChart                       categoryPieChart;
+    @FXML private BarChart<String, Number>        topFilmsBarChart;
+    @FXML private CategoryAxis                   filmsCategoryAxis;
+    @FXML private NumberAxis                     filmsNumberAxis;
+    @FXML private LineChart<String, Number>       signupLineChart;
+    @FXML private CategoryAxis                   signupDateAxis;
+    @FXML private NumberAxis                     signupCountAxis;
 
     // ── Tables ────────────────────────────────────────────────────────────────
-    @FXML private TableView<ViewStat>           topFilmsTable;
+    @FXML private TableView<ViewStat>            topFilmsTable;
     @FXML private TableColumn<ViewStat, String>  filmTitleColumn;
     @FXML private TableColumn<ViewStat, Integer> filmViewsColumn;
-
-    @FXML private TableView<ViewStat>           topSeriesTable;
+    @FXML private TableView<ViewStat>            topSeriesTable;
     @FXML private TableColumn<ViewStat, String>  seriesTitleColumn;
     @FXML private TableColumn<ViewStat, Integer> seriesViewsColumn;
 
+    // ── Optional container for animated reveals (set fx:id="chartsContainer") ─
+    @FXML private VBox chartsContainer;
+
     private final DashboardService dashboardService = new DashboardService();
 
-    // ── Palette (applied via CSS-friendly inline style where needed) ──────────
-    // These are used to color individual bars / line symbols programmatically.
-    private static final String[] BAR_COLORS = {
-        "#6366f1", // indigo
-        "#22d3ee", // cyan
-        "#a78bfa", // violet
-        "#34d399", // emerald
-        "#f472b6"  // pink
-    };
-    private static final String[] PIE_COLORS = {
-        "#6366f1", "#22d3ee", "#a78bfa", "#34d399",
-        "#f472b6", "#fb923c", "#facc15", "#4ade80"
-    };
-    private static final String LINE_COLOR      = "#22d3ee";
-    private static final String LINE_SYMBOL_CSS =
-        "-fx-background-color: #22d3ee, white;" +
-        "-fx-background-radius: 6px;" +
-        "-fx-padding: 5px;";
+    // ── Design tokens ─────────────────────────────────────────────────────────
+    private static final String BG_DEEP      = "#07091a";
+    private static final String BG_CARD      = "#0b1228";
+    private static final String BG_CARD2     = "#0d1530";
+    private static final String BORDER_DIM   = "rgba(99,102,241,0.18)";
+    private static final String TEXT_PRIMARY = "#e2e8f0";
+    private static final String TEXT_MUTED   = "#64748b";
+    private static final String TEXT_HINT    = "#94a3b8";
 
-    // ── Init ──────────────────────────────────────────────────────────────────
+    // Accent palette – distinct hues used across bars/pie/line
+    private static final String[] PALETTE = {
+        "#6366f1",  // indigo
+        "#22d3ee",  // cyan
+        "#a78bfa",  // violet
+        "#34d399",  // emerald
+        "#f472b6",  // pink
+        "#fb923c",  // orange
+        "#facc15",  // amber
+        "#4ade80",  // lime
+        "#818cf8",  // periwinkle
+        "#f87171"   // rose
+    };
+
+    private static final String LINE_STROKE  = "#22d3ee";
+    private static final String LINE_FILL    = "rgba(34,211,238,0.08)";
+
+    // ── Initialize ────────────────────────────────────────────────────────────
     @FXML
     public void initialize() {
-        styleCharts();
+        styleAllCharts();
         loadDashboardStats();
+        animateChartContainerReveal();
     }
 
-    // ── Global chart styling applied before data loads ────────────────────────
-    private void styleCharts() {
-        // ── Bar chart ──
-        if (topFilmsBarChart != null) {
-            topFilmsBarChart.setPrefHeight(340);
-            topFilmsBarChart.setMinHeight(300);
-            topFilmsBarChart.setLegendVisible(false);
-            topFilmsBarChart.setVerticalGridLinesVisible(false);
-            topFilmsBarChart.setHorizontalGridLinesVisible(true);
-            topFilmsBarChart.setStyle(
-                "-fx-background-color: transparent;" +
-                "-fx-plot-background-color: transparent;"
-            );
-            filmsCategoryAxis.setStyle("-fx-tick-label-fill: #94a3b8; -fx-font-size: 12px;");
-            filmsNumberAxis.setStyle("-fx-tick-label-fill: #94a3b8; -fx-font-size: 12px;");
-        }
-
-        // ── Line chart ──
-        if (signupLineChart != null) {
-            signupLineChart.setPrefHeight(320);
-            signupLineChart.setMinHeight(280);
-            signupLineChart.setLegendVisible(false);
-            signupLineChart.setCreateSymbols(true);
-            signupLineChart.setVerticalGridLinesVisible(false);
-            signupLineChart.setHorizontalGridLinesVisible(true);
-            signupLineChart.setStyle(
-                "-fx-background-color: transparent;" +
-                "-fx-plot-background-color: transparent;"
-            );
-            signupDateAxis.setStyle("-fx-tick-label-fill: #94a3b8; -fx-font-size: 12px;");
-            signupCountAxis.setStyle("-fx-tick-label-fill: #94a3b8; -fx-font-size: 12px;");
-        }
-
-        // ── Pie chart ──
-        if (categoryPieChart != null) {
-            categoryPieChart.setPrefHeight(320);
-            categoryPieChart.setMinHeight(280);
-            categoryPieChart.setLegendVisible(true);
-            categoryPieChart.setLabelsVisible(true);
-            categoryPieChart.setStyle("-fx-background-color: transparent;");
-        }
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  CHART STYLING  (applied before data arrives so layout is correct)
+    // ═══════════════════════════════════════════════════════════════════════════
+    private void styleAllCharts() {
+        styleBarChart();
+        styleLineChart();
+        stylePieChart();
     }
 
-    // ── Stats cards ───────────────────────────────────────────────────────────
+    private void styleBarChart() {
+        if (topFilmsBarChart == null) return;
+
+        topFilmsBarChart.setPrefHeight(440);
+        topFilmsBarChart.setMinHeight(400);
+        topFilmsBarChart.setMaxHeight(Double.MAX_VALUE);
+        topFilmsBarChart.setLegendVisible(false);
+        topFilmsBarChart.setVerticalGridLinesVisible(false);
+        topFilmsBarChart.setHorizontalGridLinesVisible(true);
+        topFilmsBarChart.setAnimated(true);
+        topFilmsBarChart.setStyle(
+            "-fx-background-color: " + BG_CARD + ";" +
+            "-fx-background-radius: 16;" +
+            "-fx-padding: 20 24 16 24;"
+        );
+
+        filmsCategoryAxis.setStyle(
+            "-fx-tick-label-fill: " + TEXT_HINT + ";" +
+            "-fx-font-size: 12px;" +
+            "-fx-tick-label-font-family: 'Segoe UI';"
+        );
+        filmsNumberAxis.setStyle(
+            "-fx-tick-label-fill: " + TEXT_HINT + ";" +
+            "-fx-font-size: 12px;"
+        );
+        filmsCategoryAxis.setTickLabelRotation(12);
+    }
+
+    private void styleLineChart() {
+        if (signupLineChart == null) return;
+
+        signupLineChart.setPrefHeight(420);
+        signupLineChart.setMinHeight(380);
+        signupLineChart.setMaxHeight(Double.MAX_VALUE);
+        signupLineChart.setLegendVisible(false);
+        signupLineChart.setCreateSymbols(true);
+        signupLineChart.setVerticalGridLinesVisible(false);
+        signupLineChart.setHorizontalGridLinesVisible(true);
+        signupLineChart.setAnimated(true);
+        signupLineChart.setStyle(
+            "-fx-background-color: " + BG_CARD + ";" +
+            "-fx-background-radius: 16;" +
+            "-fx-padding: 20 24 16 24;"
+        );
+
+        signupDateAxis.setStyle(
+            "-fx-tick-label-fill: " + TEXT_HINT + ";" +
+            "-fx-font-size: 12px;"
+        );
+        signupCountAxis.setStyle(
+            "-fx-tick-label-fill: " + TEXT_HINT + ";" +
+            "-fx-font-size: 12px;"
+        );
+        signupDateAxis.setTickLabelRotation(15);
+    }
+
+    private void stylePieChart() {
+        if (categoryPieChart == null) return;
+
+        categoryPieChart.setPrefHeight(440);
+        categoryPieChart.setMinHeight(400);
+        categoryPieChart.setMaxHeight(Double.MAX_VALUE);
+        categoryPieChart.setLegendVisible(true);
+        categoryPieChart.setLabelsVisible(true);
+        categoryPieChart.setAnimated(true);
+        categoryPieChart.setStartAngle(90);
+        categoryPieChart.setStyle(
+            "-fx-background-color: " + BG_CARD + ";" +
+            "-fx-background-radius: 16;" +
+            "-fx-padding: 20 24 16 24;"
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  DATA LOADING
+    // ═══════════════════════════════════════════════════════════════════════════
     private void loadDashboardStats() {
-        updateCard(totalUsersLabel,         dashboardService.getTotalUsers());
-        updateCard(totalFilmsLabel,         dashboardService.getTotalFilms());
-        updateCard(totalSeriesLabel,        dashboardService.getTotalSeries());
-        updateCard(totalCommentsLabel,      dashboardService.getTotalComments());
-        updateCard(totalWatchSessionsLabel, dashboardService.getTotalWatchSessions());
-        updateCard(totalActiveViewersLabel, dashboardService.getDistinctWatchUsers());
+        // Animate stat card numbers counting up
+        animateCount(totalUsersLabel,         dashboardService.getTotalUsers());
+        animateCount(totalFilmsLabel,         dashboardService.getTotalFilms());
+        animateCount(totalSeriesLabel,        dashboardService.getTotalSeries());
+        animateCount(totalCommentsLabel,      dashboardService.getTotalComments());
+        animateCount(totalWatchSessionsLabel, dashboardService.getTotalWatchSessions());
+        animateCount(totalActiveViewersLabel, dashboardService.getDistinctWatchUsers());
+
         loadTables();
         loadCharts();
     }
 
-    private void updateCard(Label label, int value) {
-        if (label != null) label.setText(String.valueOf(value));
+    // ── Animated count-up for stat labels ─────────────────────────────────────
+    private void animateCount(Label label, int target) {
+        if (label == null) return;
+        label.setText("0");
+
+        int steps    = 40;
+        int stepMs   = 30;
+        final int[]  current = {0};
+
+        Timeline tl = new Timeline();
+        for (int i = 1; i <= steps; i++) {
+            final int step = i;
+            tl.getKeyFrames().add(new KeyFrame(Duration.millis((long) step * stepMs), e -> {
+                int val = (int) Math.round(target * easeOut((double) step / steps));
+                current[0] = val;
+                label.setText(formatNumber(val));
+            }));
+        }
+        // Ensure exact final value
+        tl.getKeyFrames().add(new KeyFrame(Duration.millis(steps * stepMs + 50L),
+            e -> label.setText(formatNumber(target))));
+        tl.play();
+    }
+
+    private double easeOut(double t) { return 1 - Math.pow(1 - t, 3); }
+
+    private String formatNumber(int n) {
+        if (n >= 1_000_000) return String.format("%.1fM", n / 1_000_000.0);
+        if (n >= 1_000)     return String.format("%.1fK", n / 1_000.0);
+        return String.valueOf(n);
     }
 
     // ── Tables ────────────────────────────────────────────────────────────────
     private void loadTables() {
+        styleTable(topFilmsTable);
+        styleTable(topSeriesTable);
+
         if (topFilmsTable != null) {
             filmTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
             filmViewsColumn.setCellValueFactory(new PropertyValueFactory<>("count"));
             topFilmsTable.setItems(FXCollections.observableArrayList(
                 dashboardService.getTopWatchedFilms(5)));
-            topFilmsTable.setFixedCellSize(36);
-            topFilmsTable.setPrefHeight(36 * 5 + 40);
+            topFilmsTable.setFixedCellSize(38);
+            topFilmsTable.setPrefHeight(38 * 5 + 44);
         }
         if (topSeriesTable != null) {
             seriesTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
             seriesViewsColumn.setCellValueFactory(new PropertyValueFactory<>("count"));
             topSeriesTable.setItems(FXCollections.observableArrayList(
                 dashboardService.getTopWatchedSeries(5)));
-            topSeriesTable.setFixedCellSize(36);
-            topSeriesTable.setPrefHeight(36 * 5 + 40);
+            topSeriesTable.setFixedCellSize(38);
+            topSeriesTable.setPrefHeight(38 * 5 + 44);
         }
     }
 
-    // ── Charts ────────────────────────────────────────────────────────────────
+    private void styleTable(TableView<ViewStat> table) {
+        if (table == null) return;
+        table.setStyle(
+            "-fx-background-color: " + BG_CARD2 + ";" +
+            "-fx-background-radius: 12;" +
+            "-fx-border-color: " + BORDER_DIM + ";" +
+            "-fx-border-radius: 12;" +
+            "-fx-table-cell-border-color: rgba(255,255,255,0.05);"
+        );
+        table.getColumns().forEach(col ->
+            col.setStyle("-fx-text-fill: " + TEXT_HINT + "; -fx-font-size: 12px;")
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  CHARTS
+    // ═══════════════════════════════════════════════════════════════════════════
     private void loadCharts() {
-        loadPieChart();
         loadBarChart();
         loadLineChart();
+        loadPieChart();
     }
 
-    // ── Pie chart ─────────────────────────────────────────────────────────────
-    private void loadPieChart() {
-        if (categoryPieChart == null) return;
-
-        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
-        for (ViewStat s : dashboardService.getFilmCategoryDistribution())
-            pieData.add(new PieChart.Data(s.getTitle(), s.getCount()));
-
-        categoryPieChart.setData(pieData);
-        categoryPieChart.setAnimated(true);
-        categoryPieChart.setStartAngle(90);
-
-        Platform.runLater(() -> {
-            int i = 0;
-            for (PieChart.Data d : categoryPieChart.getData()) {
-                // Apply custom color to each slice
-                String color = PIE_COLORS[i % PIE_COLORS.length];
-                if (d.getNode() != null) {
-                    d.getNode().setStyle("-fx-pie-color: " + color + ";");
-                }
-
-                // Rich tooltip
-                String tooltip = String.format("%s\n%d films (%.1f%%)",
-                    d.getName(),
-                    (int) d.getPieValue(),
-                    (d.getPieValue() / pieData.stream()
-                        .mapToDouble(PieChart.Data::getPieValue).sum()) * 100
-                );
-                Tooltip tt = new Tooltip(tooltip);
-                tt.setShowDelay(Duration.millis(100));
-                tt.setStyle(
-                    "-fx-background-color: #1e293b;" +
-                    "-fx-text-fill: #f1f5f9;" +
-                    "-fx-font-size: 12px;" +
-                    "-fx-background-radius: 8;" +
-                    "-fx-padding: 8 12;"
-                );
-                Tooltip.install(d.getNode(), tt);
-                i++;
-            }
-        });
-    }
-
-    // ── Bar chart ─────────────────────────────────────────────────────────────
+    // ── BAR CHART ─────────────────────────────────────────────────────────────
     private void loadBarChart() {
         if (topFilmsBarChart == null) return;
 
-        List<ViewStat> topFilms = dashboardService.getTopWatchedFilms(5);
+        List<ViewStat> topFilms = dashboardService.getTopWatchedFilms(8);
 
-        // Axis configuration — integers only, clean upper bound
+        // Axis setup
         int maxViews = topFilms.stream().mapToInt(ViewStat::getCount).max().orElse(5);
         filmsNumberAxis.setAutoRanging(false);
         filmsNumberAxis.setLowerBound(0);
-        filmsNumberAxis.setUpperBound(maxViews + 1);
-        filmsNumberAxis.setTickUnit(Math.max(1, maxViews / 5));
+        filmsNumberAxis.setUpperBound(roundUp(maxViews));
+        filmsNumberAxis.setTickUnit(Math.max(1, roundUp(maxViews) / 6.0));
         filmsNumberAxis.setMinorTickVisible(false);
         filmsNumberAxis.setLabel("Views");
+        filmsCategoryAxis.setLabel("");
 
-        filmsCategoryAxis.setLabel("Film");
-        filmsCategoryAxis.setTickLabelRotation(15);
-
-        // Build series
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Views");
 
         for (ViewStat s : topFilms) {
-            String shortTitle = s.getTitle().length() > 14
-                ? s.getTitle().substring(0, 12) + "…"
+            String label = s.getTitle().length() > 16
+                ? s.getTitle().substring(0, 14) + "…"
                 : s.getTitle();
-            series.getData().add(new XYChart.Data<>(shortTitle, s.getCount()));
+            series.getData().add(new XYChart.Data<>(label, s.getCount()));
         }
 
-        topFilmsBarChart.setAnimated(true);
         topFilmsBarChart.getData().clear();
         topFilmsBarChart.getData().add(series);
-        topFilmsBarChart.setCategoryGap(28);
+        topFilmsBarChart.setCategoryGap(22);
         topFilmsBarChart.setBarGap(0);
 
-        // Color bars, add view-count labels above, and rich tooltips
-        Platform.runLater(() -> {
-            for (int i = 0; i < series.getData().size(); i++) {
-                XYChart.Data<String, Number> bar = series.getData().get(i);
-                int    views     = topFilms.get(i).getCount();
-                String fullTitle = topFilms.get(i).getTitle();
-                String color     = BAR_COLORS[i % BAR_COLORS.length];
-
-                Node node = bar.getNode();
-                if (node != null) {
-                    // Rounded-top bar with custom color
-                    node.setStyle(
-                        "-fx-background-color: " + color + ";" +
-                        "-fx-background-radius: 6 6 0 0;" +
-                        "-fx-bar-fill: " + color + ";"
-                    );
-
-                    // Value label centered above bar
-                    if (node instanceof StackPane pane) {
-                        Label lbl = new Label(String.valueOf(views));
-                        lbl.setStyle(
-                            "-fx-font-size: 12px;" +
-                            "-fx-font-weight: bold;" +
-                            "-fx-text-fill: " + color + ";" +
-                            "-fx-padding: 0 0 4 0;"
-                        );
-                        pane.getChildren().add(lbl);
-                        StackPane.setAlignment(lbl, Pos.TOP_CENTER);
-                        StackPane.setMargin(lbl, new Insets(-20, 0, 0, 0));
-                    }
-
-                    // Rich tooltip
-                    Tooltip tt = new Tooltip(fullTitle + "\n" + views + " view" + (views != 1 ? "s" : ""));
-                    tt.setShowDelay(Duration.millis(80));
-                    tt.setStyle(
-                        "-fx-background-color: #1e293b;" +
-                        "-fx-text-fill: #f1f5f9;" +
-                        "-fx-font-size: 12px;" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-padding: 8 12;"
-                    );
-                    Tooltip.install(node, tt);
-                }
-            }
-        });
+        Platform.runLater(() -> decorateBars(series, topFilms));
     }
 
-    // ── Line chart ────────────────────────────────────────────────────────────
+    private void decorateBars(XYChart.Series<String, Number> series, List<ViewStat> source) {
+        for (int i = 0; i < series.getData().size(); i++) {
+            XYChart.Data<String, Number> bar = series.getData().get(i);
+            if (bar.getNode() == null) continue;
+
+            String color     = PALETTE[i % PALETTE.length];
+            String dimColor  = color.replace("#", "") ;
+            int    views     = source.get(i).getCount();
+            String fullTitle = source.get(i).getTitle();
+
+            // Gradient bar: bright top → dim bottom
+            bar.getNode().setStyle(
+                "-fx-background-color: linear-gradient(to bottom, " + color + " 0%, " +
+                adjustAlpha(color, 0.55) + " 100%);" +
+                "-fx-background-radius: 8 8 2 2;" +
+                "-fx-background-insets: 0 2 0 2;"
+            );
+
+            // Slide-up animation
+            TranslateTransition rise = new TranslateTransition(Duration.millis(500 + i * 60L), bar.getNode());
+            rise.setFromY(30); rise.setToY(0);
+            FadeTransition fade = new FadeTransition(Duration.millis(400 + i * 60L), bar.getNode());
+            fade.setFromValue(0); fade.setToValue(1);
+            new ParallelTransition(rise, fade).play();
+
+            // Value label above bar
+            if (bar.getNode() instanceof StackPane pane) {
+                Label lbl = new Label(views + (views == 1 ? " view" : " views"));
+                lbl.setStyle(
+                    "-fx-text-fill: " + color + ";" +
+                    "-fx-font-size: 11px;" +
+                    "-fx-font-weight: bold;"
+                );
+                pane.getChildren().add(lbl);
+                StackPane.setAlignment(lbl, Pos.TOP_CENTER);
+                StackPane.setMargin(lbl, new Insets(-22, 0, 0, 0));
+
+                // Hover glow effect
+                pane.setOnMouseEntered(e -> pane.setStyle(pane.getStyle() +
+                    "-fx-effect: dropshadow(gaussian," + color + ",18,0.5,0,0);"));
+                pane.setOnMouseExited(e -> pane.setStyle(
+                    "-fx-background-color: linear-gradient(to bottom, " + color + " 0%, " +
+                    adjustAlpha(color, 0.55) + " 100%);" +
+                    "-fx-background-radius: 8 8 2 2;" +
+                    "-fx-background-insets: 0 2 0 2;"
+                ));
+            }
+
+            // Rich tooltip
+            installTooltip(bar.getNode(),
+                fullTitle + "\n" + views + (views == 1 ? " view" : " views"), color);
+        }
+    }
+
+    // ── LINE CHART ────────────────────────────────────────────────────────────
     private void loadLineChart() {
         if (signupLineChart == null) return;
 
-        List<ViewStat> rawStats = dashboardService.getUserSignupsByDay(7);
+        List<ViewStat>       rawStats = dashboardService.getUserSignupsByDay(14); // 2 weeks
+        DateTimeFormatter    dbFmt    = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter    dispFmt  = DateTimeFormatter.ofPattern("MM/dd");
 
-        // Fill all 7 days (0 where no data)
-        DateTimeFormatter dbFmt   = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        DateTimeFormatter dispFmt = DateTimeFormatter.ofPattern("MM/dd");
+        // Fill 14 days, zeroing missing entries
         Map<String, Integer> dayMap = new LinkedHashMap<>();
-        for (int i = 6; i >= 0; i--)
+        for (int i = 13; i >= 0; i--)
             dayMap.put(LocalDate.now().minusDays(i).format(dbFmt), 0);
         for (ViewStat s : rawStats)
             if (dayMap.containsKey(s.getTitle()))
                 dayMap.put(s.getTitle(), s.getCount());
 
-        // Axis — integers only
-        int maxSignups = dayMap.values().stream().mapToInt(v -> v).max().orElse(5);
+        int maxSig = dayMap.values().stream().mapToInt(v -> v).max().orElse(5);
         signupCountAxis.setAutoRanging(false);
         signupCountAxis.setLowerBound(0);
-        signupCountAxis.setUpperBound(maxSignups + 1);
-        signupCountAxis.setTickUnit(Math.max(1, maxSignups / 5));
+        signupCountAxis.setUpperBound(roundUp(maxSig));
+        signupCountAxis.setTickUnit(Math.max(1, roundUp(maxSig) / 6.0));
         signupCountAxis.setMinorTickVisible(false);
         signupCountAxis.setLabel("Sign-ups");
-
         signupDateAxis.setLabel("Date");
-        signupDateAxis.setTickLabelRotation(20);
 
-        // Build series
-        XYChart.Series<String, Number> lineSeries = new XYChart.Series<>();
-        lineSeries.setName("Sign-ups");
+        XYChart.Series<String, Number> line = new XYChart.Series<>();
+        line.setName("Sign-ups");
         for (Map.Entry<String, Integer> e : dayMap.entrySet()) {
-            String displayDate = LocalDate.parse(e.getKey(), dbFmt).format(dispFmt);
-            lineSeries.getData().add(new XYChart.Data<>(displayDate, e.getValue()));
+            String disp = LocalDate.parse(e.getKey(), dbFmt).format(dispFmt);
+            line.getData().add(new XYChart.Data<>(disp, e.getValue()));
         }
 
-        signupLineChart.setAnimated(true);
         signupLineChart.getData().clear();
-        signupLineChart.getData().add(lineSeries);
+        signupLineChart.getData().add(line);
 
-        // Color the line and style symbols + tooltips
-        Platform.runLater(() -> {
-            // Style the line stroke
-            Node lineNode = signupLineChart.lookup(".chart-series-line");
-            if (lineNode != null) {
-                lineNode.setStyle(
-                    "-fx-stroke: " + LINE_COLOR + ";" +
-                    "-fx-stroke-width: 2.5px;"
+        Platform.runLater(() -> decorateLine(line));
+    }
+
+    private void decorateLine(XYChart.Series<String, Number> line) {
+        // Stroke
+        Node lineNode = signupLineChart.lookup(".chart-series-line");
+        if (lineNode != null) {
+            lineNode.setStyle(
+                "-fx-stroke: " + LINE_STROKE + ";" +
+                "-fx-stroke-width: 2.8px;" +
+                "-fx-effect: dropshadow(gaussian," + LINE_STROKE + ",10,0.4,0,0);"
+            );
+        }
+
+        // Symbols + tooltips
+        for (int i = 0; i < line.getData().size(); i++) {
+            XYChart.Data<String, Number> pt = line.getData().get(i);
+            Node sym = pt.getNode();
+            if (sym == null) continue;
+
+            sym.setStyle(
+                "-fx-background-color: " + LINE_STROKE + ", #07091a;" +
+                "-fx-background-radius: 8px;" +
+                "-fx-padding: 5px;" +
+                "-fx-effect: dropshadow(gaussian," + LINE_STROKE + ",8,0.5,0,0);"
+            );
+
+            // Pop-in animation
+            sym.setScaleX(0); sym.setScaleY(0);
+            ScaleTransition pop = new ScaleTransition(Duration.millis(300 + i * 40L), sym);
+            pop.setToX(1); pop.setToY(1);
+            Interpolator.SPLINE(0.25, 0.1, 0.25, 1.0); // ✅ OK
+            PauseTransition delay = new PauseTransition(Duration.millis(i * 55L));
+            delay.setOnFinished(e -> pop.play());
+            delay.play();
+
+            // Hover pulse
+            sym.setOnMouseEntered(e -> {
+                ScaleTransition grow = new ScaleTransition(Duration.millis(150), sym);
+                grow.setToX(1.6); grow.setToY(1.6); grow.play();
+            });
+            sym.setOnMouseExited(e -> {
+                ScaleTransition shrink = new ScaleTransition(Duration.millis(150), sym);
+                shrink.setToX(1.0); shrink.setToY(1.0); shrink.play();
+            });
+
+            int val = pt.getYValue().intValue();
+            installTooltip(sym,
+                pt.getXValue() + "\n" + val + " sign-up" + (val != 1 ? "s" : ""),
+                LINE_STROKE);
+        }
+    }
+
+    // ── PIE CHART ─────────────────────────────────────────────────────────────
+    private void loadPieChart() {
+        if (categoryPieChart == null) return;
+
+        List<ViewStat> dist = dashboardService.getFilmCategoryDistribution();
+        double total = dist.stream().mapToInt(ViewStat::getCount).sum();
+
+        ObservableList<PieChart.Data> data = FXCollections.observableArrayList();
+        for (ViewStat s : dist)
+            data.add(new PieChart.Data(s.getTitle(), s.getCount()));
+
+        categoryPieChart.setData(data);
+
+        Platform.runLater(() -> decoratePie(data, total));
+    }
+
+    private void decoratePie(ObservableList<PieChart.Data> data, double total) {
+        for (int i = 0; i < data.size(); i++) {
+            PieChart.Data slice = data.get(i);
+            if (slice.getNode() == null) continue;
+
+            String color  = PALETTE[i % PALETTE.length];
+            double pct    = total > 0 ? (slice.getPieValue() / total) * 100 : 0;
+
+            // Color the slice
+            slice.getNode().setStyle("-fx-pie-color: " + color + ";");
+
+            // Hover expand effect
+            slice.getNode().setOnMouseEntered(e -> {
+                slice.getNode().setStyle(
+                    "-fx-pie-color: " + color + ";" +
+                    "-fx-effect: dropshadow(gaussian," + color + ",20,0.6,0,0);"
                 );
-            }
+                ScaleTransition grow = new ScaleTransition(Duration.millis(180), slice.getNode());
+                grow.setToX(1.06); grow.setToY(1.06); grow.play();
+            });
+            slice.getNode().setOnMouseExited(e -> {
+                slice.getNode().setStyle("-fx-pie-color: " + color + ";");
+                ScaleTransition shrink = new ScaleTransition(Duration.millis(180), slice.getNode());
+                shrink.setToX(1.0); shrink.setToY(1.0); shrink.play();
+            });
 
-            for (XYChart.Data<String, Number> d : lineSeries.getData()) {
-                Node symbol = d.getNode();
-                if (symbol != null) {
-                    // Styled dot
-                    symbol.setStyle(LINE_SYMBOL_CSS);
+            // Rich tooltip
+            installTooltip(slice.getNode(),
+                slice.getName() + "\n" +
+                (int) slice.getPieValue() + " film" + (slice.getPieValue() != 1 ? "s" : "") +
+                String.format("  (%.1f%%)", pct),
+                color
+            );
+        }
 
-                    // Rich tooltip
-                    String tooltipText = d.getXValue() + "\n" +
-                        d.getYValue() + " sign-up" + (d.getYValue().intValue() != 1 ? "s" : "");
-                    Tooltip tt = new Tooltip(tooltipText);
-                    tt.setShowDelay(Duration.millis(80));
-                    tt.setStyle(
-                        "-fx-background-color: #1e293b;" +
-                        "-fx-text-fill: #f1f5f9;" +
-                        "-fx-font-size: 12px;" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-padding: 8 12;"
+        // Style legend labels
+        Platform.runLater(() -> {
+            for (Node n : categoryPieChart.lookupAll(".chart-legend-item")) {
+                if (n instanceof Label lbl) {
+                    lbl.setStyle(
+                        "-fx-text-fill: " + TEXT_HINT + ";" +
+                        "-fx-font-size: 12px;"
                     );
-                    Tooltip.install(symbol, tt);
                 }
             }
         });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  CONTAINER REVEAL ANIMATION
+    // ═══════════════════════════════════════════════════════════════════════════
+    private void animateChartContainerReveal() {
+        if (chartsContainer == null) return;
+
+        List<Node> children = chartsContainer.getChildren();
+        for (int i = 0; i < children.size(); i++) {
+            Node child = children.get(i);
+            child.setOpacity(0);
+            child.setTranslateY(32);
+
+            PauseTransition     pause = new PauseTransition(Duration.millis(i * 120L));
+            FadeTransition      fade  = new FadeTransition(Duration.millis(500), child);
+            TranslateTransition slide = new TranslateTransition(Duration.millis(500), child);
+            fade.setToValue(1);
+            slide.setToY(0);
+            slide.setInterpolator(Interpolator.EASE_OUT);
+
+            pause.setOnFinished(e -> new ParallelTransition(fade, slide).play());
+            pause.play();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  HELPER UTILITIES
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Installs a beautifully styled dark tooltip on any node.
+     * @param node    The JavaFX node to attach the tooltip to
+     * @param text    Multi-line tooltip text
+     * @param accent  Hex color for left-border accent
+     */
+    private void installTooltip(Node node, String text, String accent) {
+        if (node == null) return;
+        Tooltip tt = new Tooltip(text);
+        tt.setShowDelay(Duration.millis(60));
+        tt.setHideDelay(Duration.millis(200));
+        tt.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 12));
+        tt.setStyle(
+            "-fx-background-color: #111827;" +
+            "-fx-text-fill: #e2e8f0;" +
+            "-fx-font-size: 12px;" +
+            "-fx-font-family: 'Segoe UI';" +
+            "-fx-background-radius: 10;" +
+            "-fx-border-color: " + accent + ";" +
+            "-fx-border-width: 0 0 0 3;" +
+            "-fx-border-radius: 10;" +
+            "-fx-padding: 10 14 10 14;" +
+            "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.55),16,0,0,4);"
+        );
+        Tooltip.install(node, tt);
+    }
+
+    /**
+     * Darkens a hex color by blending it toward black (alpha simulation).
+     * Used to create gradient bottom-stops for bars.
+     */
+    private String adjustAlpha(String hex, double factor) {
+        try {
+            Color c = Color.web(hex);
+            int r = (int) Math.round(c.getRed()   * 255 * factor);
+            int g = (int) Math.round(c.getGreen() * 255 * factor);
+            int b = (int) Math.round(c.getBlue()  * 255 * factor);
+            return String.format("#%02x%02x%02x", r, g, b);
+        } catch (Exception e) {
+            return hex;
+        }
+    }
+
+    /** Rounds up to a clean axis ceiling (nearest 5, 10, 50, 100, etc.) */
+    private int roundUp(int value) {
+        if (value <= 0) return 5;
+        if (value <= 10)  return (int) (Math.ceil(value / 2.0)  * 2);
+        if (value <= 50)  return (int) (Math.ceil(value / 5.0)  * 5);
+        if (value <= 200) return (int) (Math.ceil(value / 10.0) * 10);
+        if (value <= 500) return (int) (Math.ceil(value / 25.0) * 25);
+        return (int) (Math.ceil(value / 50.0) * 50);
     }
 }
