@@ -10,13 +10,13 @@ public class Rating {
     private int serieID;      // > 0 si série,   sinon 0
     private int episodeID;    // > 0 si épisode, sinon 0  
     private int seasonID;     // > 0 si saison,  sinon 0  
-    private int note;         // 1..5
+    private double note;         // 1..5
     private Timestamp created_at;
     private Timestamp updated_at;
 
     public Rating() {}
 
-    public static Rating forFilm(int userId, int filmId, int note) {
+    public static Rating forFilm(int userId, int filmId, double note) {
         Rating r = new Rating();
         r.userID    = userId;
         r.filmID    = filmId;
@@ -27,7 +27,7 @@ public class Rating {
         return r;
     }
 
-    public static Rating forEpisode(int userId, int serieId, int seasonId, int episodeId, int note) {
+    public static Rating forEpisode(int userId, int serieId, int seasonId, int episodeId, double note) {
         Rating r = new Rating();
         r.userID    = userId;
         r.filmID    = 0;
@@ -39,7 +39,7 @@ public class Rating {
     }
 
     public Rating(int rating_id, int userID, int filmID, int serieID,
-                  int episodeID, int seasonID, int note,
+                  int episodeID, int seasonID, double note,
                   Timestamp created_at, Timestamp updated_at) {
         this.rating_id  = rating_id;
         this.userID     = userID;
@@ -70,8 +70,8 @@ public class Rating {
     public int getSeasonID()            { return seasonID; }
     public void setSeasonID(int v)      { this.seasonID = v; }
 
-    public int getNote()                { return note; }
-    public void setNote(int v)          { this.note = v; }
+    public double getNote()                { return note; }
+    public void setNote(double v)          { this.note = v; }
 
     public Timestamp getCreated_at()    { return created_at; }
     public void setCreated_at(Timestamp v) { this.created_at = v; }

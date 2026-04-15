@@ -26,7 +26,7 @@ public class RatingDAO {
 	            ps.setInt(3, rating.getSerieID());   // 0 if not a serie
 	            ps.setInt(4, rating.getSeasonID());  // 0 if not a season
 	            ps.setInt(5, rating.getEpisodeID()); // 0 if not an episode
-	            ps.setInt(6, rating.getNote());
+	            ps.setDouble(6, rating.getNote());
 
 	            System.out.println("🔍 Inserting rating: user=" + rating.getUserID()
 	                + " film=" + rating.getFilmID()
@@ -63,46 +63,42 @@ public class RatingDAO {
 	    }
 	}
 	private void updateFilmAverage(Connection conn, int filmId) throws SQLException {
-	    // episode_id = 0 means it's a film rating (NOT NULL column, 0 = no episode)
-	    String sql = "UPDATE film SET rating = ROUND(" +
+	    String sql = "UPDATE film SET rating = " +
 	                 "  (SELECT AVG(note) FROM ratings WHERE film_id=? AND episode_id=0)" +
-	                 ") WHERE film_id = ?";
+	                 " WHERE film_id = ?";
 	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
 	        ps.setInt(1, filmId);
 	        ps.setInt(2, filmId);
 	        ps.executeUpdate();
 	    }
 	}
-
 	private void updateEpisodeSeasonSerieCascade(Connection conn, Rating r) throws SQLException {
 
-	    // 1. Episode = AVG of all ratings for this episode
+	    // 1. Episode : Précision totale
 	    try (PreparedStatement ps = conn.prepareStatement(
-	            "UPDATE episode SET rating = ROUND(" +
-	            "  (SELECT AVG(note) FROM ratings WHERE episode_id = ?)" +
+	            "UPDATE episode SET rating = (" +
+	            "  SELECT AVG(note) FROM ratings WHERE episode_id = ?" +
 	            ") WHERE ep_id = ?")) {
 	        ps.setInt(1, r.getEpisodeID());
 	        ps.setInt(2, r.getEpisodeID());
 	        ps.executeUpdate();
 	    }
 
-	    // 2. Season = AVG of ratings for all episodes in this season
-	    // ✅ Wrapped in derived table to bypass MySQL's update-select restriction
+	    // 2. Season : Précision totale
 	    try (PreparedStatement ps = conn.prepareStatement(
-	            "UPDATE season SET rating = ROUND((" +
+	            "UPDATE season SET rating = (" +
 	            "  SELECT AVG(note) FROM ratings WHERE episode_id IN (" +
 	            "    SELECT ep_id FROM (SELECT ep_id FROM episode WHERE season_id = ?) AS eps" +
 	            "  ) AND episode_id > 0" +
-	            ")) WHERE season_id = ?")) {
+	            ") WHERE season_id = ?")) {
 	        ps.setInt(1, r.getSeasonID());
 	        ps.setInt(2, r.getSeasonID());
 	        ps.executeUpdate();
 	    }
 
-	    // 3. Serie = AVG of ratings for all episodes across all seasons of this serie
-	    // ✅ Wrapped in derived table to bypass MySQL's update-select restriction
+	    // 3. Serie : Précision totale
 	    try (PreparedStatement ps = conn.prepareStatement(
-	            "UPDATE serie SET rating = ROUND((" +
+	            "UPDATE serie SET rating = (" +
 	            "  SELECT AVG(note) FROM ratings WHERE episode_id IN (" +
 	            "    SELECT ep_id FROM (" +
 	            "      SELECT e.ep_id FROM episode e " +
@@ -110,7 +106,7 @@ public class RatingDAO {
 	            "      WHERE s.serie_id = ?" +
 	            "    ) AS eps" +
 	            "  ) AND episode_id > 0" +
-	            ")) WHERE serie_id = ?")) {
+	            ") WHERE serie_id = ?")) {
 	        ps.setInt(1, r.getSerieID());
 	        ps.setInt(2, r.getSerieID());
 	        ps.executeUpdate();
@@ -195,7 +191,7 @@ public class RatingDAO {
             rs.getInt("serie_id"),
             rs.getInt("episode_id"),
             rs.getInt("season_id"),
-            rs.getInt("note"),
+            rs.getDouble("note"),
             rs.getTimestamp("created_at"),
             rs.getTimestamp("updated_at")
         );

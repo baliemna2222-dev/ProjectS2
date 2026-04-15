@@ -21,7 +21,7 @@ public class Film {
     private Timestamp updated_at;
     private double duration;
     private String age_rating;
-    private int rating;
+    private double rating;
 
     public Film() {}
 
@@ -29,7 +29,7 @@ public class Film {
                 String trailer_url, String video_url, String image_url, String title_image_url,
                 String poster_url, String posterV_url, List<Category> categories,
                 LocalDateTime release_date, Timestamp updated_at,
-                double duration, String age_rating, int rating) {
+                double duration, String age_rating, double rating) {
         this.film_id = film_id;
         this.title = title;
         this.synopsis = synopsis;
@@ -97,8 +97,8 @@ public class Film {
     public String getAge_rating()                   { return age_rating; }
     public void setAge_rating(String age_rating)    { this.age_rating = age_rating; }
 
-    public int getRating()                          { return rating; }
-    public void setRating(int rating)               { this.rating = rating; }
+    public double getRating()                          { return rating; }
+    public void setRating(double rating)               { this.rating = rating; }
 
     public String getCategoriesAsString() {
         if (categories == null || categories.isEmpty()) return "";

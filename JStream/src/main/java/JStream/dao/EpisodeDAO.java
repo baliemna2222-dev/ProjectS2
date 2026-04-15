@@ -163,7 +163,7 @@ public class EpisodeDAO {
         ep.setResume(rs.getString("resume"));
         ep.setVideoUrl(rs.getString("video_url"));
         ep.setCovertUrl(rs.getString("covert_url"));
-        ep.setRating(rs.getInt("rating"));
+        ep.setRating(rs.getDouble("rating"));
         ep.setCreatedAt(rs.getTimestamp("created_at"));
         ep.setReleasedAt(rs.getTimestamp("released_at"));
         return ep;
@@ -182,7 +182,7 @@ public class EpisodeDAO {
             stmt.setString(5, episode.getResume());
             stmt.setString(6, episode.getVideoUrl());
             stmt.setString(7, episode.getCovertUrl());
-            stmt.setInt(8, episode.getRating());
+            stmt.setDouble(8, episode.getRating());
             
             if (episode.getReleasedAt() != null) {
                 stmt.setTimestamp(9, episode.getReleasedAt());
@@ -196,7 +196,6 @@ public class EpisodeDAO {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }}
 
-   
-}
+  

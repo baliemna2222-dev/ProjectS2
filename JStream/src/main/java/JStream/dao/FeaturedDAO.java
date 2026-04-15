@@ -48,7 +48,7 @@ public class FeaturedDAO {
 	                    rs.getString("poster_url"),
 	                    categories,
 	                    rs.getString("age_rating"),
-	                    rs.getInt("rating")
+	                    rs.getDouble("rating")
 	            ));
 	        }
 	    }
@@ -110,7 +110,7 @@ public class FeaturedDAO {
 	                rs.getString("poster_url"),
 	                categories,
 	                rs.getString("age_rating"),
-	                rs.getInt("rating"),
+	                rs.getDouble("rating"),
 	                rs.getString("status"),
 	                rs.getInt("season_num"),
 	                rs.getInt("last_episode")
@@ -160,7 +160,7 @@ public class FeaturedDAO {
 	                film.setUpdated_at(rs.getTimestamp("updated_at"));
 	                film.setDuration(rs.getDouble("duration"));
 	                film.setAge_rating(rs.getString("age_rating"));
-	                film.setRating(rs.getInt("rating"));
+	                film.setRating(rs.getDouble("rating"));
 	            }
 
 	            if (rs.getInt("category_id") != 0) {
@@ -199,7 +199,7 @@ public class FeaturedDAO {
 	        serie.setCasting(rs.getString("casting"));
 	        serie.setCovertUrl(rs.getString("covert_url"));
 	        serie.setAge_rating(rs.getString("age_rating"));
-	        serie.setRating(rs.getInt("rating"));
+	        serie.setRating(rs.getDouble("rating"));
 	        serie.setCreatedAt(rs.getTimestamp("created_at"));
 	        serie.setUpdatedAt(rs.getTimestamp("updated_at"));
 
@@ -259,7 +259,7 @@ public class FeaturedDAO {
 	            season.setImageUrl(rs.getString("image_url"));
 	            season.setStatus(rs.getString("status"));
 	            season.setPlannedEpisodes(rs.getInt("planned_episodes"));
-	            season.setRating(rs.getInt("rating"));
+	            season.setRating(rs.getDouble("rating"));
 
 	            // ✅ SAFE: this method will open its own connection
 	            season.setEpisodes(getEpisodesBySeason(seasonId));
@@ -291,7 +291,7 @@ public class FeaturedDAO {
 	            ep.setResume(rs.getString("resume"));
 	            ep.setVideoUrl(rs.getString("video_url"));
 	            ep.setCovertUrl(rs.getString("covert_url"));
-	            ep.setRating(rs.getInt("rating"));
+	            ep.setRating(rs.getDouble("rating"));
 	            ep.setCreatedAt(rs.getTimestamp("created_at"));
 	            ep.setReleasedAt(rs.getTimestamp("released_at"));
 	            ep.setDuration(rs.getInt("duration"));
@@ -333,7 +333,7 @@ public class FeaturedDAO {
 	                    rs.getString("poster_url"),
 	                    categories,
 	                    rs.getString("age_rating"),
-	                    rs.getInt("rating")
+	                    rs.getDouble("rating")
 	                ));
 	            }
 	        }
@@ -392,7 +392,7 @@ public class FeaturedDAO {
 	                    rs.getString("poster_url"),
 	                    categories,
 	                    rs.getString("age_rating"),
-	                    rs.getInt("rating"),
+	                    rs.getDouble("rating"),
 	                    rs.getString("status"),
 	                    rs.getInt("season_num"),
 	                    rs.getInt("last_episode")
@@ -452,7 +452,7 @@ public class FeaturedDAO {
 	                    rs.getString("poster_url"),
 	                    categories,
 	                    rs.getString("age_rating"),
-	                    rs.getInt("rating")
+	                    rs.getDouble("rating")
 	                ));
 	            }
 	        }
@@ -502,7 +502,7 @@ public class FeaturedDAO {
 	                        rs2.getString("poster_url"),
 	                        categories,
 	                        rs2.getString("age_rating"),
-	                        rs2.getInt("rating"),
+	                        rs2.getDouble("rating"),
 	                        rs2.getString("status"),
 	                        rs2.getInt("season_num"),
 	                        rs2.getInt("last_episode")
@@ -513,7 +513,7 @@ public class FeaturedDAO {
 	    }
 
 	    // 🔥 SORT EVERYTHING TOGETHER (mix films + series)
-	    items.sort((a, b) -> Integer.compare(b.getRating(), a.getRating()));
+	    items.sort((a, b) -> Double.compare(b.getRating(), a.getRating()));
 
 	    // 🔥 LIMIT FINAL RESULT
 	    return items.stream().limit(limit).toList();
@@ -572,7 +572,7 @@ public class FeaturedDAO {
 	                        rs.getString("poster_url"),
 	                        filmCategories,
 	                        rs.getString("age_rating"),
-	                        rs.getInt("rating")
+	                        rs.getDouble("rating")
 	                    ));
 	                }
 	            }
@@ -638,7 +638,7 @@ public class FeaturedDAO {
 	                        rs.getString("poster_url"),
 	                        serieCategories,
 	                        rs.getString("age_rating"),
-	                        rs.getInt("rating"),
+	                        rs.getDouble("rating"),
 	                        rs.getString("status"),
 	                        rs.getInt("season_num"),
 	                        rs.getInt("last_episode")
@@ -650,7 +650,7 @@ public class FeaturedDAO {
 	    } // connection auto-closed
 
 	    // 🔥 Sort all by rating
-	    items.sort((a, b) -> Integer.compare(b.getRating(), a.getRating()));
+	    items.sort((a, b) -> Double.compare(b.getRating(), a.getRating()));
 
 	    return items;
 	}
@@ -686,7 +686,7 @@ public class FeaturedDAO {
 	                    rs.getString("poster_url"),
 	                    categories,
 	                    rs.getString("age_rating"),
-	                    rs.getInt("rating")
+	                    rs.getDouble("rating")
 	                ));
 	            }
 	        }
@@ -729,7 +729,7 @@ public class FeaturedDAO {
 	                    rs.getString("poster_url"),
 	                    categories,
 	                    rs.getString("age_rating"),
-	                    rs.getInt("rating"),
+	                    rs.getDouble("rating"),
 	                    rs.getString("status"),
 	                    rs.getInt("season_num"),
 	                    rs.getInt("last_episode")
@@ -825,13 +825,13 @@ public class FeaturedDAO {
 	                    rs.getInt("film_id"),
 	                    rs.getString("title"),
 	                    rs.getString("synopsis"),
-	                    rs.getString("trailer_url"),
+	                    rs.getString("trailor_url"),
 	                    rs.getString("image_url"),
 	                    rs.getString("title_image_url"),
 	                    rs.getString("poster_url"),
 	                    categories,
 	                    rs.getString("age_rating"),
-	                    rs.getInt("rating")
+	                    rs.getDouble("rating")
 	            );
 	        }
 	    }
@@ -901,7 +901,7 @@ public class FeaturedDAO {
 	                    rs.getString("poster_url"),
 	                    categories,
 	                    rs.getString("age_rating"),
-	                    rs.getInt("rating"),
+	                    rs.getDouble("rating"),
 	                    rs.getString("status"),
 	                    rs.getInt("season_num"),
 	                    rs.getInt("last_episode")

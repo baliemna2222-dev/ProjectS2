@@ -14,11 +14,6 @@
            stylesheets="@/view/css/scrollbar.css"
            style="-fx-background-color: #02040a;">
 
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!--  BACKGROUND LAYER STACK                                         -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-
-    <!-- Blurred cinematic background — fixed to top of page -->
     <ImageView fx:id="backgroundImage"
                fitWidth="1280" fitHeight="700"
                preserveRatio="false"
@@ -30,7 +25,6 @@
         </effect>
     </ImageView>
 
-    <!-- Left-to-right vignette (title side stays dark) -->
     <Region prefWidth="1280" prefHeight="700"
             StackPane.alignment="TOP_LEFT"
             mouseTransparent="true"
@@ -40,7 +34,6 @@
                        rgba(2,4,10,0.30) 65%,
                        transparent 82%);"/>
 
-    <!-- Top-to-bottom vignette (hero fades into page) -->
     <Region prefWidth="1280" prefHeight="700"
             StackPane.alignment="TOP_LEFT"
             mouseTransparent="true"
@@ -49,9 +42,7 @@
                        rgba(2,4,10,0.65) 68%,
                        #02040a 100%);"/>
 
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!--  MAIN SCROLL CONTAINER                                          -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
+
     <ScrollPane fx:id="mainScrollPane"
                 fitToWidth="true"
                 vbarPolicy="AS_NEEDED"
@@ -64,16 +55,12 @@
 
         <VBox fx:id="mainContainer" spacing="0">
 
-            <!-- ─────────────────────────────────────────────────────── -->
-            <!--  NAVBAR                                                  -->
-            <!-- ─────────────────────────────────────────────────────── -->
             <HBox alignment="CENTER_LEFT" prefHeight="64" spacing="28"
                   style="-fx-background-color: rgba(2,4,10,0.94);
                          -fx-padding: 0 44 0 32;
                          -fx-border-color: rgba(0,212,255,0.08);
                          -fx-border-width: 0 0 1 0;">
 
-                <!-- Back -->
                 <Button fx:id="btnBack" text="← Back"
                         style="-fx-background-color: rgba(0,212,255,0.08);
                                -fx-text-fill: #00d4ff;
@@ -85,10 +72,8 @@
                                -fx-border-color: rgba(0,212,255,0.25);
                                -fx-border-radius: 20;"/>
 
-                <!-- Logo -->
                 <ImageView fx:id="logoNav" fitHeight="30" preserveRatio="true"/>
 
-                <!-- Centre nav links -->
                 <HBox alignment="CENTER" spacing="30" HBox.hgrow="ALWAYS">
                     <Button fx:id="btnHistory" text="History"
                             style="-fx-background-color: transparent;
@@ -106,7 +91,6 @@
 
                 <Region HBox.hgrow="ALWAYS"/>
 
-                <!-- Bell -->
                 <Button fx:id="btnNotification"
                         style="-fx-background-color: transparent;
                                -fx-cursor: hand;
@@ -128,14 +112,10 @@
 
             </HBox>
 
-            <!-- ─────────────────────────────────────────────────────── -->
-            <!--  HERO SECTION                                            -->
-            <!-- ─────────────────────────────────────────────────────── -->
             <HBox spacing="52"
                   style="-fx-padding: 52 64 44 56;"
                   alignment="TOP_LEFT">
 
-                <!-- ── Poster column ── -->
                 <VBox alignment="TOP_CENTER">
                     <ImageView fx:id="posterImage"
                                fitWidth="250" fitHeight="375"
@@ -148,36 +128,19 @@
                     </ImageView>
                 </VBox>
 
-                <!-- ── Info column ── -->
                 <VBox spacing="14" HBox.hgrow="ALWAYS" alignment="TOP_LEFT">
 
-                    <!-- Title + score chip -->
                     <HBox alignment="BOTTOM_LEFT" spacing="16">
                         <Label fx:id="titleLabel" text="Movie Title"
                                style="-fx-font-size: 38px;
                                       -fx-font-weight: bold;
                                       -fx-text-fill: white;
                                       -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.9),14,0,0,2);"/>
-                        <VBox alignment="CENTER" spacing="1"
-                              style="-fx-background-color: rgba(0,212,255,0.10);
-                                     -fx-background-radius: 10;
-                                     -fx-padding: 5 13;
-                                     -fx-border-color: rgba(0,212,255,0.28);
-                                     -fx-border-radius: 10;">
-                            <Label fx:id="scoreLabel" text="0"
-                                   style="-fx-font-size: 21px;
-                                          -fx-text-fill: #00d4ff;
-                                          -fx-font-weight: bold;"/>
-                            <Label text="/ 5"
-                                   style="-fx-font-size: 10px;
-                                          -fx-text-fill: #4e5670;"/>
-                        </VBox>
+                     
                     </HBox>
 
-                    <!-- Display stars (half-star aware) -->
                     <HBox fx:id="starsBox" spacing="4" alignment="CENTER_LEFT"/>
 
-                    <!-- Meta pills row -->
                     <HBox spacing="10" alignment="CENTER_LEFT">
                         <Label fx:id="yearLabel" text="2024"
                                style="-fx-text-fill: #5a6080; -fx-font-size: 13px;"/>
@@ -185,7 +148,6 @@
                         <Label fx:id="durationLabel" text="120 min"
                                style="-fx-text-fill: #5a6080; -fx-font-size: 13px;"/>
                         <Label text="•" style="-fx-text-fill: #252d40;"/>
-                        <!-- Age-rating badge -->
                         <Label fx:id="ageRatingLabel" text="16+"
                                style="-fx-background-color: rgba(0,212,255,0.09);
                                       -fx-border-color: rgba(0,212,255,0.38);
@@ -195,12 +157,10 @@
                                       -fx-font-size: 11px;
                                       -fx-font-weight: bold;
                                       -fx-padding: 2 8;"/>
-                        <!-- Categories -->
                         <Label fx:id="categoriesLabel" text="Action • Sci-Fi"
                                style="-fx-text-fill: #00d4ff;
                                       -fx-font-weight: bold;
                                       -fx-font-size: 13px;"/>
-                        <!-- Episode pill (hidden for films) -->
                         <Label fx:id="episodeInfoLabel" text="S1 · E1"
                                style="-fx-background-color: rgba(0,212,255,0.14);
                                       -fx-background-radius: 6;
@@ -211,7 +171,6 @@
                                visible="false"/>
                     </HBox>
 
-                    <!-- Tab bar -->
                     <HBox spacing="32" style="-fx-padding: 10 0 0 0;">
                         <VBox alignment="CENTER" spacing="5">
                             <Button fx:id="tabOverview" text="OVERVIEW"
@@ -246,7 +205,6 @@
                         </VBox>
                     </HBox>
 
-                    <!-- Synopsis -->
                     <Label fx:id="descriptionLabel"
                            wrapText="true"
                            prefWidth="660" maxWidth="660"
@@ -254,7 +212,6 @@
                                   -fx-font-size: 14px;
                                   -fx-line-spacing: 6;"/>
 
-                    <!-- Credits (Starring / Director) -->
                     <VBox spacing="8" style="-fx-padding: 4 0 0 0;">
                         <HBox spacing="12" alignment="CENTER_LEFT">
                             <Label text="STARRING"
@@ -280,7 +237,6 @@
                         </HBox>
                     </VBox>
 
-                    <!-- CTA buttons -->
                     <HBox spacing="14"
                           style="-fx-padding: 14 0 0 0;"
                           alignment="CENTER_LEFT">
@@ -312,9 +268,6 @@
                 </VBox>
             </HBox>
 
-            <!-- ─────────────────────────────────────────────────────── -->
-            <!--  CAST & CREW                                             -->
-            <!-- ─────────────────────────────────────────────────────── -->
             <VBox spacing="20"
                   style="-fx-padding: 32 64 36 64;
                          -fx-background-color: rgba(0,212,255,0.025);
@@ -330,19 +283,14 @@
                                   -fx-text-fill: white;"/>
                 </HBox>
 
-                <!-- castBox is populated programmatically -->
                 <HBox fx:id="castBox" spacing="24" alignment="CENTER_LEFT"/>
 
             </VBox>
 
-            <!-- ─────────────────────────────────────────────────────── -->
-            <!--  REVIEWS SECTION                                         -->
-            <!-- ─────────────────────────────────────────────────────── -->
             <VBox spacing="0"
                   style="-fx-padding: 44 64 60 64;
                          -fx-background-color: transparent;">
 
-                <!-- Section header -->
                 <HBox alignment="CENTER_LEFT" spacing="12"
                       style="-fx-padding: 0 0 26 0;">
                     <Rectangle width="3" height="20"
@@ -355,7 +303,6 @@
 
                 <HBox spacing="44" alignment="TOP_LEFT">
 
-                    <!-- ── Comment cards carousel ── -->
                     <VBox spacing="16" HBox.hgrow="ALWAYS">
                         <HBox alignment="CENTER_LEFT" spacing="10"
                               style="-fx-padding: 0 0 4 0;">
@@ -366,7 +313,6 @@
                                           -fx-letter-spacing: 1.2;"/>
                             <Region HBox.hgrow="ALWAYS"/>
                         </HBox>
-                        <!-- commentsContainer populated in controller -->
                         <HBox fx:id="commentsContainer"
                               spacing="14"
                               alignment="CENTER_LEFT"
@@ -374,7 +320,6 @@
                               style="-fx-padding: 4 0 8 0;"/>
                     </VBox>
 
-                    <!-- ── Write a review panel ── -->
                     <VBox spacing="0"
                           prefWidth="388" minWidth="360"
                           style="-fx-background-color: rgba(255,255,255,0.022);
@@ -382,7 +327,6 @@
                                  -fx-border-color: rgba(0,212,255,0.11);
                                  -fx-border-radius: 18;">
 
-                        <!-- Panel header -->
                         <HBox style="-fx-background-color: rgba(0,212,255,0.045);
                                      -fx-background-radius: 18 18 0 0;
                                      -fx-border-color: transparent transparent rgba(0,212,255,0.09) transparent;
@@ -394,10 +338,8 @@
                                           -fx-text-fill: white;"/>
                         </HBox>
 
-                        <!-- Panel body -->
                         <VBox spacing="18" style="-fx-padding: 20 22 24 22;">
 
-                            <!-- Interactive star rating -->
                             <VBox spacing="6">
                                 <Label text="YOUR RATING"
                                        style="-fx-text-fill: #3a4258;
@@ -409,11 +351,9 @@
                                       alignment="CENTER_LEFT"/>
                             </VBox>
 
-                            <!-- Divider -->
                             <Region prefHeight="1"
                                     style="-fx-background-color: rgba(0,212,255,0.07);"/>
 
-                            <!-- Comment textarea -->
                             <VBox spacing="8">
                                 <Label text="YOUR THOUGHTS"
                                        style="-fx-text-fill: #3a4258;
@@ -435,7 +375,6 @@
                                                  -fx-faint-focus-color: transparent;"/>
                             </VBox>
 
-                            <!-- Submit -->
                             <Button fx:id="btnSubmitComment"
                                     text="✔  Post review"
                                     prefWidth="344" prefHeight="43"
@@ -456,10 +395,7 @@
 
                 </HBox>
             </VBox>
- 
-            <!-- ─────────────────────────────────────────────────────── -->
-            <!--  WHAT TO WATCH NEXT                                      -->
-            <!-- ─────────────────────────────────────────────────────── -->
+
             <VBox fx:id="watchNextContainer"
                   spacing="0"
                   style="-fx-padding: 0 0 56 0;

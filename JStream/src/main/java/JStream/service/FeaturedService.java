@@ -1,13 +1,10 @@
 package JStream.service;
 
-import JStream.dao.EpisodeProgressDAO;
 import JStream.dao.FeaturedDAO;
-import JStream.dao.FilmProgressDAO;
 import JStream.dao.FilmDAO;
 import JStream.dao.SerieDAO;
 
 import JStream.entity.FeaturedItem;
-import JStream.entity.FeaturedItemProgress;
 import JStream.entity.Category;
 import JStream.entity.Episode;
 import JStream.entity.Film;
@@ -24,7 +21,7 @@ import java.util.Set;
 public class FeaturedService {
 
     private final FeaturedDAO dao;
-    private final FilmDAO     filmDAO  = new FilmDAO();   // ✅ NEW
+    private final FilmDAO     filmDAO  = new FilmDAO();   
     private final SerieDAO    serieDAO = new SerieDAO();
     public FeaturedService() {
         

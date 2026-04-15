@@ -18,7 +18,7 @@ public class SeasonDAO {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            conn.setAutoCommit(false); // start transaction
+            conn.setAutoCommit(false); 
 
             ps.setInt(1, season.getSerieId());
             ps.setInt(2, season.getSeasonNum());
@@ -65,8 +65,10 @@ public class SeasonDAO {
             ps.setString(6, season.getImageUrl());
             ps.setInt(7, season.getPlannedEpisodes());
             ps.setString(8, season.getStatus());
-            ps.setInt(9, season.getRating());
+            ps.setDouble(9, season.getRating());
             ps.setInt(10, season.getSeasonId());
+            
+            
 
             return ps.executeUpdate() > 0;
 
@@ -145,7 +147,7 @@ public class SeasonDAO {
         s.setCreatedAt(rs.getTimestamp("created_at"));
         s.setPlannedEpisodes(rs.getInt("planned_episodes"));
         s.setStatus(rs.getString("status"));
-        s.setRating(rs.getInt("rating"));
+        s.setRating(rs.getDouble("rating"));
         return s;
     }
     public void addSeason(Season season) {
@@ -165,7 +167,7 @@ public class SeasonDAO {
             stmt.setString(8, season.getImageUrl());
             stmt.setInt(9, season.getPlannedEpisodes());
             stmt.setString(10, season.getStatus());
-            stmt.setInt(11, season.getRating());
+            stmt.setDouble(11, season.getRating());
 
             stmt.executeUpdate();
             System.out.println("✅ Saison ajoutée avec succès !");

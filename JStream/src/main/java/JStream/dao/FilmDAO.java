@@ -31,7 +31,7 @@ public class FilmDAO {
             ps.setObject(11, film.getRelease_date());
             ps.setDouble(12, film.getDuration());
             ps.setString(13, film.getAge_rating());
-            ps.setInt(14,    film.getRating());
+            ps.setDouble(14,    film.getRating());
 
             int rows = ps.executeUpdate();
             if (rows > 0) {
@@ -69,7 +69,7 @@ public class FilmDAO {
             ps.setObject(11, film.getRelease_date());
             ps.setDouble(12, film.getDuration());
             ps.setString(13, film.getAge_rating());
-            ps.setInt(14,    film.getRating());
+            ps.setDouble(14,    film.getRating());
             ps.setInt(15,    film.getFilm_id());
 
             boolean updated = ps.executeUpdate() > 0;
@@ -195,7 +195,7 @@ public class FilmDAO {
         film.setPosterV_url(rs.getString("poster_v_url"));
         film.setDuration(rs.getDouble("duration"));
         film.setAge_rating(rs.getString("age_rating"));
-        film.setRating(rs.getInt("rating"));
+        film.setRating(rs.getDouble("rating"));
         film.setUpdated_at(rs.getTimestamp("updated_at"));
 
         if (rs.getTimestamp("release_date") != null)

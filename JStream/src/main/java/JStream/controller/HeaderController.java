@@ -107,7 +107,7 @@ public class HeaderController {
     private final VBox   suggestionsContent = new VBox();
 
     // Track current page for restoration
-    public static String lastActiveFxml = "/view/fxml/HomePage.fxml";
+     static String lastActiveFxml = "/view/fxml/HomePage.fxml";
 
     // ── SERVICES ─────────────────────────────────────────────────────────────
     private final FeaturedService        featuredService        = new FeaturedService();
@@ -1531,11 +1531,39 @@ public class HeaderController {
                 try { titleImage.setImage(new Image(film.getTitle_image_url())); } catch (Exception ignored) {}
 
                 HBox starsBox = new HBox(3);
-                for (int i = 0; i < 5; i++) {
-                    Label star = new Label("★");
-                    star.setStyle("-fx-font-size:24; -fx-font-weight:bold;");
-                    star.setTextFill(i < film.getRating() ? Color.DEEPSKYBLUE : Color.LIGHTGRAY);
-                    starsBox.getChildren().add(star);
+                starsBox.getChildren().clear(); 
+                starsBox.setSpacing(3);
+                starsBox.setAlignment(Pos.CENTER_LEFT);
+
+                double rating = film.getRating(); 
+                double size = 24.0;
+
+                for (int i = 1; i <= 5; i++) {
+                    StackPane starPane = new StackPane();
+                    starPane.setAlignment(Pos.CENTER_LEFT);
+
+                    Label starEmpty = new Label("★");
+                    starEmpty.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 0;");
+                    starEmpty.setTextFill(Color.LIGHTGRAY);
+
+                    Label starFilled = new Label("★");
+                    starFilled.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 0;");
+                    starFilled.setTextFill(Color.DEEPSKYBLUE);
+
+                    double fillAmount = Math.min(1.0, Math.max(0.0, rating - (i - 1)));
+
+                    if (fillAmount >= 1.0) {
+                        starPane.getChildren().add(starFilled);
+                    } else if (fillAmount <= 0) {
+                        starPane.getChildren().add(starEmpty);
+                    } else {
+                        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(fillAmount * size, 35);
+                        starFilled.setClip(clip);
+                        
+                        starPane.getChildren().addAll(starEmpty, starFilled);
+                    }
+
+                    starsBox.getChildren().add(starPane);
                 }
 
                 int totalMin = (int) film.getDuration();
