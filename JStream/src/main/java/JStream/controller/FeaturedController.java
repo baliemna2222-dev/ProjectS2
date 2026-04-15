@@ -1853,7 +1853,7 @@ public class FeaturedController {
         // ── COVER ─────────────────────────────────────────────
         ImageView cover = new ImageView();
         cover.setFitWidth(740);
-        cover.setFitHeight(280);
+        cover.setFitHeight(350);
         cover.setPreserveRatio(false);
 
         cover.setImage(ImageUtil.load(ep.getCovertUrl()));
