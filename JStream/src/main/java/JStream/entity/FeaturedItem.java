@@ -14,7 +14,7 @@ public class FeaturedItem {
     private String posterUrl;
     private List<String> categoryNames; // ✅ multiple categories
     private String ageRating;
-    private int rating;             // 0-5 stars
+    private double rating;             // 0-5 stars
     private String seasonStatus;    // Only for series/season
     private int seasonNumber;  
     private int lastEpisodeNumber;  // Only for series
@@ -25,7 +25,7 @@ public class FeaturedItem {
     // Constructor for films
     public FeaturedItem(int id, String title, String synopsis, String trailerUrl,
                         String mainImageUrl, String titleImageUrl, String posterUrl,
-                        List<String> categoryNames, String ageRating, int rating) {
+                        List<String> categoryNames, String ageRating, double rating) {
         this.id = id;
         this.type = "film";
         this.title = title;
@@ -41,7 +41,7 @@ public class FeaturedItem {
     // ── Constructor for films (lecturepage) ──────────────────────────
     public FeaturedItem(int id, String title, String synopsis, String trailerUrl,
                         String mainImageUrl, String titleImageUrl, String posterUrl,
-                        List<String> categoryNames, String ageRating, int rating,
+                        List<String> categoryNames, String ageRating, double rating,
                         int releaseYear, String director) {
         this.id = id;
         this.type = "film";
@@ -61,7 +61,7 @@ public class FeaturedItem {
     // ── Constructor for series/season (lecyurepage) ──────────────────
     public FeaturedItem(int seasonId, int serieId, String title, String synopsis, String trailerUrl,
                         String mainImageUrl, String titleImageUrl, String posterUrl,
-                        List<String> categoryNames, String ageRating, int rating,
+                        List<String> categoryNames, String ageRating, double rating,
                         String seasonStatus, int seasonNumber, int lastEpisodeNumber,
                         int releaseYear, String director) {
         this.id = seasonId;
@@ -85,7 +85,7 @@ public class FeaturedItem {
     // Constructor for series (season)
     public FeaturedItem(int seasonId, int serieId, String title, String synopsis, String trailerUrl,
                         String mainImageUrl, String titleImageUrl, String posterUrl,
-                        List<String> categoryNames,String ageRating, int rating, String seasonStatus,
+                        List<String> categoryNames,String ageRating, double rating, String seasonStatus,
                         int seasonNumber, int lastEpisodeNumber) {
         this.id = seasonId;
         this.serieId = serieId;
@@ -141,8 +141,8 @@ public class FeaturedItem {
     public String getAgeRating() { return ageRating; }
     public void setAgeRating(String ageRating) { this.ageRating = ageRating; }
 
-    public int getRating() { return rating; }
-    public void setRating(int rating) { this.rating = rating; }
+    public double getRating() { return rating; }
+    public void setRating(double rating) { this.rating = rating; }
 
     public String getSeasonStatus() { return seasonStatus; }
     public void setSeasonStatus(String seasonStatus) { this.seasonStatus = seasonStatus; }

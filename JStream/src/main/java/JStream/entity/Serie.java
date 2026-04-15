@@ -17,7 +17,7 @@ public class Serie {
     private List<Season> seasons;
     private Timestamp createdAt;
     private Timestamp updatedAt; 
-    private int rating;         // from 1-5
+    private double rating;         // from 1-5
     private String age_rating;  // Age rating like "16+" or "PG-13"
 
     // Default constructor
@@ -29,7 +29,7 @@ public class Serie {
     // Full constructor
     public Serie(int serieId, String title, String synopsis, String casting,String director, String covertUrl,
                  List<Category> categories, Timestamp createdAt, Timestamp updatedAt,
-                 int rating, String age_rating,String titleUrl) {
+                 double rating, String age_rating,String titleUrl) {
         this.serieId = serieId;
         this.titleUrl=titleUrl;
         this.title = title;
@@ -81,8 +81,8 @@ public class Serie {
     public Timestamp getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
 
-    public int getRating() { return rating; }
-    public void setRating(int rating) { this.rating = rating; }
+    public double getRating() { return rating; }
+    public void setRating(double rating) { this.rating = rating; }
 
     public String getAge_rating() { return age_rating; }
     public void setAge_rating(String age_rating) { this.age_rating = age_rating; }

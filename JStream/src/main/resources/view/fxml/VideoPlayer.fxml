@@ -75,14 +75,7 @@
 
             <!-- ── Seek bar ── -->
             <VBox spacing="4.0">
-                <!--
-                    StackPane trick:
-                    Layer 1 (bottom): seekFill — cyan Region, width set from Java
-                    Layer 2 (top):    Slider   — track is semi-transparent dim rail
-                                                 thumb is the cyan dot
-                    Both layers share CENTER alignment so they sit on the same
-                    vertical axis; the Region is mouse-transparent.
-                -->
+            
                 <StackPane fx:id="seekBarWrapper" prefHeight="20.0" alignment="CENTER_LEFT">
                     <Region fx:id="seekFill"
                             prefHeight="5.0" maxHeight="5.0"

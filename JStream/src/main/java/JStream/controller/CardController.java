@@ -83,6 +83,7 @@ public class CardController {
     FilmProgressService filmProgressService = new FilmProgressService(featuredService);
     public void setFeaturedController(FeaturedController controller) {
         this.featuredController = controller;
+
     }
     @FXML
     public void initialize() {
@@ -146,7 +147,7 @@ public class CardController {
         });
         addBtn.setOnAction(e -> handleAddToList());
         updateAddButton(addBtn, item);
-        starsLabel.setText(getStars(item.getRating()));
+        populateStars(item.getRating());
         show(playBtn);
         show(addBtn);
         show(starsLabel);
@@ -247,11 +248,64 @@ public class CardController {
             scaleDown.playFromStart(); // play shrink animation
         });
     }
-    private String getStars(int rating) {
-        rating = Math.max(0, Math.min(5, rating)); // ensure rating is 0-5
+    private void populateStars(double rawAvg) {
+        if (starsLabel == null) return;
+
+        javafx.scene.Parent parent = starsLabel.getParent();
+        if (!(parent instanceof HBox)) {
+            starsLabel.setText(getStarsText(rawAvg));
+            return;
+        }
+
+        HBox container = (HBox) parent;
+        int insertIndex = container.getChildren().indexOf(starsLabel);
+        javafx.geometry.Insets originalPadding = starsLabel.getPadding();
+        
+        container.getChildren().remove(starsLabel);
+        starsLabel = null;
+
+        HBox starsBox = new HBox(2);
+        
+        HBox.setHgrow(starsBox, javafx.scene.layout.Priority.ALWAYS); 
+        starsBox.setMaxWidth(Double.MAX_VALUE);
+        
+        starsBox.setAlignment(javafx.geometry.Pos.BASELINE_CENTER); 
+       
+        starsBox.setPadding(originalPadding);
+
+        double val = Math.max(0, Math.min(5, rawAvg));
+        for (int i = 1; i <= 5; i++) {
+            StackPane starPane = new StackPane();
+            starPane.setPrefSize(16, 16);
+
+            Label empty = new Label("★");
+            empty.setStyle("-fx-text-fill: rgba(30,144,255,0.25); -fx-font-size: 14px;");
+
+            double fill = Math.min(1.0, Math.max(0.0, val - (i - 1)));
+
+            if (fill >= 1.0) {
+                Label filled = new Label("★");
+                filled.setStyle("-fx-text-fill: #1E90FF; -fx-font-size: 14px; -fx-font-weight: bold;");
+                starPane.getChildren().addAll(empty, filled);
+            } else if (fill > 0) {
+                Label filled = new Label("★");
+                filled.setStyle("-fx-text-fill: #1E90FF; -fx-font-size: 14px; -fx-font-weight: bold;");
+                javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(fill * 14, 16);
+                filled.setClip(clip);
+                starPane.getChildren().addAll(empty, filled);
+            } else {
+                starPane.getChildren().add(empty);
+            }
+            starsBox.getChildren().add(starPane);
+        }
+
+        container.getChildren().add(insertIndex, starsBox);
+    }
+    private String getStarsText(double rating) {
+        rating = Math.max(0, Math.min(5, rating));
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < rating; i++) sb.append("★");  // filled star
-        for (int i = rating; i < 5; i++) sb.append("☆");  // empty star
+        for (int i = 0; i < (int) rating; i++) sb.append("★");
+        for (int i = (int) rating; i < 5; i++) sb.append("☆");
         return sb.toString();
     }
     public void showFilmPopup(FeaturedItem item) {
@@ -286,6 +340,7 @@ public class CardController {
                 filmBox.setAlignment(Pos.TOP_LEFT);
                 filmBox.setMaxWidth(Double.MAX_VALUE);
 
+                // Poster
                 ImageView poster = new ImageView();
                 poster.setFitWidth(300);
                 poster.setFitHeight(450);
@@ -297,19 +352,48 @@ public class CardController {
                 right.setMaxWidth(Double.MAX_VALUE);
                 HBox.setHgrow(right, Priority.ALWAYS);
 
+                // Title image
                 ImageView titleImage = new ImageView();
                 titleImage.setFitHeight(150);
                 titleImage.setPreserveRatio(true);
 
-                titleImage.setImage(ImageUtil.load(film.getTitle_image_url()));
                 // Stars
                 HBox starsBox = new HBox(3);
-                int fullStars = film.getRating();
-                for (int i = 0; i < 5; i++) {
-                    Label star = new Label("★");
-                    star.setStyle("-fx-font-size:24; -fx-font-weight:bold;");
-                    star.setTextFill(i < fullStars ? Color.DEEPSKYBLUE : Color.LIGHTGRAY);
-                    starsBox.getChildren().add(star);
+                starsBox.getChildren().clear(); 
+                starsBox.setSpacing(3);
+                starsBox.setAlignment(Pos.CENTER_LEFT);
+
+                double rating = film.getRating(); 
+                double size = 24.0;
+
+                for (int i = 1; i <= 5; i++) {
+                    StackPane starPane = new StackPane();
+                    starPane.setAlignment(Pos.CENTER_LEFT);
+
+                    Label starEmpty = new Label("★");
+                    starEmpty.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 0;");
+                    starEmpty.setTextFill(Color.LIGHTGRAY);
+
+                    Label starFilled = new Label("★");
+                    starFilled.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 0;");
+                    starFilled.setTextFill(Color.DEEPSKYBLUE);
+
+                    double fillAmount = Math.min(1.0, Math.max(0.0, rating - (i - 1)));
+
+                    if (fillAmount >= 1.0) {
+                        // Star is fully blue
+                        starPane.getChildren().add(starFilled);
+                    } else if (fillAmount <= 0) {
+                        // Star is fully gray
+                        starPane.getChildren().add(starEmpty);
+                    } else {
+                        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(fillAmount * size, 35);
+                        starFilled.setClip(clip);
+                        
+                        starPane.getChildren().addAll(starEmpty, starFilled);
+                    }
+
+                    starsBox.getChildren().add(starPane);
                 }
 
                 // Duration
@@ -1105,7 +1189,7 @@ public class CardController {
 	        contentWrapper.setPrefSize(740, 420);
 	        card.getChildren().add(contentWrapper);
 
-	        // ── POSTER ───────────────────────────────────────────────────
+	     // ── POSTER ───────────────────────────────────────────────────
 	        ImageView poster = new ImageView();
 	        poster.setFitWidth(300);
 	        poster.setFitHeight(420);
@@ -1124,9 +1208,11 @@ public class CardController {
 	        posterClip.setArcHeight(20);
 	        posterWrapper.setClip(posterClip);
 
+	        // OPTIONAL: slight zoom to avoid empty gaps
 	        poster.setScaleX(1.05);
 	        poster.setScaleY(1.05);
 
+	        // Fade overlay (your code is good 👍)
 	        Region posterFade = new Region();
 	        posterFade.setPrefSize(300, 420);
 	        posterFade.setStyle(
@@ -1134,11 +1220,11 @@ public class CardController {
 	            "  transparent 0%, rgba(7,9,15,0.55) 70%, rgba(7,9,15,1.0) 100%);"
 	        );
 
+	        // Final container
 	        StackPane posterPane = new StackPane(posterWrapper, posterFade);
 	        posterPane.setPrefSize(300, 420);
 	        posterPane.setMaxSize(300, 420);
 	        StackPane.setAlignment(posterPane, Pos.CENTER_LEFT);
-
 	        // ── INFO PANEL ───────────────────────────────────────────────
 	        VBox infoBox = new VBox(12);
 	        infoBox.setPadding(new Insets(28, 24, 24, 18));
@@ -1164,12 +1250,39 @@ public class CardController {
 	        title.setMaxWidth(380); title.setWrapText(true);
 
 	        HBox starsBox = new HBox(4);
+	        starsBox.getChildren().clear(); 
+	        starsBox.setSpacing(4);         
 	        starsBox.setAlignment(Pos.CENTER_LEFT);
-	        for (int i = 0; i < 5; i++) {
-	            Label star = new Label("★");
-	            star.setStyle("-fx-font-size: 15px; -fx-text-fill: " +
-	                (i < s.getRating() ? "#38bdf8;" : "rgba(255,255,255,0.15);"));
-	            starsBox.getChildren().add(star);
+
+	        double rating = s.getRating(); 
+	        double size = 15.0;            
+
+	        for (int i = 1; i <= 5; i++) {
+	            StackPane starPane = new StackPane();
+	            starPane.setAlignment(Pos.CENTER_LEFT);
+
+	            Label bgStar = new Label("★");
+	            bgStar.setStyle("-fx-font-size: 15px; -fx-text-fill: rgba(255,255,255,0.15); -fx-padding: 0;");
+
+	            Label fgStar = new Label("★");
+	            fgStar.setStyle("-fx-font-size: 15px; -fx-text-fill: #38bdf8; -fx-font-weight: bold; -fx-padding: 0;");
+
+	            double fill = Math.min(1.0, Math.max(0.0, rating - (i - 1)));
+
+	            if (fill >= 1.0) {
+	                // Full Blue Star
+	                starPane.getChildren().add(fgStar);
+	            } else if (fill <= 0) {
+	                // Full Empty Star
+	                starPane.getChildren().add(bgStar);
+	            } else {
+	                javafx.scene.shape.Rectangle clip1 = new javafx.scene.shape.Rectangle(fill * size, 25);
+	                fgStar.setClip(clip1);
+	                
+	                starPane.getChildren().addAll(bgStar, fgStar);
+	            }
+
+	            starsBox.getChildren().add(starPane);
 	        }
 
 	        String statusText = s.getStatus() != null ? s.getStatus() : "Unknown";
@@ -1200,9 +1313,9 @@ public class CardController {
 	            "-fx-background-color: linear-gradient(to right, transparent, rgba(56,189,248,0.4), transparent);"
 	        );
 
-	        Button trailerBtn  = new Button("▶  Trailer");
+	        Button trailerBtn = new Button("▶  Trailer");
 	        Button episodesBtn = new Button("≡  Episodes");
-	        styleCardButton(trailerBtn,  false);
+	        styleCardButton(trailerBtn, false);
 	        styleCardButton(episodesBtn, true);
 	        addHoverAnimation(trailerBtn);
 	        addHoverAnimation(episodesBtn);
@@ -1242,7 +1355,9 @@ public class CardController {
 	        addHoverAnimation(backToMain);
 
 	        Label epHeaderTitle = new Label("Season " + s.getSeasonNum() + " — Episodes");
-	        epHeaderTitle.setStyle("-fx-text-fill: white; -fx-font-size: 17px; -fx-font-weight: bold;");
+	        epHeaderTitle.setStyle(
+	            "-fx-text-fill: white; -fx-font-size: 17px; -fx-font-weight: bold;"
+	        );
 
 	        Label epHeaderCount = new Label(epCount + " episodes");
 	        epHeaderCount.setStyle("-fx-text-fill: #38bdf8; -fx-font-size: 12px;");
@@ -1346,11 +1461,11 @@ public class CardController {
 	                ));
 	            }
 	        });
-
-	        // ── Episode detail pane ───────────────────────────────────────
+	      
 	        int userId = Session.getUserId();
 	        Map<Integer, WatchStatus> progressMap = episodeProgressService.loadUserProgress(userId);
 
+	        // Build the shared episode detail pane
 	        StackPane episodeDetailPane = new StackPane();
 	        episodeDetailPane.setPrefSize(740, 420);
 	        episodeDetailPane.setStyle("-fx-background-color: #07090f;");
@@ -1363,11 +1478,10 @@ public class CardController {
 	            episodesList.getChildren().add(row);
 	        }
 
-	        // scrollRow: ScrollPane fills width, slim bar on the right edge
-	        HBox scrollRow = new HBox(0, episodesScroll, customScrollBar);
+	        HBox scrollRow = new HBox(4, episodesScroll, customScrollBar);
 	        HBox.setHgrow(episodesScroll, Priority.ALWAYS);
 	        VBox.setVgrow(scrollRow, Priority.ALWAYS);
-
+	        
 	        episodesView.getChildren().addAll(epHeader, scrollRow);
 
 	        // ── WIRE ACTIONS ─────────────────────────────────────────────
@@ -1427,12 +1541,37 @@ public class CardController {
 	        );
 
 	        HBox miniStars = new HBox(2);
-	        int rating = (int) Math.round(ep.getRating());
-	        for (int i = 0; i < 5; i++) {
-	            Label st = new Label("★");
-	            st.setStyle("-fx-font-size: 10px; -fx-text-fill: " +
-	                (i < rating ? "#38bdf8" : "rgba(255,255,255,0.12)") + ";");
-	            miniStars.getChildren().add(st);
+	        miniStars.getChildren().clear(); 
+	        miniStars.setSpacing(1); 
+	        miniStars.setAlignment(Pos.CENTER_LEFT);
+
+	        double rawRating = ep.getRating(); 
+	        double size = 10.0;
+
+	        for (int i = 1; i <= 5; i++) {
+	            StackPane starPane = new StackPane();
+	            starPane.setAlignment(Pos.CENTER_LEFT);
+
+	            Label bgStar = new Label("★");
+	            bgStar.setStyle("-fx-font-size: 10px; -fx-text-fill: rgba(255,255,255,0.12); -fx-padding: 0;");
+
+	            Label fgStar = new Label("★");
+	            fgStar.setStyle("-fx-font-size: 10px; -fx-text-fill: #38bdf8; -fx-font-weight: bold; -fx-padding: 0;");
+
+	            double fill = Math.min(1.0, Math.max(0.0, rawRating - (i - 1)));
+
+	            if (fill >= 1.0) {
+	                starPane.getChildren().add(fgStar);
+	            } else if (fill <= 0) {
+	                starPane.getChildren().add(bgStar);
+	            } else {
+	                javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(fill * size, 15);
+	                fgStar.setClip(clip);
+	                
+	                starPane.getChildren().addAll(bgStar, fgStar);
+	            }
+
+	            miniStars.getChildren().add(starPane);
 	        }
 	        textCol.getChildren().addAll(epTitleLbl, miniStars);
 
@@ -1484,6 +1623,7 @@ public class CardController {
 	        cover.setPreserveRatio(false);
 
 	        cover.setImage(ImageUtil.load(ep.getCovertUrl()));
+
 
 	        Region coverGradient = new Region();
 	        coverGradient.setPrefSize(740, 280);
@@ -1759,8 +1899,7 @@ public class CardController {
 	    	     updateAddButton(addBtn, item);
 
 	    	     // ------------------ Rating Stars ------------------
-	    	     starsLabel.setText(getStars(item.getRating()));
-
+	    	     populateStars(item.getRating());
 	    	     // ------------------ Progress Line ------------------
 	    	     int lastPos = data.getLastPosition();
 	    	     int totalDuration = 1; // default to avoid division by zero
@@ -1832,7 +1971,7 @@ public class CardController {
 	    	       
 	    	        addBtn.setOnAction(e -> handleAddToList());
 	    	        updateAddButton(addBtn, item);
-	    	        starsLabel.setText(getStars(item.getRating()));
+	    	        populateStars(item.getRating());
 	    	        hide(playBtn);
 	    	        hide(starsLabel);
 	    	        hide(progressFill);
@@ -1841,36 +1980,36 @@ public class CardController {
 	    	        
 	    	    }
 	    	 private void show(Node node) {
+	    		 if (node == null) return;
 	    		    node.setVisible(true);
 	    		    node.setManaged(true);
 	    		}
 
 	    		private void hide(Node node) {
+	    			if (node == null) return;
 	    		    node.setVisible(false);
 	    		    node.setManaged(false);
 	    		}
 	    		public void setItem_mylist(FeaturedItem item) {
 	    		    this.currentItem = item;
 
-	    		    // ------------------ CLICK ON POSTER ------------------
 	    		    poster.getParent().setOnMouseClicked(e -> {
 	    		        if (autoSlide != null) autoSlide.pause();
 
 	    		        String type = currentItem.getType().toLowerCase();
-
+	    		        
 	    		        if (type.equals("film")) {
 	    		            showFilmPopup(currentItem);
-
+	    		            
 	    		        } else if (type.equals("serie")) {
-	    		            // 🎯 Direct smart resume instead of popup
-	    		            playBtn.fire();
+	    		            showSeriePopup(currentItem);
 	    		        }
 	    		    });
 
-	    		    // ------------------ POSTER ------------------
+	    		    // ------------------ Poster ------------------
 	    		    poster.setImage(ImageUtil.load(item.getPosterUrl()));
 
-	    		    // ------------------ TYPE BADGE ------------------
+	    		    // ------------------ Type Badge ------------------
 	    		    if (item.getSerieId() != 0) {
 	    		        typeBadge.setText("SERIE");
 	    		    } else {
@@ -1949,6 +2088,8 @@ public class CardController {
 	    		                        targetSeasonNum,
 	    		                        targetEpisode.getEpId()
 	    		                );
+
+	    		                // ❌ REMOVED: markInProgress here — LecturePageController handles this
 	    		            }
 
 	    		        } catch (Exception ex) {
@@ -1961,16 +2102,11 @@ public class CardController {
 	    		    updateAddButton(addBtn, item);
 
 	    		    // ------------------ UI ------------------
-	    		    starsLabel.setText(getStars(item.getRating()));
-
+	    		    populateStars(item.getRating());
 	    		    show(playBtn);
 	    		    show(addBtn);
 	    		    show(starsLabel);
 	    		    show(typeBadge);
 	    		    hide(progressFill);
 	    		}
-
-	    		    
-	    		        } 
-	    		        
-	    		  
+}

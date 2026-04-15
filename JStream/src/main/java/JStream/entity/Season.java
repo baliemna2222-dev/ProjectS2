@@ -17,7 +17,7 @@ public class Season {
     private Timestamp createdAt; // creation timestamp
     private int plannedEpisodes; // total number of episodes planned
     private String status;       // "Ongoing" or "Completed"
-    private int rating;       // average rating for this season
+    private double rating;       // average rating for this season
     private List<Episode> episodes; // optional, can be loaded from DB
 
     public Season() {}
@@ -25,7 +25,7 @@ public class Season {
     public Season(int seasonId, int serieId, int seasonNum, String title, String synopsis,
                   String trailerUrl, String posterUrl, String titleUrl, String imageUrl,
                   Timestamp createdAt, int plannedEpisodes, String status,
-                  int rating, List<Episode> episodes) {
+                  double rating, List<Episode> episodes) {
         this.seasonId = seasonId;
         this.serieId = serieId;
         this.seasonNum = seasonNum;
@@ -79,8 +79,8 @@ public class Season {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public int getRating() { return rating; }
-    public void setRating(int rating) { this.rating = rating; }
+    public double getRating() { return rating; }
+    public void setRating(double rating) { this.rating = rating; }
 
     public List<Episode> getEpisodes() { return episodes; }
     public void setEpisodes(List<Episode> episodes) { this.episodes = episodes; }

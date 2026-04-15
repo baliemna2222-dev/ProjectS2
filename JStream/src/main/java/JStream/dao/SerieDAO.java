@@ -22,11 +22,11 @@ public class SerieDAO {
                 ps.setString(1, serie.getTitle());
                 ps.setString(2, serie.getSynopsis());
                 ps.setString(3, serie.getCasting());
-                ps.setString(4, serie.getDirector()); // ✅ NEW
+                ps.setString(4, serie.getDirector()); 
                 ps.setString(5, serie.getCovertUrl());
                 ps.setString(6, serie.getTitleUrl());
                 ps.setString(7, serie.getAge_rating());
-                ps.setInt(8, serie.getRating()); // ✅ NEW
+                ps.setDouble(8, serie.getRating()); 
 
                 ps.executeUpdate();
 
@@ -67,11 +67,11 @@ public class SerieDAO {
                 ps.setString(1, serie.getTitle());
                 ps.setString(2, serie.getSynopsis());
                 ps.setString(3, serie.getCasting());
-                ps.setString(4, serie.getDirector()); // ✅ NEW
+                ps.setString(4, serie.getDirector()); 
                 ps.setString(5, serie.getCovertUrl());
                 ps.setString(6, serie.getTitleUrl());
                 ps.setString(7, serie.getAge_rating());
-                ps.setInt(8, serie.getRating()); // ✅ NEW
+                ps.setDouble(8, serie.getRating()); 
                 ps.setInt(9, serie.getSerieId());
 
                 boolean updated = ps.executeUpdate() > 0;
@@ -240,7 +240,7 @@ public class SerieDAO {
         serie.setCovertUrl(rs.getString("covert_url"));
         serie.setTitleUrl(rs.getString("title_url"));
         serie.setAge_rating(rs.getString("age_rating"));
-        serie.setRating(rs.getInt("rating"));
+        serie.setRating(rs.getDouble("rating"));
         serie.setCreatedAt(rs.getTimestamp("created_at"));
         serie.setUpdatedAt(rs.getTimestamp("updated_at"));
 

@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import JStream.entity.Actor;
-import JStream.entity.Category;
 import JStream.entity.Comment;
 import JStream.entity.Episode;
 import JStream.entity.FeaturedItem;
@@ -28,7 +27,6 @@ import JStream.service.MylistService;
 import JStream.service.NotificationService;
 import JStream.service.RatingService;
 import JStream.service.UserService;
-import JStream.utils.ImageUtil;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
@@ -478,114 +476,52 @@ public class LecturePageController {
     // =========================================================================
     public void initFilm(int filmId) {
         if (episodeInfoLabel != null) episodeInfoLabel.setVisible(false);
-
         try {
             Film film = featuredService.getFilmDetail(filmId);
             if (film == null) return;
 
-            // =========================
-            // RAW DATA (kept as String)
-            // =========================
-            String posterUrl      = film.getPoster_url();
-            String imageUrl       = film.getImage_url();
-            String titleImageUrl  = film.getTitle_image_url();
-            String trailerUrl     = film.getTrailer_url();
-            String videoUrl       = film.getVideo_url();
-
-            this.currentTrailerUrl = trailerUrl;
-            this.currentVideoUrl   = videoUrl;
-
+            this.currentTrailerUrl = film.getTrailer_url();
+            this.currentVideoUrl   = film.getVideo_url();
             this.currentItem = new FeaturedItem(
-                film.getFilm_id(),
-                film.getTitle(),
-                film.getSynopsis(),
-                trailerUrl,
-                imageUrl,
-                titleImageUrl,
-                posterUrl,
+                film.getFilm_id(), film.getTitle(), film.getSynopsis(),
+                film.getTrailer_url(), film.getImage_url(), film.getTitle_image_url(),
+                film.getPoster_url(),
                 film.getCategories() != null
                     ? film.getCategories().stream().map(c -> c.getName()).collect(Collectors.toList())
                     : new ArrayList<>(),
-                film.getAge_rating(),
-                film.getRating(),
+                film.getAge_rating(), film.getRating(),
                 film.getRelease_date() != null ? film.getRelease_date().getYear() : 0,
-                film.getDirector()
-            );
+                film.getDirector());
 
-            // =========================
-            // IDS
-            // =========================
             this.resolvedFilmId    = filmId;
             this.resolvedSerieId   = null;
             this.resolvedSeasonId  = null;
             this.resolvedEpisodeId = null;
 
-            // =========================
-            // CACHE RESET
-            // =========================
             if (!Integer.valueOf(filmId).equals(cachedSimilarFilmId)) {
-                cachedSimilarFilms = null;
+                cachedSimilarFilms  = null;
                 cachedSimilarFilmId = null;
             }
 
-            // =========================
-            // UI UPDATE (IMPORTANT PART)
-            // =========================
-            updateUI(
-                posterUrl,
-                film.getTitle(),
-                film.getSynopsis(),
-                film.getDuration() + " min",
-                film.getRating(),
-                film.getCasting(),
-                film.getDirector(),
-                film.getPosterV_url(),
-                null,
-                videoUrl,
-                0
-            );
+            updateUI(film.getPoster_url(), film.getTitle(), film.getSynopsis(),
+                film.getDuration() + " min", film.getRating(), film.getCasting(),
+                film.getDirector(), film.getPosterV_url(), null, film.getVideo_url(), 0);
 
-            // =========================
-            // LABELS
-            // =========================
-            if (yearLabel != null && film.getRelease_date() != null) {
+            if (yearLabel != null && film.getRelease_date() != null)
                 yearLabel.setText(String.valueOf(film.getRelease_date().getYear()));
-            }
+            if (ageRatingLabel != null)
+                ageRatingLabel.setText(film.getAge_rating() != null ? film.getAge_rating() : "");
+            if (addToListButton != null) syncAddButton();
 
-            if (ageRatingLabel != null) {
-                ageRatingLabel.setText(
-                    film.getAge_rating() != null ? film.getAge_rating() : ""
-                );
-            }
-
-            if (addToListButton != null) {
-                syncAddButton();
-            }
-
-            // =========================
-            // RATING
-            // =========================
             Rating prior = ratingService.getUserRatingForFilm(Session.getUserId(), filmId);
-
             setupReviewSection(prior != null ? prior.getNote() : 0);
+            if (prior != null) lockStars();
 
-            if (prior != null) {
-                lockStars();
-            }
-
-            // =========================
-            // EXTRA DATA
-            // =========================
             loadCast();
             populateWatchNext();
 
-            if (mainScrollPane != null) {
-                Platform.runLater(() -> mainScrollPane.setVvalue(0));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            if (mainScrollPane != null) Platform.runLater(() -> mainScrollPane.setVvalue(0));
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     // =========================================================================
@@ -593,168 +529,77 @@ public class LecturePageController {
     // =========================================================================
     public void initEpisode(int serieId, int seasonNum, int epId) {
         try {
-
-            this.currentSerie = featuredService.getSerieDetail(serieId);
+            this.currentSerie     = featuredService.getSerieDetail(serieId);
             this.currentSeasonNum = seasonNum;
-
             if (currentSerie == null) return;
 
             this.currentEpisode = findEpisodeById(currentSerie, epId);
             if (currentEpisode == null) return;
 
             Season matchedSeason = null;
+            for (Season s : currentSerie.getSeasons())
+                if (s.getSeasonNum() == seasonNum) { matchedSeason = s; break; }
 
-            for (Season s : currentSerie.getSeasons()) {
-                if (s.getSeasonNum() == seasonNum) {
-                    matchedSeason = s;
-                    break;
-                }
-            }
-
-            // =========================
-            // SAFE RAW DATA EXTRACTION
-            // =========================
-            String posterUrl = null;
-            String coverUrl = null;
-            String trailerUrl = null;
-
-            if (matchedSeason != null) {
-                posterUrl = matchedSeason.getPosterUrl();
-                coverUrl = matchedSeason.getImageUrl();
-                trailerUrl = matchedSeason.getTrailerUrl();
-            }
+            String posterUrl  = matchedSeason != null ? matchedSeason.getPosterUrl()  : null;
+            String coverUrl   = matchedSeason != null ? matchedSeason.getImageUrl()   : null;
+            String trailerUrl = matchedSeason != null ? matchedSeason.getTrailerUrl() : null;
 
             this.currentTrailerUrl = trailerUrl;
-            this.currentVideoUrl = currentEpisode.getVideoUrl();
-
-            // =========================
-            // FEATURED ITEM CREATION
-            // =========================
+            this.currentVideoUrl   = currentEpisode.getVideoUrl();
             this.currentItem = new FeaturedItem(
-                currentEpisode.getSeasonId(),
-                currentSerie.getSerieId(),
-                currentSerie.getTitle(),
-                currentSerie.getSynopsis(),
-                trailerUrl,
-                coverUrl,
-                currentSerie.getTitleUrl(),
-                posterUrl,
+                currentEpisode.getSeasonId(), currentSerie.getSerieId(),
+                currentSerie.getTitle(), currentSerie.getSynopsis(),
+                trailerUrl, coverUrl, currentSerie.getTitleUrl(), posterUrl,
                 currentSerie.getCategories() != null
-                    ? currentSerie.getCategories()
-                        .stream()
-                        .map(Category::getName)
-                        .collect(Collectors.toList())
+                    ? currentSerie.getCategories().stream().map(c -> c.getName()).collect(Collectors.toList())
                     : new ArrayList<>(),
-                currentSerie.getAge_rating(),
-                currentSerie.getRating(),
-                null,
-                seasonNum,
-                currentEpisode.getNumEpisode(),
+                currentSerie.getAge_rating(), currentSerie.getRating(),
+                null, seasonNum, currentEpisode.getNumEpisode(),
                 currentSerie.getCreatedAt() != null
-                    ? currentSerie.getCreatedAt().toLocalDateTime().getYear()
-                    : 0,
-                currentSerie.getDirector()
-            );
+                    ? currentSerie.getCreatedAt().toLocalDateTime().getYear() : 0,
+                currentSerie.getDirector());
 
-            // =========================
-            // IDS
-            // =========================
-            this.resolvedFilmId = null;
-            this.resolvedSerieId = serieId;
-            this.resolvedSeasonId = currentEpisode.getSeasonId();
+            this.resolvedFilmId    = null;
+            this.resolvedSerieId   = serieId;
+            this.resolvedSeasonId  = currentEpisode.getSeasonId();
             this.resolvedEpisodeId = currentEpisode.getEpId();
 
-            // =========================
-            // RATING LOGIC
-            // =========================
-            double freshAvg = ratingService.getAverageForEpisode(currentEpisode.getEpId());
+            double freshAvg      = ratingService.getAverageForEpisode(currentEpisode.getEpId());
             double displayRating = freshAvg > 0 ? freshAvg : currentSerie.getRating();
 
-            // =========================
-            // UI UPDATE (IMPORTANT)
-            // =========================
-            updateUI(
-                posterUrl,
-                currentEpisode.getTitle(),
-                currentEpisode.getResume() != null
-                    ? currentEpisode.getResume()
-                    : currentSerie.getSynopsis(),
-                currentEpisode.getDuration() + " min",
-                (int) displayRating,
-                currentSerie.getCasting(),
-                currentSerie.getDirector(),
-                coverUrl,
+            updateUI(posterUrl, currentEpisode.getTitle(),
+                currentEpisode.getResume() != null ? currentEpisode.getResume() : currentSerie.getSynopsis(),
+                currentEpisode.getDuration() + " min",  displayRating,
+                currentSerie.getCasting(), currentSerie.getDirector(), coverUrl,
                 "S" + seasonNum + " · E" + currentEpisode.getNumEpisode(),
-                currentEpisode.getVideoUrl(),
-                currentEpisode.getEpId()
-            );
+                currentEpisode.getVideoUrl(), currentEpisode.getEpId());
 
-            // =========================
-            // LABELS
-            // =========================
-            if (yearLabel != null && currentSerie.getCreatedAt() != null) {
-                yearLabel.setText(
-                    String.valueOf(currentSerie.getCreatedAt().toLocalDateTime().getYear())
-                );
-            }
+            if (yearLabel != null && currentSerie.getCreatedAt() != null)
+                yearLabel.setText(String.valueOf(currentSerie.getCreatedAt().toLocalDateTime().getYear()));
+            if (ageRatingLabel != null)
+                ageRatingLabel.setText(currentSerie.getAge_rating() != null ? currentSerie.getAge_rating() : "");
+            if (scoreLabel != null)
+                scoreLabel.setText(freshAvg > 0 ? String.format("%.1f", freshAvg) : String.valueOf(currentSerie.getRating()));
 
-            if (ageRatingLabel != null) {
-                ageRatingLabel.setText(
-                    currentSerie.getAge_rating() != null ? currentSerie.getAge_rating() : ""
-                );
-            }
-
-            if (scoreLabel != null) {
-                scoreLabel.setText(
-                    freshAvg > 0
-                        ? String.format("%.1f", freshAvg)
-                        : String.valueOf(currentSerie.getRating())
-                );
-            }
-
-            // =========================
-            // STARS + UI STATE
-            // =========================
             populateStars(displayRating);
+            if (addToListButton != null) syncAddButton();
 
-            if (addToListButton != null) {
-                syncAddButton();
-            }
-
-            // =========================
-            // USER RATING
-            // =========================
-            Rating prior = ratingService.getUserRatingForEpisode(
-                Session.getUserId(),
-                currentEpisode.getEpId()
-            );
-
+            Rating prior = ratingService.getUserRatingForEpisode(Session.getUserId(), currentEpisode.getEpId());
             setupReviewSection(prior != null ? prior.getNote() : 0);
+            if (prior != null) lockStars();
 
-            if (prior != null) {
-                lockStars();
-            }
-
-            // =========================
-            // EXTRA DATA
-            // =========================
             loadCast();
             populateWatchNext();
 
-            if (mainScrollPane != null) {
-                Platform.runLater(() -> mainScrollPane.setVvalue(0));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            if (mainScrollPane != null) Platform.runLater(() -> mainScrollPane.setVvalue(0));
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     // =========================================================================
     //  UPDATE UI
     // =========================================================================
     public void updateUI(String poster, String title, String desc,
-                         String duration, int rating, String cast,
+                         String duration, double rating, String cast,
                          String director, String bgImagePath,
                          String epInfo, String video, int epId) {
 
@@ -774,13 +619,13 @@ public class LecturePageController {
             if (epInfo != null) { episodeInfoLabel.setText(epInfo); episodeInfoLabel.setVisible(true); }
             else                  episodeInfoLabel.setVisible(false);
         }
-        if (bgImagePath != null && backgroundImage != null) {
-            backgroundImage.setImage(ImageUtil.load(bgImagePath));
-        }
 
-        if (poster != null && posterImage != null) {
-            posterImage.setImage(ImageUtil.load(poster));
-        }
+        if (bgImagePath != null && backgroundImage != null)
+            try { backgroundImage.setImage(new Image(bgImagePath, true)); } catch (Exception ignored) {}
+
+        if (poster != null && posterImage != null)
+            try { posterImage.setImage(new Image(poster, true)); } catch (Exception ignored) {}
+
         populateStars(rating);
 
         if (playButton != null) {
@@ -796,7 +641,7 @@ public class LecturePageController {
     }
 
     public void updateUI(String title, String resume, String duration,
-                         int rating, String casting,
+                         double rating, String casting,
                          String episodeLabel, String videoUrl, int epId) {
         if (currentSerie == null) return;
         String posterUrl = findSeasonPoster(currentSerie, currentSeasonNum);
@@ -865,10 +710,6 @@ public class LecturePageController {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // =========================================================================
-    //  NAVIGATION  — syncs HeaderController.lastActiveFxml so the header
-    //  highlights the correct tab when the target page loads
-    // =========================================================================
     @FXML
     private void handleBackAction() {
         stopPeriodicNotifCheck();
@@ -1003,10 +844,10 @@ public class LecturePageController {
     // =========================================================================
     //  STARS — interactive
     // =========================================================================
-    private void setupInteractiveStars(int preselected) {
+    private void setupInteractiveStars(double preselected) {
         if (interactiveStarsBox == null) return;
         interactiveStarsBox.getChildren().clear();
-        selectedStarNote = preselected;
+        selectedStarNote = (int) preselected;
 
         Label ratingHint = new Label(preselected > 0 ? ratingLabel(preselected) : "Tap to rate");
         ratingHint.setStyle("-fx-text-fill: #3e4560; -fx-font-size: 11px; -fx-font-style: italic;");
@@ -1059,14 +900,14 @@ public class LecturePageController {
         if (preselected > 0) paintInteractive(preselected);
     }
 
-    private String ratingLabel(int stars) {
-        return switch (stars) {
+    private String ratingLabel(double stars) {
+        return switch ((int)stars) {
             case 1 -> "Poor"; case 2 -> "Fair"; case 3 -> "Good";
             case 4 -> "Great"; case 5 -> "Outstanding!"; default -> "Tap to rate";
         };
     }
 
-    private void paintInteractive(int upTo) {
+    private void paintInteractive(double upTo) {
         for (int i = 0; i < interactiveLabels.length; i++) {
             if (interactiveLabels[i] == null) continue;
             if (i < upTo) {
@@ -1147,7 +988,7 @@ public class LecturePageController {
     // =========================================================================
     //  REVIEW SECTION
     // =========================================================================
-    private void setupReviewSection(int preselectedStars) {
+    private void setupReviewSection(double preselectedStars) {
         setupInteractiveStars(preselectedStars);
         if (btnSubmitComment != null)
             btnSubmitComment.setOnAction(e -> handleSubmitReview());
@@ -1329,29 +1170,26 @@ public class LecturePageController {
         card.setPrefWidth(90);
 
         Node avatar;
-
         String photoUrl = actor.getPhotoUrl();
-
         if (photoUrl != null && !photoUrl.isBlank()) {
-
-            ImageView iv = new ImageView(ImageUtil.load(photoUrl));
-            iv.setFitWidth(60);
-            iv.setFitHeight(60);
-            iv.setPreserveRatio(false);
-
-            iv.setClip(new Circle(30, 30, 30));
-
-            Circle ring = new Circle(30);
-            ring.setFill(Color.TRANSPARENT);
-            ring.setStroke(Color.web("#00d4ff", 0.3));
-            ring.setStrokeWidth(1.5);
-
-            StackPane photoPane = new StackPane(iv, ring);
-            photoPane.setMinSize(60, 60);
-            photoPane.setMaxSize(60, 60);
-
-            avatar = photoPane;
-
+            try {
+                String resolvedUrl;
+                if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://") || photoUrl.startsWith("file:"))
+                    resolvedUrl = photoUrl;
+                else {
+                    URL resource = getClass().getResource(photoUrl.startsWith("/") ? photoUrl : "/" + photoUrl);
+                    resolvedUrl = resource != null ? resource.toExternalForm() : new java.io.File(photoUrl).toURI().toString();
+                }
+                ImageView iv = new ImageView(new Image(resolvedUrl, true));
+                iv.setFitWidth(60); iv.setFitHeight(60); iv.setPreserveRatio(false);
+                iv.setClip(new Circle(30, 30, 30));
+                Circle ring = new Circle(30);
+                ring.setFill(Color.TRANSPARENT);
+                ring.setStroke(Color.web("#00d4ff", 0.3)); ring.setStrokeWidth(1.5);
+                StackPane photoPane = new StackPane(iv, ring);
+                photoPane.setMinSize(60, 60); photoPane.setMaxSize(60, 60);
+                avatar = photoPane;
+            } catch (Exception ex) { avatar = buildInitialsAvatar(actor.getName()); }
         } else {
             avatar = buildInitialsAvatar(actor.getName());
         }
@@ -1368,14 +1206,216 @@ public class LecturePageController {
             roleLabel.setMaxWidth(88);
             roleLabel.setAlignment(Pos.CENTER);
             roleLabel.setStyle("-fx-text-fill:#2e4060; -fx-font-size:10px;");
-
             card.getChildren().addAll(avatar, nameLabel, roleLabel);
         } else {
             card.getChildren().addAll(avatar, nameLabel);
         }
-
         addHoverEffect(card);
+        card.setOnMouseClicked(e -> showActorPopup(actor));
         return card;
+    }
+    private void showActorPopup(Actor actor) {
+        Stage popup = new Stage();
+        popup.initOwner(mainContainer.getScene().getWindow());
+        popup.initModality(Modality.APPLICATION_MODAL);
+        popup.initStyle(StageStyle.TRANSPARENT);
+
+        // ── Full-screen dimmed overlay ────────────────────────────────────────────
+        StackPane overlay = new StackPane();
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.82);");
+        overlay.setPrefSize(400, 360); 
+        overlay.setMaxSize(450, 450);
+        // ── Outer card ────────────────────────────────────────────────────────────
+        VBox card = new VBox(0);
+        card.setAlignment(Pos.TOP_CENTER);
+        card.setPrefWidth(350); // Set this about 50-100px smaller than the overlay width
+        card.setMaxWidth(350);
+        card.setStyle(
+            "-fx-background-color: #0b0e18;" +
+            "-fx-background-radius: 24;" +
+            "-fx-border-color: rgba(255,255,255,0.07);" +
+            "-fx-border-radius: 24;" +
+            "-fx-border-width: 1;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.95), 80, 0.5, 0, 20);");
+
+        // =========================================================================
+        //  PHOTO ZONE (full bleed, with fade-to-card at bottom)
+        // =========================================================================
+        StackPane photoZone = new StackPane();
+        photoZone.setPrefSize(320, 260);
+        photoZone.setMaxSize(320, 260);
+
+        // ── Background tint behind initials fallback ──────────────────────────────
+        Region photoBg = new Region();
+        photoBg.setPrefSize(320, 260);
+        photoBg.setStyle("-fx-background-color: #08111f; -fx-background-radius: 24 24 0 0;");
+        photoZone.getChildren().add(photoBg);
+
+        String photoUrl = actor.getPhotoUrl();
+        boolean hasPhoto = photoUrl != null && !photoUrl.isBlank();
+
+        if (hasPhoto) {
+            try {
+                String resolvedUrl;
+                if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://") || photoUrl.startsWith("file:"))
+                    resolvedUrl = photoUrl;
+                else {
+                    java.net.URL res = getClass().getResource(photoUrl.startsWith("/") ? photoUrl : "/" + photoUrl);
+                    resolvedUrl = res != null ? res.toExternalForm() : new java.io.File(photoUrl).toURI().toString();
+                }
+                ImageView bigPhoto = new ImageView(new Image(resolvedUrl, true));
+                bigPhoto.setFitWidth(320);
+                bigPhoto.setFitHeight(260);
+                bigPhoto.setPreserveRatio(false);
+                Rectangle clip = new Rectangle(320, 260);
+                clip.setArcWidth(48); clip.setArcHeight(48);
+                bigPhoto.setClip(clip);
+                photoZone.getChildren().add(bigPhoto);
+            } catch (Exception ex) {
+                photoZone.getChildren().add(buildLargeInitialsAvatar(actor.getName(), 320, 260));
+            }
+        } else {
+            photoZone.getChildren().add(buildLargeInitialsAvatar(actor.getName(), 320, 260));
+        }
+
+        // ── Cinematic bottom fade so photo bleeds into card bg ────────────────────
+        Region fadeOut = new Region();
+        fadeOut.setPrefSize(320, 260);
+        fadeOut.setMouseTransparent(true);
+        fadeOut.setStyle("-fx-background-color: linear-gradient(to bottom, transparent 40%, #0b0e18 100%);");
+        photoZone.getChildren().add(fadeOut);
+
+        // ── Close button (top-right, on top of photo) ─────────────────────────────
+        Button closeBtn = new Button("✕");
+        closeBtn.setPrefSize(32, 32); closeBtn.setMinSize(32, 32); closeBtn.setMaxSize(32, 32);
+        final String CB  = "-fx-background-color:rgba(0,0,0,0.55);-fx-text-fill:rgba(255,255,255,0.55);-fx-font-size:12px;-fx-background-radius:50%;-fx-cursor:hand;-fx-border-color:rgba(255,255,255,0.1);-fx-border-radius:50%;-fx-border-width:1;";
+        final String CBH = "-fx-background-color:rgba(220,40,40,0.7);-fx-text-fill:white;-fx-font-size:12px;-fx-background-radius:50%;-fx-cursor:hand;-fx-border-color:transparent;-fx-border-radius:50%;-fx-border-width:1;";
+        closeBtn.setStyle(CB);
+        closeBtn.setOnMouseEntered(e -> closeBtn.setStyle(CBH));
+        closeBtn.setOnMouseExited (e -> closeBtn.setStyle(CB));
+        closeBtn.setOnAction(e -> popup.close());
+        StackPane.setAlignment(closeBtn, Pos.TOP_RIGHT);
+        StackPane.setMargin(closeBtn, new Insets(12, 12, 0, 0));
+        photoZone.getChildren().add(closeBtn);
+
+        // =========================================================================
+        //  INFO ZONE
+        // =========================================================================
+        VBox infoZone = new VBox(0);
+        infoZone.setAlignment(Pos.TOP_CENTER);
+        infoZone.setPadding(new Insets(4, 24, 0, 24));
+
+        // ── Name ──────────────────────────────────────────────────────────────────
+        Label nameLbl = new Label(actor.getName());
+        nameLbl.setStyle(
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 22px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-letter-spacing: -0.5px;");
+        nameLbl.setAlignment(Pos.CENTER);
+        nameLbl.setWrapText(true);
+        nameLbl.setMaxWidth(280);
+        VBox.setMargin(nameLbl, new Insets(0, 0, 6, 0));
+
+        // ── "Actor" subtitle ──────────────────────────────────────────────────────
+        Label subtitleLbl = new Label("A C T O R");
+        subtitleLbl.setStyle(
+            "-fx-text-fill: rgba(0,212,255,0.45);" +
+            "-fx-font-size: 10px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-letter-spacing: 2px;");
+        VBox.setMargin(subtitleLbl, new Insets(0, 0, 16, 0));
+
+        infoZone.getChildren().addAll(nameLbl, subtitleLbl);
+
+        // ── Role pill ─────────────────────────────────────────────────────────────
+        if (actor.getRoleName() != null && !actor.getRoleName().isBlank()) {
+            HBox rolePill = new HBox(6);
+            rolePill.setAlignment(Pos.CENTER);
+            rolePill.setStyle(
+                "-fx-background-color: rgba(0,212,255,0.07);" +
+                "-fx-border-color: rgba(0,212,255,0.18);" +
+                "-fx-border-radius: 40;" +
+                "-fx-background-radius: 40;" +
+                "-fx-padding: 7 20;");
+
+            Label asLbl = new Label("as");
+            asLbl.setStyle("-fx-text-fill: rgba(0,212,255,0.45); -fx-font-size: 11px;");
+
+            Label roleLbl = new Label(actor.getRoleName());
+            roleLbl.setStyle(
+                "-fx-text-fill: #00d4ff;" +
+                "-fx-font-size: 13px;" +
+                "-fx-font-weight: bold;");
+
+            rolePill.getChildren().addAll(asLbl, roleLbl);
+            VBox.setMargin(rolePill, new Insets(0, 0, 20, 0));
+            infoZone.getChildren().add(rolePill);
+        } else {
+            VBox.setMargin(subtitleLbl, new Insets(0, 0, 20, 0));
+        }
+
+     
+
+        // ── Bottom padding ────────────────────────────────────────────────────────
+        Region bottomPad = new Region(); bottomPad.setPrefHeight(24);
+        infoZone.getChildren().add(bottomPad);
+
+        card.getChildren().addAll(photoZone, infoZone);
+
+        // ── Wrap card so close btn can float freely ───────────────────────────────
+        StackPane cardWrapper = new StackPane(card);
+        cardWrapper.setMaxWidth(320);
+
+        // ── Spring-in animation ───────────────────────────────────────────────────
+        cardWrapper.setScaleX(0.82);
+        cardWrapper.setScaleY(0.82);
+        cardWrapper.setOpacity(0);
+        cardWrapper.setTranslateY(24);
+
+        overlay.getChildren().add(cardWrapper);
+        overlay.setOnMouseClicked(e -> { if (e.getTarget() == overlay) popup.close(); });
+
+        Scene scene = new Scene(overlay);
+        scene.setFill(Color.TRANSPARENT);
+        popup.setScene(scene);
+
+        popup.sizeToScene();  
+        popup.centerOnScreen();
+        popup.show();
+
+        // Three-part entrance: scale + fade + slide up
+        ScaleTransition scale = new ScaleTransition(Duration.millis(280), cardWrapper);
+        scale.setFromX(0.82); scale.setToX(1.0);
+        scale.setFromY(0.82); scale.setToY(1.0);
+        scale.setInterpolator(Interpolator.EASE_OUT);
+
+        FadeTransition fade = new FadeTransition(Duration.millis(220), cardWrapper);
+        fade.setFromValue(0.0); fade.setToValue(1.0);
+
+        TranslateTransition slide = new TranslateTransition(Duration.millis(280), cardWrapper);
+        slide.setFromY(24); slide.setToY(0);
+        slide.setInterpolator(Interpolator.EASE_OUT);
+
+        new ParallelTransition(scale, fade, slide).play();
+    }
+
+    private Label buildLargeInitialsAvatar(String name, double width, double height) {
+        String initials = name.contains(" ")
+            ? "" + name.charAt(0) + name.charAt(name.indexOf(' ') + 1)
+            : name.substring(0, Math.min(2, name.length()));
+        Label avatar = new Label(initials.toUpperCase());
+        avatar.setMinSize(width, height);
+        avatar.setMaxSize(width, height);
+        avatar.setAlignment(Pos.CENTER);
+        avatar.setStyle(
+            "-fx-background-color: #08111f;" +
+            "-fx-text-fill: rgba(0,212,255,0.35);" +
+            "-fx-font-size: " + (height * 0.32) + "px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 24 24 0 0;" +
+            "-fx-letter-spacing: 4px;");
+        return avatar;
     }
     private Label buildInitialsAvatar(String name) {
         String initials = name.contains(" ")
@@ -1391,7 +1431,7 @@ public class LecturePageController {
         avatar.setEffect(new DropShadow(16, Color.web("#00d4ff", 0.22)));
         return avatar;
     }
-
+  
     // =========================================================================
     //  TRAILER POPUP
     // =========================================================================
@@ -1728,98 +1768,48 @@ public class LecturePageController {
 
     private void buildEpisodeCards(HBox cardsRow, Button scrollRight) {
         if (currentSerie == null) return;
-
         Map<Integer, List<Episode>> bySeason = new LinkedHashMap<>();
-
         for (Season s : currentSerie.getSeasons()) {
-
             List<Episode> eps = s.getEpisodes().stream()
                 .filter(ep -> currentEpisode == null || ep.getEpId() != currentEpisode.getEpId())
                 .collect(Collectors.toList());
-
-            if (!eps.isEmpty()) {
-                bySeason.put(s.getSeasonNum(), eps);
-            }
+            if (!eps.isEmpty()) bySeason.put(s.getSeasonNum(), eps);
         }
-
         if (bySeason.isEmpty()) {
-            cardsRow.getChildren().add(
-                buildEmptyCard("No other episodes", "You're up to date!")
-            );
-            scrollRight.setDisable(true);
-            return;
+            cardsRow.getChildren().add(buildEmptyCard("No other episodes", "You're up to date!"));
+            scrollRight.setDisable(true); return;
         }
-
         scrollRight.setDisable(false);
-
         for (Map.Entry<Integer, List<Episode>> entry : bySeason.entrySet()) {
-
             int seasonNum = entry.getKey();
-
             VBox seasonDivider = new VBox();
             seasonDivider.setAlignment(Pos.BOTTOM_LEFT);
-            seasonDivider.setPrefSize(80, 240);
-            seasonDivider.setMaxSize(80, 240);
+            seasonDivider.setPrefSize(80, 240); seasonDivider.setMaxSize(80, 240);
             seasonDivider.setStyle("-fx-padding: 0 0 8 0;");
-
             Label seasonLabel = new Label("Season\n" + seasonNum);
-            seasonLabel.setStyle(
-                "-fx-text-fill: rgba(0,212,255,0.5); " +
-                "-fx-font-size: 11px; -fx-font-weight: bold;" +
-                "-fx-text-alignment: center;"
-            );
-            seasonLabel.setAlignment(Pos.CENTER);
-            seasonLabel.setWrapText(true);
-
+            seasonLabel.setStyle("-fx-text-fill: rgba(0,212,255,0.5); -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-alignment: center;");
+            seasonLabel.setAlignment(Pos.CENTER); seasonLabel.setWrapText(true);
             Rectangle seasonLine = new Rectangle(2, 60);
-            seasonLine.setFill(Color.web("#00d4ff", 0.2));
-            seasonLine.setArcWidth(2);
-            seasonLine.setArcHeight(2);
-
+            seasonLine.setFill(Color.web("#00d4ff", 0.2)); seasonLine.setArcWidth(2); seasonLine.setArcHeight(2);
             seasonDivider.getChildren().addAll(seasonLine, seasonLabel);
             cardsRow.getChildren().add(seasonDivider);
-
             String posterUrl = findSeasonPoster(currentSerie, seasonNum);
-
             for (Episode ep : entry.getValue()) {
-
                 final int finalSeasonNum = seasonNum;
-
-                cardsRow.getChildren().add(
-                    createWatchNextCard(
-                        posterUrl,   // OK ONLY if createWatchNextCard uses ImageUtil
-                        ep.getTitle(),
-                        "S" + seasonNum + "  ·  E" + ep.getNumEpisode(),
-                        ep.getDuration() + " min",
-                        0,
-                        "episode",
-                        () -> {
-                            try {
-                                FXMLLoader loader = new FXMLLoader(
-                                    getClass().getResource("/view/fxml/LecturePage.fxml")
-                                );
-
-                                Parent root = loader.load();
-                                LecturePageController ctrl = loader.getController();
-
-                                ((Stage) watchNextContainer.getScene().getWindow())
-                                    .getScene()
-                                    .setRoot(root);
-
-                                ctrl.initEpisode(
-                                    currentSerie.getSerieId(),
-                                    finalSeasonNum,
-                                    ep.getEpId()
-                                );
-
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                        }
-                    )
-                );
+                cardsRow.getChildren().add(createWatchNextCard(
+                    posterUrl, ep.getTitle(),
+                    "S" + seasonNum + "  ·  E" + ep.getNumEpisode(),
+                    ep.getDuration() + " min", 0, "episode", () -> {
+                        try {
+                            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/LecturePage.fxml"));
+                            Parent root = loader.load();
+                            LecturePageController ctrl = loader.getController();
+                            ((Stage) watchNextContainer.getScene().getWindow()).getScene().setRoot(root);
+                            ctrl.initEpisode(currentSerie.getSerieId(), finalSeasonNum, ep.getEpId());
+                        } catch (Exception ex) { ex.printStackTrace(); }
+                    }));
             }
-            }
+        }
     }
 
     private VBox buildEmptyCard(String line1, String line2) {
@@ -1831,7 +1821,7 @@ public class LecturePageController {
     }
 
     private VBox createWatchNextCard(String posterUrl, String title, String subtitle,
-                                     String meta, int rating, String type, Runnable onClick) {
+                                     String meta, double rating, String type, Runnable onClick) {
         VBox card = new VBox();
         card.setPrefWidth(180); card.setMaxWidth(180); card.setMinHeight(250);
         card.setAlignment(Pos.TOP_CENTER);
@@ -1845,20 +1835,20 @@ public class LecturePageController {
         Region placeholder = new Region(); placeholder.setPrefSize(180, 160);
         placeholder.setStyle("-fx-background-color: linear-gradient(to bottom, #0d1526, #070d18); -fx-background-radius: 20 20 0 0;");
         imagePane.getChildren().add(placeholder);
+
         if (posterUrl != null && !posterUrl.isBlank()) {
-            ImageView iv = new ImageView(ImageUtil.load(posterUrl));
-
-            iv.setFitWidth(180);
-            iv.setFitHeight(160);
-            iv.setPreserveRatio(false);
-
-            Rectangle clip = new Rectangle(180, 160);
-            clip.setArcWidth(20);
-            clip.setArcHeight(20);
-
-            iv.setClip(clip);
-
-            imagePane.getChildren().add(iv);
+            try {
+                String resolved;
+                if (posterUrl.startsWith("http") || posterUrl.startsWith("file:")) resolved = posterUrl;
+                else {
+                    URL res = getClass().getResource(posterUrl.startsWith("/") ? posterUrl : "/" + posterUrl);
+                    resolved = res != null ? res.toExternalForm() : new java.io.File(posterUrl).toURI().toString();
+                }
+                ImageView iv = new ImageView(new Image(resolved, true));
+                iv.setFitWidth(180); iv.setFitHeight(160); iv.setPreserveRatio(false);
+                Rectangle clip = new Rectangle(180, 160); clip.setArcWidth(20); clip.setArcHeight(20);
+                iv.setClip(clip); imagePane.getChildren().add(iv);
+            } catch (Exception ignored) {}
         }
 
         Region gradient = new Region(); gradient.setPrefSize(180, 160); gradient.setMouseTransparent(true);

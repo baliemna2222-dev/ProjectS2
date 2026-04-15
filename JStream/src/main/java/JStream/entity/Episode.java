@@ -1,7 +1,6 @@
 package JStream.entity;
 
 import java.sql.Timestamp;
-import java.time.Duration;
 
 public class Episode {
 
@@ -13,7 +12,7 @@ public class Episode {
     private String resume;      // Episode summary / synopsis
     private String videoUrl;    // Video file URL
     private String covertUrl;   // Cover image /
-    private int rating;      // Episode rating
+    private double rating;      // Episode rating
     private Timestamp createdAt;
     private Timestamp releasedAt;
 
@@ -21,7 +20,7 @@ public class Episode {
 
     public Episode(int epId, int seasonId, int numEpisode, String title, int duration,
                    String resume, String videoUrl, String covertUrl,
-                   int rating, Timestamp createdAt, Timestamp updatedAt) {
+                   double rating, Timestamp createdAt, Timestamp updatedAt) {
         this.epId = epId;
         this.seasonId = seasonId;
         this.numEpisode = numEpisode;
@@ -60,8 +59,8 @@ public class Episode {
     public String getCovertUrl() { return covertUrl; }
     public void setCovertUrl(String covertUrl) { this.covertUrl = covertUrl; }
 
-    public int getRating() { return rating; }
-    public void setRating(int rating) { this.rating = rating; }
+    public double getRating() { return rating; }
+    public void setRating(double rating) { this.rating = rating; }
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }

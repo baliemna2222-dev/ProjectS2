@@ -41,6 +41,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextBoundsType;
 import javafx.scene.web.WebView;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
@@ -56,7 +57,7 @@ import java.util.List;
 import java.util.Map;
 
 public class FeaturedController {
-
+ 
     // ═══════════════════════ FXML FIELDS ═══════════════════════
     @FXML private StackPane rootPane;
     @FXML private ImageView heroBackground;
@@ -224,12 +225,49 @@ public class FeaturedController {
         heroAge.setManaged(hasAge);
 
         heroStars.getChildren().clear();
-        int fullStars = item.getRating();
-        for (int i = 0; i < 5; i++) {
-            Text star = new Text("★");
-            star.setStyle("-fx-font-size:20px; -fx-font-weight:bold;");
-            star.setFill(i < fullStars ? Color.DEEPSKYBLUE : Color.LIGHTGRAY);
-            heroStars.getChildren().add(star);
+        heroStars.getChildren().clear(); 
+        heroStars.setSpacing(4);         
+        heroStars.setAlignment(Pos.CENTER_LEFT);
+
+     // 1. Prepare the container
+        heroStars.getChildren().clear();
+        heroStars.setSpacing(4);
+        heroStars.setAlignment(Pos.CENTER_LEFT);
+
+        double rating = item.getRating(); 
+        double size = 20.0;
+
+        for (int i = 1; i <= 5; i++) {
+            StackPane starPane = new StackPane();
+            starPane.setAlignment(Pos.CENTER_LEFT);
+
+            // Background (Gray)
+            Text starEmpty = new Text("★");
+            starEmpty.setFill(Color.LIGHTGRAY);
+            starEmpty.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+            starEmpty.setBoundsType(TextBoundsType.VISUAL); 
+
+            // Foreground (Blue)
+            Text starFilled = new Text("★");
+            starFilled.setFill(Color.DEEPSKYBLUE);
+            starFilled.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+            starFilled.setBoundsType(TextBoundsType.VISUAL); 
+
+            double fill = Math.min(1.0, Math.max(0.0, rating - (i - 1)));
+
+            if (fill >= 1.0) {
+                starPane.getChildren().add(starFilled);
+            } else if (fill <= 0.0) {
+                starPane.getChildren().add(starEmpty);
+            } else {
+                Rectangle clip = new Rectangle(0, 0, fill * size, 40); 
+                clip.setY(-10); 
+                
+                starFilled.setClip(clip);
+                starPane.getChildren().addAll(starEmpty, starFilled);
+            }
+
+            heroStars.getChildren().add(starPane);
         }
 
         typeLabel.setText("     " + item.getType().toUpperCase());
@@ -352,7 +390,7 @@ public class FeaturedController {
                 URL resource = getClass().getResource(
                     trailerUrl.startsWith("/") ? trailerUrl : "/" + trailerUrl
                 );
-
+                
                 if (resource != null) {
                     videoPath = resource.toExternalForm();
                 } else {
@@ -1086,12 +1124,47 @@ public class FeaturedController {
 
                 titleImage.setImage(ImageUtil.load(film.getTitle_image_url()));
                 HBox starsBox = new HBox(3);
-                int fullStars = film.getRating();
-                for (int i = 0; i < 5; i++) {
-                    Label star = new Label("★");
-                    star.setStyle("-fx-font-size:24; -fx-font-weight:bold;");
-                    star.setTextFill(i < fullStars ? Color.DEEPSKYBLUE : Color.LIGHTGRAY);
-                    starsBox.getChildren().add(star);
+                starsBox.getChildren().clear(); 
+                starsBox.setSpacing(3); // Consistent with your HBox(3)
+                starsBox.setAlignment(Pos.CENTER_LEFT);
+
+                double rating = film.getRating(); 
+                double size = 24.0;
+
+                for (int i = 1; i <= 5; i++) {
+                    StackPane starPane = new StackPane();
+                    starPane.setAlignment(Pos.CENTER_LEFT);
+
+                    // 1. Create the Background (Empty) Star
+                    Label bgStar = new Label("★");
+                    bgStar.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+                    bgStar.setTextFill(Color.LIGHTGRAY);
+
+                    // 2. Create the Foreground (Filled) Star
+                    Label fgStar = new Label("★");
+                    fgStar.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+                    fgStar.setTextFill(Color.DEEPSKYBLUE);
+
+                    // 3. Calculate how much of this specific star is filled
+                    double fill = Math.min(1.0, Math.max(0.0, rating - (i - 1)));
+
+                    if (fill >= 1.0) {
+                        // Full Star
+                        starPane.getChildren().add(fgStar);
+                    } else if (fill <= 0) {
+                        // Empty Star
+                        starPane.getChildren().add(bgStar);
+                    } else {
+                        // Partial Star Clipping Logic
+                        // We use the 'size' variable (24) to calculate the clip width
+                        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(fill * size, size * 1.5);
+                        fgStar.setClip(clip);
+                        
+                        // Add both: Background is visible through the parts not covered by the clipped Foreground
+                        starPane.getChildren().addAll(bgStar, fgStar);
+                    }
+
+                    starsBox.getChildren().add(starPane);
                 }
 
                 int totalMinutes = (int) film.getDuration();
@@ -1358,6 +1431,7 @@ public class FeaturedController {
         poster.setCache(true);
 
         poster.setImage(ImageUtil.load(s.getPosterUrl()));
+
         StackPane posterWrapper = new StackPane(poster);
         posterWrapper.setPrefSize(300, 420);
         posterWrapper.setMaxSize(300, 420);
@@ -1408,12 +1482,40 @@ public class FeaturedController {
         title.setMaxWidth(380); title.setWrapText(true);
 
         HBox starsBox = new HBox(4);
+        starsBox.getChildren().clear(); 
         starsBox.setAlignment(Pos.CENTER_LEFT);
-        for (int i = 0; i < 5; i++) {
-            Label star = new Label("★");
-            star.setStyle("-fx-font-size: 15px; -fx-text-fill: " +
-                (i < s.getRating() ? "#38bdf8;" : "rgba(255,255,255,0.15);"));
-            starsBox.getChildren().add(star);
+        starsBox.setSpacing(2); 
+
+        double rating = s.getRating(); 
+        double fontSize = 15.0;
+
+        for (int i = 1; i <= 5; i++) {
+            StackPane starPane = new StackPane();
+            starPane.setAlignment(Pos.CENTER_LEFT);
+            Label bgStar = new Label("★");
+            bgStar.setStyle("-fx-font-size: 15px; -fx-text-fill: rgba(255,255,255,0.15);");
+
+            Label fgStar = new Label("★");
+            fgStar.setStyle("-fx-font-size: 15px; -fx-text-fill: #38bdf8; -fx-font-weight: bold;");
+
+            // 3. Calculate Fill (0.0 to 1.0)
+            double fill = Math.min(1.0, Math.max(0.0, rating - (i - 1)));
+
+            if (fill >= 1.0) {
+                // Star is fully blue
+                starPane.getChildren().add(fgStar);
+            } else if (fill <= 0) {
+                // Star is fully dim
+                starPane.getChildren().add(bgStar);
+            } else {
+               
+                javafx.scene.shape.Rectangle clip1 = new javafx.scene.shape.Rectangle(fill * fontSize, 25);
+                fgStar.setClip(clip1);
+                
+                starPane.getChildren().addAll(bgStar, fgStar);
+            }
+
+            starsBox.getChildren().add(starPane);
         }
 
         String statusText = s.getStatus() != null ? s.getStatus() : "Unknown";
@@ -1673,12 +1775,37 @@ public class FeaturedController {
         );
 
         HBox miniStars = new HBox(2);
-        int rating = (int) Math.round(ep.getRating());
-        for (int i = 0; i < 5; i++) {
-            Label st = new Label("★");
-            st.setStyle("-fx-font-size: 10px; -fx-text-fill: " +
-                (i < rating ? "#38bdf8" : "rgba(255,255,255,0.12)") + ";");
-            miniStars.getChildren().add(st);
+        miniStars.getChildren().clear(); 
+        miniStars.setSpacing(1);
+        miniStars.setAlignment(Pos.CENTER_LEFT);
+
+        double rawRating = ep.getRating(); 
+        double size = 10.0; 
+
+        for (int i = 1; i <= 5; i++) {
+            StackPane starPane = new StackPane();
+            starPane.setAlignment(Pos.CENTER_LEFT);
+
+            Label bgStar = new Label("★");
+            bgStar.setStyle("-fx-font-size: 10px; -fx-text-fill: rgba(255,255,255,0.12); -fx-padding: 0;");
+
+            Label fgStar = new Label("★");
+            fgStar.setStyle("-fx-font-size: 10px; -fx-text-fill: #38bdf8; -fx-font-weight: bold; -fx-padding: 0;");
+
+            double fill = Math.min(1.0, Math.max(0.0, rawRating - (i - 1)));
+
+            if (fill >= 1.0) {
+                starPane.getChildren().add(fgStar);
+            } else if (fill <= 0) {
+                starPane.getChildren().add(bgStar);
+            } else {
+                javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(fill * size, 15);
+                fgStar.setClip(clip);
+                
+                starPane.getChildren().addAll(bgStar, fgStar);
+            }
+
+            miniStars.getChildren().add(starPane);
         }
         textCol.getChildren().addAll(epTitleLbl, miniStars);
 
@@ -1730,6 +1857,7 @@ public class FeaturedController {
         cover.setPreserveRatio(false);
 
         cover.setImage(ImageUtil.load(ep.getCovertUrl()));
+
 
         Region coverGradient = new Region();
         coverGradient.setPrefSize(740, 280);
