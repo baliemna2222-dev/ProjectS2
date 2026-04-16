@@ -8,7 +8,7 @@ import javafx.scene.image.Image;
 
 public class ImageUtil {
 
-    private static final String FALLBACK = "/assets/images/Loading.jpeg";
+    private static final String FALLBACK = "/assets/images/Loading.jpg";
 
     public static Image load(String url) {
         try {
