@@ -110,7 +110,6 @@ public class FilmAdminController {
         actorPanel.setMode(ActorPanelBuilder.Mode.FILM);
         VBox actorSection = actorPanel.buildPanel();
 
-        // Wrap in a visually distinct card so it stands apart from the rest of the form
         VBox actorCard = new VBox(0, actorSection);
         actorCard.setStyle(
             "-fx-background-color: rgba(37,99,235,0.05);" +
@@ -119,7 +118,6 @@ public class FilmAdminController {
             "-fx-padding: 16;"
         );
 
-        // Add a separator then the card at the bottom of formPanel
         Separator sep = new Separator();
         sep.setStyle("-fx-background-color: rgba(255,255,255,0.07);");
         formPanel.getChildren().addAll(sep, actorCard);
@@ -183,7 +181,6 @@ public class FilmAdminController {
         cancelEditBtn.setVisible(false);
         cancelEditBtn.setManaged(false);
         clearFields();
-        // Clear actor panel state – entity doesn't exist yet
         if (actorPanel != null) {
             actorPanel.clearPending();
             actorPanel.refreshActors();
@@ -192,6 +189,7 @@ public class FilmAdminController {
 
     private void setEditMode(Film film) {
         editingFilm = film;
+
         formTitle.setText("✎  Editing: " + film.getTitle());
         submitBtn.setText("Save Changes");
         cancelEditBtn.setVisible(true);
@@ -201,7 +199,12 @@ public class FilmAdminController {
         directorField.setText(nvl(film.getDirector()));
         durationField.setText(film.getDuration() > 0 ? String.valueOf((int) film.getDuration()) : "");
         ageRatingField.setText(nvl(film.getAge_rating()));
-        ratingField.setText(film.getRating() > 0 ? String.valueOf(film.getRating()) : "");
+        // ── FIX: rating is float, format without trailing .0 when it's a whole number ──
+        ratingField.setText(film.getRating() > 0
+            ? (film.getRating() == Math.floor(film.getRating())
+                ? String.valueOf((int) film.getRating())
+                : String.valueOf(film.getRating()))
+            : "");
         synopsisArea.setText(nvl(film.getSynopsis()));
         castingField.setText(nvl(film.getCasting()));
         videoField.setText(nvl(film.getVideo_url()));
@@ -216,12 +219,19 @@ public class FilmAdminController {
         else
             releaseDatePicker.setValue(null);
 
+        // ── FIX: fetch fresh categories from DB (IDs are correct), rebuild chips ONCE ──
         selectedCatIds.clear();
-        if (film.getCategories() != null)
-            film.getCategories().forEach(c -> selectedCatIds.add(c.getCategory_id()));
-        rebuildCategoryChips();
+        List<Category> freshCats = featuredService != null
+            ? featuredService.getCategoriesByFilm(film.getFilm_id())
+            : film.getCategories();
+        if (freshCats != null) {
+            for (Category c : freshCats) {
+                System.out.println("[DEBUG] cat: " + c.getName() + " | id: " + c.getCategory_id());
+                selectedCatIds.add(c.getCategory_id());
+            }
+        }
+        rebuildCategoryChips(); // called exactly ONCE with correct IDs
 
-        // Refresh actor panel for this film
         if (actorPanel != null) actorPanel.refreshActors();
 
         scrollPane.setVvalue(0);
@@ -242,8 +252,7 @@ public class FilmAdminController {
     private void doAddFilm() {
         Film film = buildFilmFromForm();
         filmService.addFilm(film);
-        editingFilm = film;   // give the panel a real ID
-        // Flush any actors added before the film was saved
+        editingFilm = film;
         if (actorPanel != null) actorPanel.flushPendingActors();
         showToast("Film added successfully ✓", true);
         loadFilms(filmService.getAllFilms());
@@ -251,6 +260,7 @@ public class FilmAdminController {
     }
 
     private void doUpdateFilm() {
+        System.out.println("[DEBUG] Selected cat IDs at save: " + selectedCatIds);
         populateFilmFromForm(editingFilm);
         filmService.updateFilm(editingFilm);
         showToast("Film updated successfully ✓", true);
@@ -285,8 +295,8 @@ public class FilmAdminController {
             card.setOpacity(0);
             filmsContainer.getChildren().add(card);
             int delay = i * 35;
-            PauseTransition    p = new PauseTransition(Duration.millis(delay));
-            FadeTransition     f = new FadeTransition(Duration.millis(280), card);
+            PauseTransition     p = new PauseTransition(Duration.millis(delay));
+            FadeTransition      f = new FadeTransition(Duration.millis(280), card);
             TranslateTransition s = new TranslateTransition(Duration.millis(280), card);
             f.setFromValue(0); f.setToValue(1);
             s.setFromY(16);    s.setToY(0);
@@ -316,8 +326,8 @@ public class FilmAdminController {
         overlay.setStyle("-fx-background-color: rgba(7,9,26,0.82); -fx-background-radius: 12;");
         overlay.setOpacity(0);
 
-        Button editBtn = overlayBtn("✎  Edit",    C_ACCENT);
-        Button delBtn  = overlayBtn("✕  Delete",  "#374151");
+        Button editBtn = overlayBtn("✎  Edit",   C_ACCENT);
+        Button delBtn  = overlayBtn("✕  Delete", "#374151");
         editBtn.setOnAction(e -> setEditMode(film));
         delBtn.setOnAction(e  -> showDeleteDialog(film));
         overlay.getChildren().addAll(editBtn, delBtn);
@@ -336,7 +346,6 @@ public class FilmAdminController {
         Label lblDir = new Label(film.getDirector() != null ? "Dir. " + film.getDirector() : "");
         lblDir.setStyle("-fx-text-fill: " + C_MUTED + "; -fx-font-size: 11px;");
 
-        // Actor preview (up to 3 avatar bubbles)
         HBox actorBubbles = buildActorBubbles(film.getFilm_id());
 
         FlowPane chips = new FlowPane();
@@ -354,10 +363,16 @@ public class FilmAdminController {
             }
         }
 
+        // ── FIX: rating displayed as float ──
+        String ratingStr = film.getRating() > 0
+            ? "  ·  ★ " + (film.getRating() == Math.floor(film.getRating())
+                ? String.valueOf((int) film.getRating())
+                : String.valueOf(film.getRating()))
+            : "";
         String meta =
             (film.getDuration() > 0 ? (int) film.getDuration() + " min" : "") +
             (notBlank(film.getAge_rating()) ? "  ·  " + film.getAge_rating() : "") +
-            (film.getRating() > 0 ? "  ·  ★ " + film.getRating() : "");
+            ratingStr;
         Label lblMeta = new Label(meta);
         lblMeta.setStyle("-fx-text-fill: #9ca3af; -fx-font-size: 11px;");
 
@@ -373,9 +388,6 @@ public class FilmAdminController {
         return card;
     }
 
-    /**
-     * Builds a small row of overlapping avatar circles showing the first 3 actors.
-     */
     private HBox buildActorBubbles(int filmId) {
         HBox row = new HBox(-8);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -392,8 +404,8 @@ public class FilmAdminController {
             iv.setPreserveRatio(false);
             loadImage(iv, a.getPhotoUrl());
 
-            javafx.scene.shape.Circle clip = new javafx.scene.shape.Circle(12, 12, 12);
-            iv.setClip(clip);
+            javafx.scene.shape.Circle clipC = new javafx.scene.shape.Circle(12, 12, 12);
+            iv.setClip(clipC);
 
             StackPane bubble = new StackPane(iv);
             bubble.setPrefSize(24, 24);
@@ -469,8 +481,8 @@ public class FilmAdminController {
         Separator sep = new Separator();
         sep.setStyle("-fx-background-color: rgba(255,255,255,0.07);");
 
-        Button cancelBtn = dialogBtn("Cancel", "rgba(255,255,255,0.07)", "#94a3b8");
-        Button deleteBtn = dialogBtn("Delete Film", C_DANGER, "white");
+        Button cancelBtn = dialogBtn("Cancel",      "rgba(255,255,255,0.07)", "#94a3b8");
+        Button deleteBtn = dialogBtn("Delete Film",  C_DANGER,                "white");
         deleteBtn.setOnMouseEntered(e -> deleteBtn.setStyle(deleteBtn.getStyle().replace(C_DANGER, "#b91c1c")));
         deleteBtn.setOnMouseExited(e  -> deleteBtn.setStyle(deleteBtn.getStyle().replace("#b91c1c", C_DANGER)));
 
@@ -519,11 +531,12 @@ public class FilmAdminController {
             try { Double.parseDouble(durationField.getText().trim()); }
             catch (NumberFormatException e) { errors.add("Duration must be a number"); }
         }
+        // ── FIX: validate rating as float 0.0–5.0 ──
         if (!isBlank(ratingField.getText())) {
             try {
-                int r = Integer.parseInt(ratingField.getText().trim());
-                if (r < 1 || r > 5) errors.add("Rating must be 1–5");
-            } catch (NumberFormatException e) { errors.add("Rating must be 1–5"); }
+                float r = Float.parseFloat(ratingField.getText().trim());
+                if (r < 0f || r > 5f) errors.add("Rating must be between 0 and 5");
+            } catch (NumberFormatException e) { errors.add("Rating must be a number (e.g. 4.5)"); }
         }
         if (!errors.isEmpty()) {
             showValidationMsg("⚠  " + String.join("  ·  ", errors));
@@ -538,7 +551,7 @@ public class FilmAdminController {
         shake.setFromX(-7); shake.setToX(7); shake.setCycleCount(5); shake.setAutoReverse(true);
         shake.play();
     }
-    private void showValidationMsg(String msg) { validationLabel.setText(msg); validationLabel.setVisible(true); validationLabel.setManaged(true); }
+    private void showValidationMsg(String msg) { validationLabel.setText(msg); validationLabel.setVisible(true);  validationLabel.setManaged(true);  }
     private void clearValidation()              { validationLabel.setText(""); validationLabel.setVisible(false); validationLabel.setManaged(false); }
 
     // ── Form helpers ──────────────────────────────────────────────────────────
@@ -560,9 +573,13 @@ public class FilmAdminController {
         film.setTitle_image_url(titleImageField.getText().trim());
         film.setPoster_url(posterField.getText().trim());
         film.setPosterV_url(posterVField.getText().trim());
-        try { film.setDuration(Double.parseDouble(durationField.getText().trim())); } catch (Exception ignored) { film.setDuration(0); }
-        try { film.setRating(Integer.parseInt(ratingField.getText().trim())); }       catch (Exception ignored) { film.setRating(0); }
-        film.setRelease_date(releaseDatePicker.getValue() != null ? releaseDatePicker.getValue().atStartOfDay() : null);
+        try { film.setDuration(Double.parseDouble(durationField.getText().trim())); }
+        catch (Exception ignored) { film.setDuration(0); }
+        // ── FIX: parse rating as float ──
+        try { film.setRating(Float.parseFloat(ratingField.getText().trim())); }
+        catch (Exception ignored) { film.setRating(0f); }
+        film.setRelease_date(releaseDatePicker.getValue() != null
+            ? releaseDatePicker.getValue().atStartOfDay() : null);
         List<Category> selected = new ArrayList<>();
         for (Category c : allCategories)
             if (selectedCatIds.contains(c.getCategory_id())) selected.add(c);
@@ -582,46 +599,23 @@ public class FilmAdminController {
 
     // ── Image loading ─────────────────────────────────────────────────────────
     private void loadImage(ImageView iv, String path) {
-        if (path == null || path.isBlank()) {
-             return;
-        }
-
+        if (path == null || path.isBlank()) return;
         try {
             Image img;
-
-            // ✅ URL (internet)
-            if (path.startsWith("http")) {
+            if (path.startsWith("http") || path.startsWith("file:")) {
                 img = new Image(path, true);
-            }
-
-            // ✅ FILE URI (file:/...)
-            else if (path.startsWith("file:")) {
-                img = new Image(path, true);
-            }
-
-            // ✅ LOCAL FILE (C:/...)
-            else {
+            } else {
                 File f = new File(path);
-
                 if (f.exists()) {
-                    String uri = f.toURI().toString();
-                    img = new Image(uri, true);
+                    img = new Image(f.toURI().toString(), true);
                 } else {
-                   
                     var res = getClass().getResource(path);
-
-                    if (res != null) {
-                        img = new Image(res.toExternalForm(), true);
-                    } else {
-                          return;
-                    }
+                    if (res != null) img = new Image(res.toExternalForm(), true);
+                    else return;
                 }
             }
-
             iv.setImage(img);
-
         } catch (Exception e) {
-            
             e.printStackTrace();
         }
     }
@@ -629,13 +623,16 @@ public class FilmAdminController {
     // ── UI helpers ────────────────────────────────────────────────────────────
     private Button overlayBtn(String text, String bg) {
         Button b = new Button(text);
-        b.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: white; -fx-font-size: 12px; -fx-padding: 7 22; -fx-background-radius: 22; -fx-cursor: hand; -fx-min-width: 130;");
+        b.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: white; -fx-font-size: 12px;" +
+                   "-fx-padding: 7 22; -fx-background-radius: 22; -fx-cursor: hand; -fx-min-width: 130;");
         return b;
     }
 
     private Button dialogBtn(String text, String bg, String fg) {
         Button b = new Button(text);
-        b.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: " + fg + "; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 11 28; -fx-background-radius: 12; -fx-cursor: hand; -fx-border-width: 0;");
+        b.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: " + fg + ";" +
+                   "-fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 11 28;" +
+                   "-fx-background-radius: 12; -fx-cursor: hand; -fx-border-width: 0;");
         return b;
     }
 
@@ -664,10 +661,10 @@ public class FilmAdminController {
         toast.setOpacity(0);
         sp.getChildren().add(toast);
 
-        FadeTransition  fadeIn  = new FadeTransition(Duration.millis(250), toast);
-        TranslateTransition up  = new TranslateTransition(Duration.millis(250), toast);
-        PauseTransition hold    = new PauseTransition(Duration.millis(2200));
-        FadeTransition  fadeOut = new FadeTransition(Duration.millis(300), toast);
+        FadeTransition      fadeIn  = new FadeTransition(Duration.millis(250), toast);
+        TranslateTransition up      = new TranslateTransition(Duration.millis(250), toast);
+        PauseTransition     hold    = new PauseTransition(Duration.millis(2200));
+        FadeTransition      fadeOut = new FadeTransition(Duration.millis(300), toast);
         fadeIn.setToValue(1); up.setFromY(12); up.setToY(0);
         fadeOut.setToValue(0);
         fadeOut.setOnFinished(e -> sp.getChildren().remove(toast));

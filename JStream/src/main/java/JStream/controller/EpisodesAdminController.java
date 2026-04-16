@@ -344,7 +344,6 @@ public class EpisodesAdminController {
         popup.showAndWait();
     }
 
-    // add this helper alongside smallBtn():
     private Button styledBtn(String text, String bg, String fg) {
         Button b = new Button(text);
         b.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: " + fg + "; " +
@@ -371,8 +370,8 @@ public class EpisodesAdminController {
         }
         if (!ratingField.getText().isBlank()) {
             try {
-                int r = Integer.parseInt(ratingField.getText().trim());
-                if (r < 1 || r > 5) errors.add("Rating must be 1–5");
+                float r = Float.parseFloat(ratingField.getText().trim());
+                if (r < 1f || r > 5f) errors.add("Rating must be 1–5");
             } catch (NumberFormatException e) { errors.add("Rating must be a number (1–5)"); }
         }
         if (videoUrlField.getText().isBlank()) errors.add("Video file is required");
@@ -409,7 +408,7 @@ public class EpisodesAdminController {
         ep.setCovertUrl(covertUrlField.getText().trim());
         try { ep.setNumEpisode(Integer.parseInt(numEpisodeField.getText().trim())); } catch (Exception ignored) {}
         try { ep.setDuration(Integer.parseInt(durationField.getText().trim())); }     catch (Exception ignored) {}
-        try { ep.setRating(Integer.parseInt(ratingField.getText().trim())); }          catch (Exception ignored) {}
+        try { ep.setRating(Float.parseFloat(ratingField.getText().trim())); }          catch (Exception ignored) {}
         LocalDate d = releasedAtPicker.getValue();
         ep.setReleasedAt(d != null ? Timestamp.valueOf(d.atStartOfDay()) : null);
     }

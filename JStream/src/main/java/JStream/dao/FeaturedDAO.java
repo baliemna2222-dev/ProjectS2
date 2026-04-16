@@ -910,4 +910,24 @@ public class FeaturedDAO {
 	    }
 	    return null;
 	}
+	public List<Category> getCategoriesByFilm(int filmId) {
+	    List<Category> cats = new ArrayList<>();
+	    String sql = "SELECT c.* FROM category c " +
+	                 "JOIN film_category fc ON fc.category_id = c.category_id " +
+	                 "WHERE fc.film_id = ?";
+	    try (Connection conn = Database.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, filmId);
+	        ResultSet rs = ps.executeQuery();
+	        while (rs.next()) {
+	            Category c = new Category();
+	            c.setCategory_id(rs.getInt("category_id"));
+	            c.setName(rs.getString("name"));
+	            cats.add(c);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return cats;
+	}
 }

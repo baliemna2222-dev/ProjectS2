@@ -364,7 +364,6 @@ public class SeasonsAdminController {
         popup.showAndWait();
     }
 
-    // add this helper alongside smallBtn():
     private Button styledBtn(String text, String bg, String fg) {
         Button b = new Button(text);
         b.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: " + fg + "; " +
@@ -389,8 +388,8 @@ public class SeasonsAdminController {
         }
         if (!ratingField.getText().isBlank()) {
             try {
-                int r = Integer.parseInt(ratingField.getText().trim());
-                if (r < 1 || r > 5) errors.add("Rating must be between 1 and 5");
+                float r = Float.parseFloat(ratingField.getText().trim());
+                if (r < 1f || r > 5f) errors.add("Rating must be between 1 and 5");
             } catch (NumberFormatException e) { errors.add("Rating must be a number (1–5)"); }
         }
 
@@ -427,9 +426,9 @@ public class SeasonsAdminController {
         s.setTitleUrl(titleUrlField.getText().trim());
         s.setImageUrl(imageUrlField.getText().trim());
         s.setStatus(statusComboBox.getValue());
-        try { s.setSeasonNum(Integer.parseInt(seasonNumField.getText().trim())); }      catch (Exception ignored) {}
+        try { s.setSeasonNum(Integer.parseInt(seasonNumField.getText().trim())); }           catch (Exception ignored) {}
         try { s.setPlannedEpisodes(Integer.parseInt(plannedEpisodesField.getText().trim())); } catch (Exception ignored) {}
-        try { s.setRating(Integer.parseInt(ratingField.getText().trim())); }             catch (Exception ignored) {}
+        try { s.setRating(Float.parseFloat(ratingField.getText().trim())); }                 catch (Exception ignored) {}
     }
 
     private void clearFields() {

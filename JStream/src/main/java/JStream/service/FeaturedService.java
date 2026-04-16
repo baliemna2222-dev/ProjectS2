@@ -267,4 +267,7 @@ public class FeaturedService {
          return new java.util.ArrayList<>();
      }
  }
+ public List<Category> getCategoriesByFilm(int filmId) {
+	   return dao.getCategoriesByFilm(filmId);
+	}
 }
