@@ -21,7 +21,7 @@ public class FeaturedDAO {
 	    List<FeaturedItem> featured = new ArrayList<>();
 
 	    int filmLimit = limit -1;
-	    int seasonLimit = limit - filmLimit+1; // to handle odd numbers
+	    int seasonLimit = limit - filmLimit+1; 
 
 	    // -------- FILMS --------
 	    String filmSql =
@@ -151,11 +151,11 @@ public class FeaturedDAO {
 	                film.setSynopsis(rs.getString("synopsis"));
 	                film.setCasting(rs.getString("casting"));
 	                film.setVideo_url(rs.getString("video_url"));
-	                film.setTrailer_url(rs.getString("trailer_url"));   // ✅ NEW
+	                film.setTrailer_url(rs.getString("trailer_url"));   
 	                film.setImage_url(rs.getString("image_url"));
 	                film.setTitle_image_url(rs.getString("title_image_url"));
 	                film.setPoster_url(rs.getString("poster_url"));
-	                film.setPosterV_url(rs.getString("poster_v_url"));  // ✅ NEW
+	                film.setPosterV_url(rs.getString("poster_v_url"));  
 
 	                if (rs.getTimestamp("release_date") != null)
 	                    film.setRelease_date(rs.getTimestamp("release_date").toLocalDateTime());
@@ -230,8 +230,7 @@ public class FeaturedDAO {
 	        serie.setCategories(categories);
 	    }
 
-	    // -------- SEASONS (IMPORTANT) --------
-	    // This stays OUTSIDE because your method probably opens its own connection
+	    // -------- SEASONS  --------
 	    serie.setSeasons(getSeasonsBySerie(serieId));
 
 	    return serie;
@@ -263,8 +262,6 @@ public class FeaturedDAO {
 	            season.setStatus(rs.getString("status"));
 	            season.setPlannedEpisodes(rs.getInt("planned_episodes"));
 	            season.setRating(rs.getDouble("rating"));
-
-	            // ✅ SAFE: this method will open its own connection
 	            season.setEpisodes(getEpisodesBySeason(seasonId));
 
 	            seasons.add(season);
@@ -514,24 +511,20 @@ public class FeaturedDAO {
 	            }
 	        }
 	    }
-
-	    // 🔥 SORT EVERYTHING TOGETHER (mix films + series)
 	    items.sort((a, b) -> Double.compare(b.getRating(), a.getRating()));
-
-	    // 🔥 LIMIT FINAL RESULT
 	    return items.stream().limit(limit).toList();
 	}
 	public List<FeaturedItem> getFilteredItems(
-	        Set<String> categories,  // can be empty
-	        Set<String> types,       // can be empty (film, serie)
-	        Set<Integer> years       // can be empty
+	        Set<String> categories,  
+	        Set<String> types,      
+	        Set<Integer> years       
 	) throws SQLException {
 
 	    List<FeaturedItem> items = new ArrayList<>();
 	    boolean filterFilms = types.isEmpty() || types.stream().anyMatch(t -> t.equalsIgnoreCase("film"));
 	    boolean filterSeries = types.isEmpty() || types.stream().anyMatch(t -> t.equalsIgnoreCase("serie"));
 
-	    try (Connection connection = Database.getConnection()) {  // <-- get connection here
+	    try (Connection connection = Database.getConnection()) {  
 
 	        // ---------------- FILMS ----------------
 	        if (filterFilms) {
@@ -650,9 +643,8 @@ public class FeaturedDAO {
 	            }
 	        }
 
-	    } // connection auto-closed
+	    } 
 
-	    // 🔥 Sort all by rating
 	    items.sort((a, b) -> Double.compare(b.getRating(), a.getRating()));
 
 	    return items;
@@ -661,7 +653,7 @@ public class FeaturedDAO {
 	    List<FeaturedItem> results = new ArrayList<>();
 	    String likeQuery = "%" + query + "%";
 
-	    try (Connection connection = Database.getConnection()) { // <-- get connection here
+	    try (Connection connection = Database.getConnection()) {
 
 	        // ---------------- FILMS ----------------
 	        String filmSql = "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
@@ -739,7 +731,7 @@ public class FeaturedDAO {
 	                ));
 	            }
 	        }
-	    } // <-- connection auto-closed here
+	    } 
 
 	    return results;
 	}
@@ -749,24 +741,18 @@ public class FeaturedDAO {
 	    if (title.isEmpty()) return;
 
 	    try (Connection connection = Database.getConnection()) {
-
-	        // 1. Remove duplicate
 	        String deleteDuplicate = "DELETE FROM latest_search WHERE user_id = ? AND title = ?";
 	        try (PreparedStatement ps = connection.prepareStatement(deleteDuplicate)) {
 	            ps.setInt(1, userId);
 	            ps.setString(2, title);
 	            ps.executeUpdate();
 	        }
-
-	        // 2. Insert new search
 	        String insertSql = "INSERT INTO latest_search(user_id, title) VALUES (?, ?)";
 	        try (PreparedStatement ps = connection.prepareStatement(insertSql)) {
 	            ps.setInt(1, userId);
 	            ps.setString(2, title);
 	            ps.executeUpdate();
 	        }
-
-	        // 3. Keep ONLY 5 latest searches
 	        String deleteOld =
 	            "DELETE FROM latest_search WHERE user_id = ? AND searched_at NOT IN (" +
 	            "SELECT searched_at FROM (" +

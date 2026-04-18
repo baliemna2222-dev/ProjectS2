@@ -12,7 +12,7 @@ public class Serie {
     private String director;
     private String covertUrl;
     private String titleUrl;
-    private List<Category> categories;  // ✅ multiple categories
+    private List<Category> categories;  // multiple categories
 
     private List<Season> seasons;
     private Timestamp createdAt;

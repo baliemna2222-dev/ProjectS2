@@ -6,7 +6,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 
@@ -24,8 +23,7 @@ public class AdminHomeController {
 
     @FXML
     public void initialize() {
-        openDashboard();
-        
+        openDashboard();   
     }
 
     @FXML
@@ -71,12 +69,7 @@ public class AdminHomeController {
               Parent root = loader.load();
 
               javafx.stage.Stage stage = (javafx.stage.Stage) logoutBtn.getScene().getWindow();
-              
-              /**Reuse existing scene instead of creating a new one*/
               stage.getScene().setRoot(root);
-              // Ne pas forcer le mode maximisé - maintenir l'état du stage
-
-              // ✅ Bind login root to stage size
               ((Region) root).prefWidthProperty().bind(stage.widthProperty());
               ((Region) root).prefHeightProperty().bind(stage.heightProperty());
 

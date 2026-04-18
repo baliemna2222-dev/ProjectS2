@@ -71,7 +71,6 @@ import javafx.util.Duration;
 
 public class LecturePageController {
 
-    // ── Services ──────────────────────────────────────────────────────────────
     private final RatingService       ratingService       = new RatingService();
     private final CommentService      commentService      = new CommentService();
     private final MylistService       mylistService       = new MylistService();
@@ -79,78 +78,53 @@ public class LecturePageController {
     private final UserService         userService         = new UserService();
     private final FeaturedService     featuredService     = new FeaturedService();
     private final NotificationService notificationService = new NotificationService();
-
-    // ── Resolved context ──────────────────────────────────────────────────────
     private Integer resolvedFilmId    = null;
     private Integer resolvedSerieId   = null;
     private Integer resolvedSeasonId  = null;
     private Integer resolvedEpisodeId = null;
-
-    // ── Star state ────────────────────────────────────────────────────────────
     private int     selectedStarNote  = 0;
     private Label[] interactiveLabels = new Label[5];
-
-    // ── Current item ──────────────────────────────────────────────────────────
     private String       currentTrailerUrl;
     private String       currentVideoUrl;
     private FeaturedItem currentItem;
 
-    // ── Episode / serie context ───────────────────────────────────────────────
     private Serie   currentSerie;
     private Episode currentEpisode;
     private int     currentSeasonNum;
-
-    // ── Comment pagination ────────────────────────────────────────────────────
     private int           commentScrollIndex = 0;
     private List<Comment> currentComments    = new ArrayList<>();
 
-    // ── Cache ─────────────────────────────────────────────────────────────────
     private List<FeaturedItem> cachedSimilarFilms  = null;
     private Integer            cachedSimilarFilmId = null;
-
-    // ── Notification state ────────────────────────────────────────────────────
     private AudioClip bellSound;
     private Popup     notificationPopup;
     private VBox      notificationListBox;
     private Label     notifBadgeLabel;
     private int       unreadCount = 0;
     private Timeline  notifPeriodicCheck;
-
-    // ── FXML — Navbar ─────────────────────────────────────────────────────────
     @FXML private ImageView logoNav, bellIcon;
     @FXML private Button    btnHistory, btnMyList;
     @FXML private StackPane bellContainer;
     @FXML private Circle    notificationCircle;
     @FXML private Button    btnBack, playButton, profileBtn;
     @FXML private javafx.scene.control.ScrollPane mainScrollPane;
-
-    // ── FXML — Hero ───────────────────────────────────────────────────────────
     @FXML private VBox      mainContainer;
     @FXML private ImageView backgroundImage, posterImage;
     @FXML private Label     titleLabel, scoreLabel, yearLabel, durationLabel,
                             ageRatingLabel, descriptionLabel;
     @FXML private Label     starringLabel, directorLabel, categoriesLabel, episodeInfoLabel;
     @FXML private HBox      starsBox, castBox;
-
-    // ── FXML — Tabs ───────────────────────────────────────────────────────────
     @FXML private Rectangle lineOverview, lineTrailers;
     @FXML private Button    tabOverview, tabTrailers;
-
-    // ── FXML — Reviews ────────────────────────────────────────────────────────
     @FXML private HBox     commentsContainer;
     @FXML private VBox     interactiveStarsBox;
     @FXML private TextArea commentInput;
     @FXML private Button   btnSubmitComment;
     @FXML private Button   addToListButton;
     @FXML private VBox     watchNextContainer;
-
-    // ── Comment slot state ────────────────────────────────────────────────────
     private final VBox[] commentSlots = new VBox[3];
     private Button arrowLeft, arrowRight;
 
-    // =========================================================================
-    //  INITIALIZE
-    // =========================================================================
     @FXML
     public void initialize() {
         setupNavbar();
@@ -194,11 +168,7 @@ public class LecturePageController {
         }
     }
 
-    // =========================================================================
-    //  NAVBAR SETUP
-    // =========================================================================
     private void setupNavbar() {
-        // Use ImageUtil for navbar assets
         if (logoNav  != null) logoNav.setImage(ImageUtil.load("/assets/images/logo/Raksha.png"));
         if (bellIcon != null) bellIcon.setImage(ImageUtil.load("/assets/images/bellwhiter.png"));
 
@@ -227,10 +197,6 @@ public class LecturePageController {
             bellContainer.setCursor(javafx.scene.Cursor.HAND);
         }
     }
-
-    // =========================================================================
-    //  NOTIFICATION POPUP
-    // =========================================================================
     private void buildNotificationPopup() {
         notificationPopup = new Popup();
         notificationPopup.setAutoHide(true);
@@ -465,9 +431,6 @@ public class LecturePageController {
         return dt.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"));
     }
 
-    // =========================================================================
-    //  INIT — FILM
-    // =========================================================================
     public void initFilm(int filmId) {
         if (episodeInfoLabel != null) episodeInfoLabel.setVisible(false);
         try {
@@ -518,9 +481,6 @@ public class LecturePageController {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // =========================================================================
-    //  INIT — EPISODE
-    // =========================================================================
     public void initEpisode(int serieId, int seasonNum, int epId) {
         try {
             this.currentSerie     = featuredService.getSerieDetail(serieId);
@@ -589,9 +549,6 @@ public class LecturePageController {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // =========================================================================
-    //  UPDATE UI
-    // =========================================================================
     public void updateUI(String poster, String title, String desc,
                          String duration, double rating, String cast,
                          String director, String bgImagePath,
@@ -614,7 +571,6 @@ public class LecturePageController {
             else                  episodeInfoLabel.setVisible(false);
         }
 
-        // ── ImageUtil replaces raw new Image(...) calls ────────────────────────
         if (bgImagePath != null && backgroundImage != null)
             backgroundImage.setImage(ImageUtil.load(bgImagePath));
 
@@ -645,9 +601,7 @@ public class LecturePageController {
                  currentSerie.getDirector(), coverUrl, episodeLabel, videoUrl, epId);
     }
 
-    // =========================================================================
-    //  EPISODE HELPERS
-    // =========================================================================
+//helpers
     private Episode findEpisodeById(Serie serie, int epId) {
         for (Season s : serie.getSeasons())
             for (Episode ep : s.getEpisodes())
@@ -669,9 +623,7 @@ public class LecturePageController {
         return null;
     }
 
-    // =========================================================================
-    //  VIDEO PLAYER
-    // =========================================================================
+//video player
     private void openVideoPlayer(String videoUrl, String title, Integer epId) {
         if (videoUrl == null || videoUrl.trim().isEmpty()) return;
         try {
@@ -734,9 +686,6 @@ public class LecturePageController {
         if (notifPeriodicCheck != null) notifPeriodicCheck.stop();
     }
 
-    // =========================================================================
-    //  MY LIST
-    // =========================================================================
     private void handleAddToList() {
         if (currentItem == null) return;
         int userId  = Session.getUserId();
@@ -777,9 +726,6 @@ public class LecturePageController {
         pumpButton(addToListButton);
     }
 
-    // =========================================================================
-    //  TABS
-    // =========================================================================
     private void setupTabLogic() {
         if (tabOverview == null || tabTrailers == null) return;
 
@@ -799,9 +745,6 @@ public class LecturePageController {
         });
     }
 
-    // =========================================================================
-    //  STARS — display
-    // =========================================================================
     private void populateStars(double rawAvg) {
         if (starsBox == null) return;
         starsBox.getChildren().clear();
@@ -835,9 +778,6 @@ public class LecturePageController {
         }
     }
 
-    // =========================================================================
-    //  STARS — interactive
-    // =========================================================================
     private void setupInteractiveStars(double preselected) {
         if (interactiveStarsBox == null) return;
         interactiveStarsBox.getChildren().clear();
@@ -925,9 +865,6 @@ public class LecturePageController {
         interactiveStarsBox.getChildren().add(locked);
     }
 
-    // =========================================================================
-    //  SUBMIT REVIEW
-    // =========================================================================
     private void handleSubmitReview() {
         int userId = Session.getUserId();
 
@@ -955,7 +892,6 @@ public class LecturePageController {
                 }
             }
         }
-
         String content = commentInput != null ? commentInput.getText().trim() : "";
         if (!content.isEmpty()) {
             int filmId = resolvedFilmId    != null ? resolvedFilmId    : 0;
@@ -973,9 +909,7 @@ public class LecturePageController {
         }
     }
 
-    // =========================================================================
-    //  REVIEW SECTION
-    // =========================================================================
+//review
     private void setupReviewSection(double preselectedStars) {
         setupInteractiveStars(preselectedStars);
         if (btnSubmitComment != null)
@@ -989,9 +923,6 @@ public class LecturePageController {
         loadComments(existing);
     }
 
-    // =========================================================================
-    //  COMMENTS
-    // =========================================================================
     private void initCommentSlots() {
         commentsContainer.getChildren().clear();
         commentsContainer.setAlignment(Pos.CENTER_LEFT);
@@ -1131,10 +1062,6 @@ public class LecturePageController {
         btn.setOnMouseExited (e -> btn.setStyle(BASE));
         return btn;
     }
-
-    // =========================================================================
-    //  CAST
-    // =========================================================================
     private void loadCast() {
         if (castBox == null) return;
         castBox.getChildren().clear();
@@ -1160,7 +1087,6 @@ public class LecturePageController {
         Node avatar;
         String photoUrl = actor.getPhotoUrl();
         if (photoUrl != null && !photoUrl.isBlank()) {
-            // ── ImageUtil replaces the try/catch URL resolution block ──────────
             Image actorImage = ImageUtil.load(photoUrl);
             ImageView iv = new ImageView(actorImage);
             iv.setFitWidth(60); iv.setFitHeight(60); iv.setPreserveRatio(false);
@@ -1170,7 +1096,6 @@ public class LecturePageController {
             ring.setStroke(Color.web("#00d4ff", 0.3)); ring.setStrokeWidth(1.5);
             StackPane photoPane = new StackPane(iv, ring);
             photoPane.setMinSize(60, 60); photoPane.setMaxSize(60, 60);
-            // Fall back to initials avatar if the image has an error
             if (actorImage.isError()) {
                 avatar = buildInitialsAvatar(actor.getName());
             } else {
@@ -1224,7 +1149,6 @@ public class LecturePageController {
             "-fx-border-width: 1;" +
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.95), 80, 0.5, 0, 20);");
 
-        // ── Photo zone ────────────────────────────────────────────────────────
         StackPane photoZone = new StackPane();
         photoZone.setPrefSize(320, 260);
         photoZone.setMaxSize(320, 260);
@@ -1238,7 +1162,6 @@ public class LecturePageController {
         boolean hasPhoto = photoUrl != null && !photoUrl.isBlank();
 
         if (hasPhoto) {
-            // ── ImageUtil replaces the try/catch URL resolution block ──────────
             Image actorImg = ImageUtil.load(photoUrl);
             if (!actorImg.isError()) {
                 ImageView bigPhoto = new ImageView(actorImg);
@@ -1274,7 +1197,6 @@ public class LecturePageController {
         StackPane.setMargin(closeBtn, new Insets(12, 12, 0, 0));
         photoZone.getChildren().add(closeBtn);
 
-        // ── Info zone ─────────────────────────────────────────────────────────
         VBox infoZone = new VBox(0);
         infoZone.setAlignment(Pos.TOP_CENTER);
         infoZone.setPadding(new Insets(4, 24, 0, 24));
@@ -1383,10 +1305,7 @@ public class LecturePageController {
         avatar.setEffect(new DropShadow(16, Color.web("#00d4ff", 0.22)));
         return avatar;
     }
-
-    // =========================================================================
-    //  TRAILER POPUP
-    // =========================================================================
+//trailer
     private void showTrailerPopup(String url) {
         if (url == null || url.isBlank()) return;
         String videoPath;
@@ -1552,10 +1471,6 @@ public class LecturePageController {
         HBox.setMargin(d, new Insets(0, 1, 0, 0));
         return d;
     }
-
-    // =========================================================================
-    //  ANIMATION HELPERS
-    // =========================================================================
     private void addHoverEffect(Node node) {
         ScaleTransition in  = new ScaleTransition(Duration.millis(180), node); in.setToX(1.05);  in.setToY(1.05);
         ScaleTransition out = new ScaleTransition(Duration.millis(180), node); out.setToX(1.0); out.setToY(1.0);
@@ -1580,9 +1495,6 @@ public class LecturePageController {
         st.setAutoReverse(true); st.setCycleCount(2); st.play();
     }
 
-    // =========================================================================
-    //  WATCH NEXT SECTION
-    // =========================================================================
     private void populateWatchNext() {
         if (watchNextContainer == null) return;
         watchNextContainer.getChildren().clear();
@@ -1800,7 +1712,6 @@ public class LecturePageController {
         imagePane.getChildren().add(placeholder);
 
         if (posterUrl != null && !posterUrl.isBlank()) {
-            // ── ImageUtil replaces the try/catch URL resolution block ──────────
             Image posterImg = ImageUtil.load(posterUrl);
             if (!posterImg.isError()) {
                 ImageView iv = new ImageView(posterImg);

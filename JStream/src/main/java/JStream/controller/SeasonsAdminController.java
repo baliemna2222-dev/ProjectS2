@@ -24,7 +24,6 @@ import java.util.Optional;
 
 public class SeasonsAdminController {
 
-    // ── FXML Fields ───────────────────────────────────────────────────────────
     @FXML private Label       titreSerieLabel;
     @FXML private VBox        seasonsListContainer;
     @FXML private TextField   seasonNumField;
@@ -43,13 +42,9 @@ public class SeasonsAdminController {
     @FXML private Label       validationLabel;
     @FXML private VBox        formPanel;
     @FXML private Label       seasonCountLabel;
-
-    // ── State ─────────────────────────────────────────────────────────────────
     private final SeasonService seasonService = new SeasonService();
     private Serie  serieActuelle;
     private Season editingSeason = null;
-
-    // ── Init ──────────────────────────────────────────────────────────────────
     @FXML
     public void initialize() {
         statusComboBox.getItems().addAll("Ongoing", "Completed", "Cancelled", "Upcoming");
@@ -69,7 +64,6 @@ public class SeasonsAdminController {
         chargerSaisons();
     }
 
-    // ── Mode switching ────────────────────────────────────────────────────────
     private void setAddMode() {
         editingSeason = null;
         formTitleLabel.setText("✦ Add Season");
@@ -99,8 +93,6 @@ public class SeasonsAdminController {
         clearValidation();
         animateFormHighlight();
     }
-
-    // ── Submit ────────────────────────────────────────────────────────────────
     @FXML
     private void handleAddSeason() {
         if (!validateForm()) return;
@@ -110,7 +102,6 @@ public class SeasonsAdminController {
 
     @FXML
     private void cancelEdit() { setAddMode(); }
-
     private void doAddSeason() {
         Season s = buildSeasonFromForm();
         seasonService.addSeason(s);
@@ -128,7 +119,6 @@ public class SeasonsAdminController {
         showToast("Season updated successfully ✓");
     }
 
-    // ── File choosers ─────────────────────────────────────────────────────────
     @FXML private void choosePosterFile()   { chooseImageFile(posterUrlField,  "Choose Poster Image"); }
     @FXML private void chooseTitleUrlFile() { chooseImageFile(titleUrlField,   "Choose Title Logo"); }
     @FXML private void chooseImageFile()    { chooseImageFile(imageUrlField,   "Choose General Image"); }
@@ -151,8 +141,6 @@ public class SeasonsAdminController {
         File f = fc.showOpenDialog(target.getScene().getWindow());
         if (f != null) target.setText(f.getAbsolutePath());
     }
-
-    // ── Load seasons ──────────────────────────────────────────────────────────
     private void chargerSaisons() {
         if (seasonsListContainer == null) return;
         seasonsListContainer.getChildren().clear();
@@ -183,8 +171,6 @@ public class SeasonsAdminController {
             pause.play();
         }
     }
-
-    // ── Season card ───────────────────────────────────────────────────────────
     private VBox createSeasonCard(Season season) {
         Label badge = new Label("S" + season.getSeasonNum());
         badge.setStyle("""
@@ -199,8 +185,6 @@ public class SeasonsAdminController {
 
         Label lblTitle = new Label(displayTitle);
         lblTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px;");
-
-        // Status chip colours
         String statusBg = switch (nvl(season.getStatus())) {
             case "Completed" -> "rgba(16,185,129,0.20)";
             case "Ongoing"   -> "rgba(59,130,246,0.20)";
@@ -256,8 +240,6 @@ public class SeasonsAdminController {
 
         return card;
     }
-
-    // ── Navigation ────────────────────────────────────────────────────────────
     private void ouvrirDetailsSaison(Season season) {
         try {
             java.net.URL resourceUrl = getClass().getResource("/view/fxml/admin_episodes.fxml");
@@ -288,8 +270,6 @@ public class SeasonsAdminController {
         if (area instanceof Pane pane) pane.getChildren().setAll(view);
         else scene.setRoot(view);
     }
-
-    // ── Delete confirmation ────────────────────────────────────────────────────
     private void confirmDelete(Season season) {
         Stage popup = new Stage();
         popup.initOwner(seasonsListContainer.getScene().getWindow());
@@ -371,8 +351,6 @@ public class SeasonsAdminController {
                    "-fx-background-radius: 12; -fx-cursor: hand; -fx-border-width: 0;");
         return b;
     }
-
-    // ── Validation ────────────────────────────────────────────────────────────
     private boolean validateForm() {
         List<String> errors = new ArrayList<>();
 
@@ -409,8 +387,6 @@ public class SeasonsAdminController {
 
     private void showValidation(String msg) { validationLabel.setText(msg); validationLabel.setVisible(true); }
     private void clearValidation()          { validationLabel.setVisible(false); }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
     private Season buildSeasonFromForm() {
         Season s = new Season();
         s.setSerieId(serieActuelle.getSerieId());

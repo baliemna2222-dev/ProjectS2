@@ -4,14 +4,9 @@ import JStream.entity.Category;
 import JStream.entity.FeaturedItem;
 import JStream.service.FeaturedService;
 import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.ScaleTransition;
-import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -24,10 +19,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
-
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 public class CarouselController {
@@ -38,44 +31,31 @@ public class CarouselController {
     @FXML private Button leftBtn, rightBtn;
     @FXML private HBox paginationBox;
     @FXML private StackPane carouselPane;
-
     private final int CARDS_PER_SLIDE = 7;
     private double currentTranslateX = 0;
     private int totalSlides = 0;
     private int currentSlideIndex = 0;
-    private boolean isAnimating = false;
-
     private final FeaturedService featuredService = new FeaturedService();
    
     @FXML
     public void initialize() {
-        // Clip viewport so content doesn’t overflow
         Rectangle clip = new Rectangle();
         clip.widthProperty().bind(viewport.widthProperty());
         clip.heightProperty().bind(viewport.heightProperty());
         viewport.setClip(clip);
-
-        // Bind arrows to height
         leftBtn.prefHeightProperty().bind(viewport.heightProperty());
         rightBtn.prefHeightProperty().bind(viewport.heightProperty());
-
-        // Initially hide arrows
         leftBtn.setOpacity(0);
         rightBtn.setOpacity(0);
-
-        // Show/hide arrows on hover
-        carouselPane.setOnMouseEntered(e -> {
-            leftBtn.setOpacity(1);
-            rightBtn.setOpacity(1);
+        carouselPane.setOnMouseEntered(e -> {leftBtn.setOpacity(1);    // Show or hide arrows on hover
+                                             rightBtn.setOpacity(1);
         });
-        carouselPane.setOnMouseExited(e -> {
-            leftBtn.setOpacity(0);
-            rightBtn.setOpacity(0);
+        carouselPane.setOnMouseExited(e -> { leftBtn.setOpacity(0);
+                                             rightBtn.setOpacity(0);
         });
+           
     }
-
-    // ----------------- CATEGORY CAROUSEL -----------------
-
+//category carousel
     public void setCategory(Category category) {
         categoryTitle.setText(category.getName());
         List<FeaturedItem> items = featuredService.getItemsByCategory(category.getName());
@@ -96,30 +76,26 @@ public class CarouselController {
                 JStream.controller.CardController controller = loader.getController();
                 controller.setItem(item);
 
-                card.setOnMouseEntered(e -> {
-                    card.setScaleX(1.2);
-                    card.setScaleY(1.2);
+                card.setOnMouseEntered(e -> {card.setScaleX(1.2);
+                                             card.setScaleY(1.2);
                 });
-                card.setOnMouseExited(e -> {
-                    card.setScaleX(1);
-                    card.setScaleY(1);
+                    
+                card.setOnMouseExited(e -> { card.setScaleX(1);
+                                               card.setScaleY(1);
                 });
-
+                   
                 contentBox.getChildren().add(card);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
         int totalCards = contentBox.getChildren().size();
         totalSlides = (int) Math.ceil((double) totalCards / CARDS_PER_SLIDE);
-
         currentSlideIndex = 0;
         moveToSlide(0);
         setupPagination();
         updateArrowState();
     }
-
     @FXML
     private void scrollRight() {
         if (currentSlideIndex < totalSlides - 1) {
@@ -127,7 +103,6 @@ public class CarouselController {
             moveToSlide(currentSlideIndex);
         }
     }
-
     @FXML
     private void scrollLeft() {
         if (currentSlideIndex > 0) {
@@ -135,7 +110,6 @@ public class CarouselController {
             moveToSlide(currentSlideIndex);
         }
     }
-
     private void moveToSlide(int slideIndex) {
         if (contentBox.getChildren().isEmpty()) return;
 
@@ -154,7 +128,6 @@ public class CarouselController {
         updatePagination();
         updateArrowState();
     }
-
     private void animateScroll() {
         TranslateTransition tt = new TranslateTransition(Duration.millis(400), contentBox);
         tt.setToX(currentTranslateX);
@@ -165,7 +138,6 @@ public class CarouselController {
         leftBtn.setTextFill(currentSlideIndex == 0 ? Color.GRAY : Color.WHITE);
         rightBtn.setTextFill(currentSlideIndex >= totalSlides - 1 ? Color.GRAY : Color.WHITE);
     }
-
     private void setupPagination() {
         if (paginationBox == null) return;
         paginationBox.getChildren().clear();
@@ -178,7 +150,6 @@ public class CarouselController {
             paginationBox.getChildren().add(rect);
         }
     }
-
     private void updatePagination() {
         if (paginationBox == null) return;
         for (int i = 0; i < paginationBox.getChildren().size(); i++) {
@@ -186,46 +157,34 @@ public class CarouselController {
             rect.setFill(i == currentSlideIndex ? Color.WHITE : Color.GRAY);
         }
     }
-
-    // ----------------- TOP RATED CAROUSEL -----------------
- // ======= INFINITE TOP RATED LOOP =======
+//top rated carousel
     private TranslateTransition loopTransition;
-    private boolean isHovered = false;
     private static final double TOP_CARD_WIDTH = 250;   
     private static final double TOP_CARD_HEIGHT = 150;  
     private static final double TOP_CARD_SPACING = 60;
-    private static final double LOOP_DURATION = 40; // seconds
+    private static final double LOOP_DURATION = 40;
 
     void loadTopRatedInfinite(List<FeaturedItem> topItems) {
         categoryTitle.setText("🔥 Top Rated");
         contentBox.getChildren().clear();
         contentBox.setSpacing(TOP_CARD_SPACING);
-
-        // Move carousel more to the top
-        contentBox.setTranslateY(-10);  
+        contentBox.setTranslateY(-10);  // Move carousel more to the top
         contentBox.setTranslateX(0);
 
         int rank = 1;
         for (FeaturedItem item : topItems) {
             contentBox.getChildren().add(createTopCard(item, rank++));
         }
-
         List<Node> original = new ArrayList<>(contentBox.getChildren());
-        for (Node node : original) {
-            contentBox.getChildren().add(cloneCard((StackPane) node));
-        }
-
+        for (Node node : original) {  contentBox.getChildren().add(cloneCard((StackPane) node));}
         startInfiniteLoop();
     }
 
-    // ================= Create a single top card =================
     private StackPane createTopCard(FeaturedItem item, int rank) {
         StackPane root = new StackPane();
         root.setPrefSize(TOP_CARD_WIDTH, TOP_CARD_HEIGHT-100);
         root.setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
 
-        // ================= Rating number with white outline =================
-     // ================= Rating number with white border =================
         Text number = new Text(String.valueOf(rank)); 
         number.setFont(Font.font("Arial Black", 200)); // bold font
         number.setFill(Color.TRANSPARENT);             // transparent fill
@@ -234,8 +193,6 @@ public class CarouselController {
         number.setTranslateX(-TOP_CARD_WIDTH / 3.5);
         
         number.setMouseTransparent(true);
-
-        // ================= Card FXML (bigger, bottom-right) =================
         Node cardNode;
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Card.fxml"));
@@ -243,8 +200,6 @@ public class CarouselController {
             JStream.controller.CardController controller = loader.getController();
             controller.setItem2(item);
             cardNode.setUserData(item);
-
-            // ===== Properly set preferred size if cardNode is a Region =====
             if (cardNode instanceof Region region) {
                 region.setPrefSize(TOP_CARD_WIDTH-80, TOP_CARD_HEIGHT+130);
                 region.setMinSize(Region.USE_PREF_SIZE-80, Region.USE_PREF_SIZE+130);
@@ -258,14 +213,11 @@ public class CarouselController {
             e.printStackTrace();
             return root;
         }
-        
-
-        // ================= Hover pump effect =================
-        cardNode.setOnMouseEntered(e -> {
-            cardNode.setScaleX(1.05);
-            cardNode.setScaleY(1.05);
-            stopLoop();
+            cardNode.setOnMouseEntered(e -> { cardNode.setScaleX(1.05);
+                                               cardNode.setScaleY(1.05);
+                                              stopLoop();
         });
+           
         cardNode.setOnMouseExited(e -> {
             cardNode.setScaleX(1.0);
             cardNode.setScaleY(1.0);
@@ -277,8 +229,6 @@ public class CarouselController {
 
         return root;
     }
-
-    // ===== Clone a card (same content) =====
     private StackPane cloneCard(StackPane original) {
         StackPane clone = new StackPane();
         clone.setPrefSize(TOP_CARD_WIDTH, TOP_CARD_HEIGHT-100);
@@ -286,7 +236,6 @@ public class CarouselController {
 
         for (Node child : original.getChildren()) {
             if (child instanceof Text) {
-                // Clone the rating number
                 Text txt = (Text) child;
                 Text copy = new Text(txt.getText());
                 copy.setFont(txt.getFont());
@@ -312,25 +261,20 @@ public class CarouselController {
                     	  region.setPrefSize(TOP_CARD_WIDTH-80, TOP_CARD_HEIGHT+130);
                           region.setMinSize(Region.USE_PREF_SIZE-80, Region.USE_PREF_SIZE+130);
                           region.setMaxSize(Region.USE_PREF_SIZE-80, Region.USE_PREF_SIZE+130);    }
-                    // Correctly scale the card to fit inside the slot
                     double scaleWidth = 1;
                     double scaleHeight = 1;
-                    
-                    // Align at bottom-right with small offset
                     StackPane.setAlignment(cardNode, javafx.geometry.Pos.BOTTOM_RIGHT);
                     StackPane.setMargin(cardNode, new javafx.geometry.Insets(0, 0, 0, 0));
-
-                    // Hover animation
-                    cardNode.setOnMouseEntered(e -> {
-                        cardNode.setScaleX(scaleWidth + 0.1);
+                    cardNode.setOnMouseEntered(e -> { cardNode.setScaleX(scaleWidth + 0.1);
                         cardNode.setScaleY(scaleHeight + 0.1);
                         stopLoop();
                     });
-                    cardNode.setOnMouseExited(e -> {
-                        cardNode.setScaleX(scaleWidth);
+                       
+                    cardNode.setOnMouseExited(e -> {  cardNode.setScaleX(scaleWidth);
                         cardNode.setScaleY(scaleHeight);
                         resumeLoop();
                     });
+                      
 
                     clone.getChildren().add(cardNode);
 
@@ -342,7 +286,6 @@ public class CarouselController {
 
         return clone;
     }
-    // ===== Smooth infinite scroll =====
     private void startInfiniteLoop() {
         double totalWidth = (contentBox.getChildren().size() / 2.0) * (TOP_CARD_WIDTH + TOP_CARD_SPACING);
 
@@ -355,12 +298,10 @@ public class CarouselController {
     }
 
     private void stopLoop() {
-        isHovered = true;
         if (loopTransition != null) loopTransition.pause();
     }
 
     private void resumeLoop() {
-        isHovered = false;
         if (loopTransition != null) loopTransition.play();
     }
 }

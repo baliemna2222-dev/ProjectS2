@@ -149,8 +149,6 @@ public class CommentDAO {
 
             while (rs.next()) {
                 Comment comment = mapRow(rs);
-
-                // 🔥 NEW: set username
                 comment.setUsername(rs.getString("username"));
 
                 list.add(comment);
@@ -163,8 +161,6 @@ public class CommentDAO {
         return list;
     }
     
-
-    // Ignore the report: reset is_signal to 0
     public void pardonComment(int commentId) {
         String sql = "UPDATE comments SET flagged = 0 WHERE comment_id = ?";
         try (Connection conn = Database.getConnection();

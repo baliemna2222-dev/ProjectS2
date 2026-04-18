@@ -26,9 +26,9 @@ import java.util.ResourceBundle;
 
 public class MyListController implements Initializable {
 
-    @FXML private TilePane filmContainer;     // TilePane for films
-    @FXML private TilePane serieContainer;    // TilePane for series
-    @FXML private Label usernameLabel;        // Label to show current username
+    @FXML private TilePane filmContainer;     
+    @FXML private TilePane serieContainer;    
+    @FXML private Label usernameLabel;        
     @FXML private ScrollPane mainScroll;
     private MylistService mylistService;
 
@@ -38,10 +38,8 @@ public class MyListController implements Initializable {
     	  UsernameChangeNotifier.addListener(newName -> usernameLabel.setText(newName));
     	    usernameLabel.setText("Welcome , " + Session.getUsername() + " to your WatchList !");
     	    
-    	    // Load the list first
     	    loadMyList();
 
-    	    // Subscribe to updates from any CardController
     	    MyListManager.getInstance().addListener((filmId, serieId) -> {
     	        Platform.runLater(() -> removeCardFromUI(filmId, serieId));
     	    });
@@ -77,7 +75,6 @@ public class MyListController implements Initializable {
             }
         }
 
-        // Show empty message if needed
         if (filmContainer.getChildren().isEmpty()) {
             Label empty = new Label("You haven’t added any films yet. Start exploring and add your favorites to watch later!");
             empty.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
@@ -86,7 +83,6 @@ public class MyListController implements Initializable {
             wrapper.setAlignment(Pos.CENTER);
             filmContainer.getChildren().add(wrapper);
         }
-
         if (serieContainer.getChildren().isEmpty()) {
             Label empty = new Label("You haven’t added any series yet. Start exploring and add your favorites to watch later!");
             empty.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
@@ -95,11 +91,8 @@ public class MyListController implements Initializable {
             wrapper.setAlignment(Pos.CENTER);
             serieContainer.getChildren().add(wrapper);
         }
-
-        // Force scroll to top
         Platform.runLater(() -> mainScroll.setVvalue(0));
-    
-        
+  
         // Show message if no items
         if (filmContainer.getChildren().isEmpty()) {
         	 Label empty = new Label("You haven’t added any films yet. Start exploring and add your favorites to watch later!");
@@ -120,19 +113,14 @@ public class MyListController implements Initializable {
     }
     
     private void removeCardFromUI(int filmId, int serieId) {
-        // Remove from films
         filmContainer.getChildren().removeIf(node -> {
             FeaturedItem item = (FeaturedItem) node.getUserData();
             return item != null && item.getId() == filmId && "film".equalsIgnoreCase(item.getType());
         });
-
-        // Remove from series
         serieContainer.getChildren().removeIf(node -> {
             FeaturedItem item = (FeaturedItem) node.getUserData();
             return item != null && item.getSerieId() == serieId && "serie".equalsIgnoreCase(item.getType());
         });
-
-        // Show empty messages if needed
         if (filmContainer.getChildren().isEmpty()) {
             Label empty = new Label("You haven’t added any films yet. Start exploring and add your favorites to watch later!");
             empty.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
@@ -152,7 +140,6 @@ public class MyListController implements Initializable {
         }
         Platform.runLater(() -> mainScroll.setVvalue(0));
     }
-    // Hover effects for all cards
     @FXML
     private void handleCardHoverEnter(MouseEvent e) {
         Node card = (Node) e.getSource();

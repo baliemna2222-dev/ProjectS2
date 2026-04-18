@@ -13,29 +13,21 @@ import java.awt.Desktop;
 import java.net.URI;
  
 public class FooterController {
- 
-    // ═══════════════════════ FXML FIELDS ═══════════════════════
- 
-    // Brand
-    @FXML private Label brandName;
+      @FXML private Label brandName;
  
     // Link labels
     @FXML private Label aboutUs, careers, press;
     @FXML private Label helpCenter, terms, privacy;
  
-    // FAQ buttons & answers
     @FXML private Button q1, q2, q3;
     @FXML private Label  a1, a2, a3;
     @FXML private Label  arrow1, arrow2, arrow3;
  
-    // FAQ card containers (for hover glow border)
     @FXML private VBox faqCard1, faqCard2, faqCard3;
  
     // Social icons
     @FXML private ImageView fbIcon, twIcon, igIcon;
- 
-    // ═══════════════════════ INIT ═══════════════════════
- 
+  
     @FXML
     public void initialize() {
         setupBrandPulse();
@@ -50,11 +42,7 @@ public class FooterController {
         setupSocialClicks();
     }
  
-    // ═══════════════════════ BRAND PULSE ═══════════════════════
- 
-    /**
-     * Subtle breathing opacity on the brand name for a "alive" feel.
-     */
+
     private void setupBrandPulse() {
         if (brandName == null) return;
         FadeTransition fade = new FadeTransition(Duration.seconds(3), brandName);
@@ -65,9 +53,7 @@ public class FooterController {
         fade.setInterpolator(Interpolator.EASE_BOTH);
         fade.play();
     }
- 
-    // ═══════════════════════ LINK HOVER EFFECTS ═══════════════════════
- 
+  
     private void setupLinkHovers() {
         Label[] hoverLabels = {aboutUs, careers, press, helpCenter, terms, privacy};
         for (Label lbl : hoverLabels) {
@@ -78,11 +64,9 @@ public class FooterController {
     }
  
     private void animateLabelHover(Label lbl, boolean entering) {
-        // Colour transition: muted ↔ bright white
         String colorOn  = "-fx-text-fill: white; -fx-font-size: 14px; -fx-cursor: hand; -fx-underline: true;";
         String colorOff = "-fx-text-fill: #8899bb;  -fx-font-size: 14px; -fx-cursor: hand;";
  
-        // Scale micro-animation
         ScaleTransition st = new ScaleTransition(Duration.millis(140), lbl);
         if (entering) {
             lbl.setStyle(colorOn);
@@ -97,12 +81,7 @@ public class FooterController {
         st.play();
     }
  
-    // ═══════════════════════ FAQ ═══════════════════════
  
-    /**
-     * Accordion: clicking a question expands its answer and collapses the others.
-     * Arrow rotates 90° when open.
-     */
     private void setupFAQ(Button question, Label ownAnswer,
                            Label otherAnswer1, Label otherAnswer2,
                            Label ownArrow, VBox ownCard) {
@@ -111,44 +90,34 @@ public class FooterController {
         question.setOnAction(e -> {
             boolean isOpen = ownAnswer.isVisible();
  
-            // Close all first
             collapseAnswer(a1, arrow1, faqCard1);
             collapseAnswer(a2, arrow2, faqCard2);
             collapseAnswer(a3, arrow3, faqCard3);
  
-            // Toggle self
             if (!isOpen) {
                 expandAnswer(ownAnswer, ownArrow, ownCard);
             }
         });
- 
-        // Also make the whole card clickable
-        ownCard.setOnMouseClicked(e -> question.fire());
+         ownCard.setOnMouseClicked(e -> question.fire());
     }
  
     private void expandAnswer(Label answer, Label arrow, VBox card) {
         answer.setVisible(true);
         answer.setManaged(true);
         answer.setOpacity(0);
- 
-        // Fade in answer
-        FadeTransition ft = new FadeTransition(Duration.millis(260), answer);
+         FadeTransition ft = new FadeTransition(Duration.millis(260), answer);
         ft.setFromValue(0);
         ft.setToValue(1);
         ft.setInterpolator(Interpolator.EASE_OUT);
         ft.play();
- 
-        // Rotate arrow ›  →  ˅
-        if (arrow != null) {
+         if (arrow != null) {
             RotateTransition rt = new RotateTransition(Duration.millis(200), arrow);
             rt.setFromAngle(0);
             rt.setToAngle(90);
             rt.setInterpolator(Interpolator.EASE_OUT);
             rt.play();
         }
- 
-        // Glow border on open card
-        if (card != null) {
+         if (card != null) {
             card.setStyle(card.getStyle()
                 .replace("-fx-border-color: #1e3a8a;", "-fx-border-color: #2563eb;")
                 + "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.35), 20, 0.3, 0, 0);");
@@ -178,9 +147,7 @@ public class FooterController {
             );
         }
     }
- 
-    // ═══════════════════════ FAQ CARD HOVER ═══════════════════════
- 
+
     private void setupFaqCardHover(VBox card) {
         if (card == null) return;
  
@@ -201,17 +168,13 @@ public class FooterController {
  
         card.setOnMouseEntered(e -> card.setStyle(hovered));
         card.setOnMouseExited(e  -> {
-            // Only reset if answer is collapsed (no active glow)
             Label answer = card == faqCard1 ? a1 : card == faqCard2 ? a2 : a3;
             if (answer == null || !answer.isVisible()) {
                 card.setStyle(base);
             }
         });
     }
- 
-    // ═══════════════════════ SOCIAL ICONS ═══════════════════════
- 
-    private void loadIcons() {
+   private void loadIcons() {
         try {
             fbIcon.setImage(loadImage("/assets/images/facebook.png"));
             twIcon.setImage(loadImage("/assets/images/x.png"));
@@ -240,9 +203,7 @@ public class FooterController {
         if (icon == null) return;
  
         icon.setOnMouseClicked(e -> openLink(url));
- 
-        // Glow + scale on hover
-        icon.setOnMouseEntered(e -> {
+         icon.setOnMouseEntered(e -> {
             icon.setOpacity(0.85);
             ScaleTransition st = new ScaleTransition(Duration.millis(150), icon);
             st.setToX(1.15);
@@ -259,13 +220,9 @@ public class FooterController {
             st.setInterpolator(Interpolator.EASE_OUT);
             st.play();
         });
- 
-        // Press feedback
-        icon.setOnMousePressed(e  -> icon.setOpacity(0.55));
+         icon.setOnMousePressed(e  -> icon.setOpacity(0.55));
         icon.setOnMouseReleased(e -> icon.setOpacity(0.85));
     }
- 
-    // ═══════════════════════ OPEN LINK ═══════════════════════
  
     private void openLink(String url) {
         try {

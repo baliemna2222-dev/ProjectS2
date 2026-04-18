@@ -38,11 +38,9 @@ public class FilmViewController {
         try {
             List<Category> categories = featuredService.getAllCategories();
            
-                // Load filter bar after top rated
                 loadFilmFilterCarousel(categories);
             
 
-            // Normal categories (films only)
             for (Category category : categories) {
                 List<FeaturedItem> items = new ArrayList<>(featuredService.getItemsByCategory(category.getName()));
                 items.removeIf(item -> !item.getType().equalsIgnoreCase("film"));
@@ -162,21 +160,16 @@ public class FilmViewController {
         left.setOnAction(e -> filterScroll.setHvalue(filterScroll.getHvalue() - 0.3));
         right.setOnAction(e -> filterScroll.setHvalue(filterScroll.getHvalue() + 0.3));
 
-        // Move arrows slightly up
         left.setTranslateY(-10);
         right.setTranslateY(-10);
 
-        // Wrapper (THIS IS THE KEY PART 🔥)
         HBox carousel = new HBox(15);
         carousel.setAlignment(Pos.CENTER);
         carousel.setPadding(new Insets(10, 30, 20, 30)); 
         carousel.setStyle("-fx-background-color: black;");
 
-        // Let ScrollPane expand
         HBox.setHgrow(filterScroll, Priority.ALWAYS);
         filterScroll.setMaxWidth(Double.MAX_VALUE);
-
-        // Add everything (THIS LINE IS CRITICAL ❗)
         carousel.getChildren().addAll(left, filterScroll, right);
 
         // Add to main container
@@ -192,12 +185,9 @@ public class FilmViewController {
             -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);
         """);
 
-        // Add spacing around it (important!)
         VBox.setMargin(divider, new Insets(10, 60, 20, 60));
 
-        // Add to layout
         categoryContainer.getChildren().add(divider);
-        // Film results container
         filmResultsContainer = new VBox();
         filmResultsContainer.setSpacing(15);
         filmResultsContainer.setPadding(new Insets(20, 20, 20, 20));
@@ -221,7 +211,6 @@ public class FilmViewController {
         btn.setOnMouseExited(e -> btn.setOpacity(0));
     }
 
-    // ---------------- FILM FILTER LOGIC ----------------
     private void addFilmFilter(String value) {
         value = value.toLowerCase();
         if (value.equals("film")) return; // type is always film
@@ -236,7 +225,6 @@ public class FilmViewController {
         else selectedFilmCategories.remove(value);
     }
 
-    // ---------------- REFRESH FILM RESULTS ----------------
     private void refreshFilmFilteredContent() {
         try {
             filmResultsContainer.getChildren().clear();
@@ -296,7 +284,6 @@ public class FilmViewController {
         }
     }
 
-    // ---------------- FILTER BAR WITH ARROWS ----------------
     private void addHoverEffect(Node card) {
         ScaleTransition scaleUp = new ScaleTransition(Duration.millis(180), card);
         scaleUp.setToX(1.1);

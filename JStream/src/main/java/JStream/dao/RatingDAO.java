@@ -73,8 +73,6 @@ public class RatingDAO {
 	    }
 	}
 	private void updateEpisodeSeasonSerieCascade(Connection conn, Rating r) throws SQLException {
-
-	    // 1. Episode : Précision totale
 	    try (PreparedStatement ps = conn.prepareStatement(
 	            "UPDATE episode SET rating = (" +
 	            "  SELECT AVG(note) FROM ratings WHERE episode_id = ?" +
@@ -83,8 +81,6 @@ public class RatingDAO {
 	        ps.setInt(2, r.getEpisodeID());
 	        ps.executeUpdate();
 	    }
-
-	    // 2. Season : Précision totale
 	    try (PreparedStatement ps = conn.prepareStatement(
 	            "UPDATE season SET rating = (" +
 	            "  SELECT AVG(note) FROM ratings WHERE episode_id IN (" +
@@ -96,7 +92,6 @@ public class RatingDAO {
 	        ps.executeUpdate();
 	    }
 
-	    // 3. Serie : Précision totale
 	    try (PreparedStatement ps = conn.prepareStatement(
 	            "UPDATE serie SET rating = (" +
 	            "  SELECT AVG(note) FROM ratings WHERE episode_id IN (" +
@@ -112,7 +107,7 @@ public class RatingDAO {
 	        ps.executeUpdate();
 	    }
 	}
-    // ── Moyennes ─────────────────────────────────────────────────────────────
+    // ── Moyennes 
     public double getAverageForFilm(int filmId) {
         return queryAvg(
             "SELECT AVG(note) AS avg FROM ratings WHERE film_id=? AND episode_id=0",
@@ -151,7 +146,7 @@ public class RatingDAO {
             userId, episodeId);
     }
 
-    // ── Helpers privés ────────────────────────────────────────────────────────
+    // ── Helpers privés 
 
     private double queryAvg(String sql, int id) {
         try (Connection conn = Database.getConnection();
@@ -160,7 +155,6 @@ public class RatingDAO {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 double v = rs.getDouble("avg");
-                // getDouble retourne 0.0 si NULL — on vérifie wasNull
                 if (rs.wasNull()) return 0.0;
                 return v;
             }

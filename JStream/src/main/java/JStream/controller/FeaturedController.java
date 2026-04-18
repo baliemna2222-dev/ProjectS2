@@ -30,9 +30,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.effect.DropShadow;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -57,8 +55,7 @@ import java.util.List;
 import java.util.Map;
 
 public class FeaturedController {
- 
-    // ═══════════════════════ FXML FIELDS ═══════════════════════
+
     @FXML private StackPane rootPane;
     @FXML private ImageView heroBackground;
     @FXML private ImageView heroTitleImage;
@@ -76,7 +73,6 @@ public class FeaturedController {
     @FXML public Label typeLabel;
     @FXML private Rectangle typeLine;
 
-    // ═══════════════════════ FIELDS ═══════════════════════
     private FeaturedService featuredService;
     private List<FeaturedItem> latestItems;
     private int currentIndex = 0;
@@ -85,8 +81,6 @@ public class FeaturedController {
     private FeaturedItem currentItem;
     private EpisodeProgressService episodeProgressService = new EpisodeProgressService();
     private FilmProgressService filmProgressService = new FilmProgressService(featuredService);
-
-    // ═══════════════════════ INIT ═══════════════════════
     @FXML
     public void initialize() {
         featuredService = new FeaturedService();
@@ -114,7 +108,6 @@ public class FeaturedController {
         typeLabel.setEffect(soft);
     }
 
-    // ═══════════════════════ MY LIST ═══════════════════════
     private void pumpButton(Button button) {
         ScaleTransition st = new ScaleTransition(Duration.millis(150), button);
         st.setFromX(1.0); st.setFromY(1.0);
@@ -151,8 +144,6 @@ public class FeaturedController {
         }
         pumpButton(button);
     }
-
-    // ═══════════════════════ CAROUSEL ═══════════════════════
     private void setupCarousel() {
         try {
             latestItems = featuredService.getLatestFeatured(4);
@@ -228,8 +219,6 @@ public class FeaturedController {
         heroStars.getChildren().clear(); 
         heroStars.setSpacing(4);         
         heroStars.setAlignment(Pos.CENTER_LEFT);
-
-     // 1. Prepare the container
         heroStars.getChildren().clear();
         heroStars.setSpacing(4);
         heroStars.setAlignment(Pos.CENTER_LEFT);
@@ -240,14 +229,10 @@ public class FeaturedController {
         for (int i = 1; i <= 5; i++) {
             StackPane starPane = new StackPane();
             starPane.setAlignment(Pos.CENTER_LEFT);
-
-            // Background (Gray)
             Text starEmpty = new Text("★");
             starEmpty.setFill(Color.LIGHTGRAY);
             starEmpty.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
             starEmpty.setBoundsType(TextBoundsType.VISUAL); 
-
-            // Foreground (Blue)
             Text starFilled = new Text("★");
             starFilled.setFill(Color.DEEPSKYBLUE);
             starFilled.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
@@ -358,9 +343,7 @@ public class FeaturedController {
         });
     }
 
-    
-    // ═══════════════════════ TRAILER POPUPS ═══════════════════════
-	private void showTrailerPopup(Object item, int seasonIndex) {
+    	private void showTrailerPopup(Object item, int seasonIndex) {
         String trailerUrl = null;
 
         if (item instanceof Film) {
@@ -376,17 +359,14 @@ public class FeaturedController {
         String videoPath;
 
         if (trailerUrl.startsWith("http")) {
-            // Online video
             videoPath = trailerUrl;
 
         } else {
             java.io.File file = new java.io.File(trailerUrl);
 
             if (file.exists()) {
-                // LOCAL FILE (Windows path)
-                videoPath = file.toURI().toString();  // ✅ VERY IMPORTANT
+                videoPath = file.toURI().toString();  
             } else {
-                // Try classpath
                 URL resource = getClass().getResource(
                     trailerUrl.startsWith("/") ? trailerUrl : "/" + trailerUrl
                 );
@@ -401,7 +381,6 @@ public class FeaturedController {
         }
 
         System.out.println("FINAL PATH = " + videoPath);
-        // ── Modern HTML5 player with custom controls ──────────────────
         String html =
         		"<!DOCTYPE html><html><head><style>" +
 
@@ -412,14 +391,14 @@ public class FeaturedController {
 
         		"  video { flex:1; width:100%; min-height:0; object-fit:contain; display:block; cursor:pointer; }" +
 
-        		/* ================= CONTROLS BAR ================= */
+        		/* controls bar */
         		"  #bar {" +
         		"    background: linear-gradient(to top, rgba(0,0,0,0.98), rgba(0,20,40,0.85));" +
         		"    padding: 6px 18px 10px;" +
         		"    display:flex; flex-direction:column; gap:7px;" +
         		"  }" +
 
-        		/* ================= PROGRESS BAR ================= */
+        		/* progress bar */
         		"  #prog-wrap {" +
         		"    position:relative; height:4px; background:rgba(255,255,255,0.08);" +
         		"    border-radius:4px; cursor:pointer; transition:height 0.15s;" +
@@ -440,7 +419,7 @@ public class FeaturedController {
 
         		"  #prog-wrap:hover #prog-thumb { opacity:1; }" +
 
-        		/* ================= ROW ================= */
+        		/* rows*/
         		"  #row { display:flex; align-items:center; gap:10px; }" +
 
         		"  .btn {" +
@@ -459,10 +438,9 @@ public class FeaturedController {
         		"  .btn:hover { background:rgba(0,140,255,0.25); color:#ffffff; }" +
         		"  .btn:active { background:rgba(0,100,180,0.4); }" +
 
-        		/* ================= TIME ================= */
         		"  #time { font-size:11px; color:rgba(180,200,255,0.75); min-width:105px; letter-spacing:0.3px; }" +
 
-        		/* ================= VOLUME ================= */
+        		/* volume */
         		"  #vol-wrap { display:flex; align-items:center; gap:6px; }" +
 
         		"  #vol { -webkit-appearance:none; width:72px; height:3px;" +
@@ -473,14 +451,13 @@ public class FeaturedController {
 
         		"  #spacer { flex:1; }" +
 
-        		/* ================= SPEED ================= */
+        		/* speed*/
         		"  #speed { background:rgba(0,0,0,0.7); border:none;" +
         		"    color:#00aaff; font-size:11px; padding:4px 7px; border-radius:6px;" +
         		"    cursor:pointer; outline:none; }" +
 
         		"  #speed:hover { background:rgba(0,140,255,0.2); }" +
 
-        		/* ================= TOOLTIP ================= */
         		"  #tip { position:fixed; bottom:72px; left:50%; transform:translateX(-50%);" +
         		"    background:rgba(0,0,0,0.85); border:none;" +
         		"    color:#00aaff; font-size:11px; padding:4px 14px; border-radius:20px;" +
@@ -607,8 +584,6 @@ public class FeaturedController {
         WebView webView = new WebView();
         webView.setPrefSize(1500, 700);
         webView.getEngine().loadContent(html);
-
-        // ── Stage ────────────────────────────────────────────────────
         Rectangle2D screenBounds = Screen.getPrimary().getBounds();
         double fullWidth  = screenBounds.getWidth();
         double fullHeight = screenBounds.getHeight();
@@ -620,12 +595,8 @@ public class FeaturedController {
         popup.initStyle(StageStyle.TRANSPARENT);
         popup.setWidth(fullWidth); popup.setHeight(fullHeight);
         popup.setX(0); popup.setY(0);
-
-        // ── Backdrop ─────────────────────────────────────────────────
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: rgba(0,0,0,0.88);");
-
-        // ── Card ─────────────────────────────────────────────────────
         VBox card = new VBox(0);
         card.setMaxSize(fullWidth - 40, fullHeight - 40);
         card.setPrefSize(fullWidth - 40, fullHeight - 40);
@@ -645,8 +616,6 @@ public class FeaturedController {
             cardClip.setHeight(nv.getHeight());
         });
         card.setClip(cardClip);
-
-        // ── Card top bar ─────────────────────────────────────────────
         HBox cardBar = new HBox(8);
         cardBar.setAlignment(Pos.CENTER_RIGHT);
         cardBar.setPadding(new Insets(9, 12, 9, 16));
@@ -740,17 +709,14 @@ public class FeaturedController {
         String videoPath;
 
         if (trailerUrl.startsWith("http")) {
-            // 🌐 Online video
             videoPath = trailerUrl;
 
         } else {
             java.io.File file = new java.io.File(trailerUrl);
 
             if (file.exists()) {
-                // 💻 Local file (Windows path)
-                videoPath = file.toURI().toString();  // ✅ FIX
+                videoPath = file.toURI().toString();  
             } else {
-                // 📦 Try resources folder
                 URL resource = getClass().getResource(
                     trailerUrl.startsWith("/") ? trailerUrl : "/" + trailerUrl
                 );
@@ -786,15 +752,11 @@ public class FeaturedController {
         		"         width:100vw; height:100vh; font-family:'Segoe UI',sans-serif; }" +
 
         		"  video { flex:1; width:100%; min-height:0; object-fit:contain; display:block; cursor:pointer; }" +
-
-        		/* ================= CONTROLS BAR ================= */
         		"  #bar {" +
         		"    background: linear-gradient(to top, rgba(0,0,0,0.98), rgba(0,20,40,0.85));" +
         		"    padding: 6px 18px 10px;" +
         		"    display:flex; flex-direction:column; gap:7px;" +
         		"  }" +
-
-        		/* ================= PROGRESS BAR ================= */
         		"  #prog-wrap {" +
         		"    position:relative; height:4px; background:rgba(255,255,255,0.08);" +
         		"    border-radius:4px; cursor:pointer; transition:height 0.15s;" +
@@ -814,8 +776,6 @@ public class FeaturedController {
         		"    opacity:0; transition:opacity 0.15s; pointer-events:none; }" +
 
         		"  #prog-wrap:hover #prog-thumb { opacity:1; }" +
-
-        		/* ================= ROW ================= */
         		"  #row { display:flex; align-items:center; gap:10px; }" +
 
         		"  .btn {" +
@@ -834,10 +794,7 @@ public class FeaturedController {
         		"  .btn:hover { background:rgba(0,140,255,0.25); color:#ffffff; }" +
         		"  .btn:active { background:rgba(0,100,180,0.4); }" +
 
-        		/* ================= TIME ================= */
         		"  #time { font-size:11px; color:rgba(180,200,255,0.75); min-width:105px; letter-spacing:0.3px; }" +
-
-        		/* ================= VOLUME ================= */
         		"  #vol-wrap { display:flex; align-items:center; gap:6px; }" +
 
         		"  #vol { -webkit-appearance:none; width:72px; height:3px;" +
@@ -847,15 +804,11 @@ public class FeaturedController {
         		"    background:#00aaff; border-radius:50%; box-shadow:0 0 6px rgba(0,170,255,0.7); }" +
 
         		"  #spacer { flex:1; }" +
-
-        		/* ================= SPEED ================= */
         		"  #speed { background:rgba(0,0,0,0.7); border:none;" +
         		"    color:#00aaff; font-size:11px; padding:4px 7px; border-radius:6px;" +
         		"    cursor:pointer; outline:none; }" +
 
         		"  #speed:hover { background:rgba(0,140,255,0.2); }" +
-
-        		/* ================= TOOLTIP ================= */
         		"  #tip { position:fixed; bottom:72px; left:50%; transform:translateX(-50%);" +
         		"    background:rgba(0,0,0,0.85); border:none;" +
         		"    color:#00aaff; font-size:11px; padding:4px 14px; border-radius:20px;" +
@@ -983,8 +936,6 @@ public class FeaturedController {
        
         webView.setPrefSize(1500, 700);
         webView.getEngine().loadContent(html);
-
-        // ── Stage ────────────────────────────────────────────────────
         Rectangle2D screenBounds = Screen.getPrimary().getBounds();
         double fullWidth  = screenBounds.getWidth();
         double fullHeight = screenBounds.getHeight();
@@ -996,12 +947,8 @@ public class FeaturedController {
         popup.initStyle(StageStyle.TRANSPARENT);
         popup.setWidth(fullWidth); popup.setHeight(fullHeight);
         popup.setX(0); popup.setY(0);
-
-        // ── Backdrop ─────────────────────────────────────────────────
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: rgba(0,0,0,0.88);");
-
-        // ── Card ─────────────────────────────────────────────────────
         VBox card = new VBox(0);
         card.setMaxSize(fullWidth - 40, fullHeight - 40);
         card.setPrefSize(fullWidth - 40, fullHeight - 40);
@@ -1021,8 +968,6 @@ public class FeaturedController {
             cardClip.setHeight(nv.getHeight());
         });
         card.setClip(cardClip);
-
-        // ── Card top bar ─────────────────────────────────────────────
         HBox cardBar = new HBox(8);
         cardBar.setAlignment(Pos.CENTER_RIGHT);
         cardBar.setPadding(new Insets(9, 12, 9, 16));
@@ -1076,8 +1021,7 @@ public class FeaturedController {
         
        
     }
-
-    // ═══════════════════════ FILM POPUP ═══════════════════════
+// film to affiche
     public void showFilmPopup(FeaturedItem item) {
         Stage popup = new Stage();
         popup.initOwner(rootPane.getScene().getWindow());
@@ -1125,7 +1069,7 @@ public class FeaturedController {
                 titleImage.setImage(ImageUtil.load(film.getTitle_image_url()));
                 HBox starsBox = new HBox(3);
                 starsBox.getChildren().clear(); 
-                starsBox.setSpacing(3); // Consistent with your HBox(3)
+                starsBox.setSpacing(3);
                 starsBox.setAlignment(Pos.CENTER_LEFT);
 
                 double rating = film.getRating(); 
@@ -1134,18 +1078,13 @@ public class FeaturedController {
                 for (int i = 1; i <= 5; i++) {
                     StackPane starPane = new StackPane();
                     starPane.setAlignment(Pos.CENTER_LEFT);
-
-                    // 1. Create the Background (Empty) Star
                     Label bgStar = new Label("★");
                     bgStar.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
                     bgStar.setTextFill(Color.LIGHTGRAY);
 
-                    // 2. Create the Foreground (Filled) Star
                     Label fgStar = new Label("★");
                     fgStar.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
                     fgStar.setTextFill(Color.DEEPSKYBLUE);
-
-                    // 3. Calculate how much of this specific star is filled
                     double fill = Math.min(1.0, Math.max(0.0, rating - (i - 1)));
 
                     if (fill >= 1.0) {
@@ -1155,15 +1094,10 @@ public class FeaturedController {
                         // Empty Star
                         starPane.getChildren().add(bgStar);
                     } else {
-                        // Partial Star Clipping Logic
-                        // We use the 'size' variable (24) to calculate the clip width
                         javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(fill * size, size * 1.5);
                         fgStar.setClip(clip);
-                        
-                        // Add both: Background is visible through the parts not covered by the clipped Foreground
-                        starPane.getChildren().addAll(bgStar, fgStar);
+                                                starPane.getChildren().addAll(bgStar, fgStar);
                     }
-
                     starsBox.getChildren().add(starPane);
                 }
 
@@ -1184,8 +1118,6 @@ public class FeaturedController {
                 Label synopsis = new Label(film.getSynopsis() != null ? film.getSynopsis() : "");
                 synopsis.setWrapText(true); synopsis.setMaxWidth(600);
                 synopsis.setStyle("-fx-text-fill:#cccccc;-fx-font-size:16;");
-
-                // Watch status
                 int userId = Session.getUserId();
                 int filmId = film.getFilm_id();
                 int dur    = (int) film.getDuration();
@@ -1247,8 +1179,6 @@ public class FeaturedController {
         popup.setScene(scene);
         popup.showAndWait();
     }
-
-    // ═══════════════════════ SERIE POPUP ═══════════════════════
     public void showSeriePopup(FeaturedItem item) {
         if (item == null || !"serie".equalsIgnoreCase(item.getType())) return;
 
@@ -1360,8 +1290,7 @@ public class FeaturedController {
         popup.setHeight(rootPane.getScene().getHeight());
         popup.showAndWait();
     }
-
-    // ═══════════════════════ SLIDE HELPERS ═══════════════════════
+//helpers
     private void styleSlideButton(Button btn) {
         btn.setStyle(
             "-fx-background-color: transparent;-fx-text-fill: #00aaff;" +
@@ -1398,8 +1327,6 @@ public class FeaturedController {
         new Timeline(new KeyFrame(Duration.millis(400),
             new KeyValue(scrollPane.hvalueProperty(), hValue, Interpolator.EASE_BOTH))).play();
     }
-
-    // ═══════════════════════ SEASON CARD ═══════════════════════
     private StackPane createSeasonCard(Serie serie, int seasonIndex, Stage popup) {
         Season s = serie.getSeasons().get(seasonIndex);
 
@@ -1421,8 +1348,6 @@ public class FeaturedController {
         StackPane contentWrapper = new StackPane();
         contentWrapper.setPrefSize(740, 420);
         card.getChildren().add(contentWrapper);
-
-        // ── POSTER ───────────────────────────────────────────────────
         ImageView poster = new ImageView();
         poster.setFitWidth(300);
         poster.setFitHeight(420);
@@ -1456,8 +1381,6 @@ public class FeaturedController {
         posterPane.setPrefSize(300, 420);
         posterPane.setMaxSize(300, 420);
         StackPane.setAlignment(posterPane, Pos.CENTER_LEFT);
-
-        // ── INFO PANEL ───────────────────────────────────────────────
         VBox infoBox = new VBox(12);
         infoBox.setPadding(new Insets(28, 24, 24, 18));
         infoBox.setAlignment(Pos.TOP_LEFT);
@@ -1498,17 +1421,14 @@ public class FeaturedController {
             Label fgStar = new Label("★");
             fgStar.setStyle("-fx-font-size: 15px; -fx-text-fill: #38bdf8; -fx-font-weight: bold;");
 
-            // 3. Calculate Fill (0.0 to 1.0)
             double fill = Math.min(1.0, Math.max(0.0, rating - (i - 1)));
 
             if (fill >= 1.0) {
-                // Star is fully blue
                 starPane.getChildren().add(fgStar);
             } else if (fill <= 0) {
-                // Star is fully dim
                 starPane.getChildren().add(bgStar);
             } else {
-               
+              
                 javafx.scene.shape.Rectangle clip1 = new javafx.scene.shape.Rectangle(fill * fontSize, 25);
                 fgStar.setClip(clip1);
                 
@@ -1566,18 +1486,14 @@ public class FeaturedController {
             synopsis, divider,
             new HBox(12, trailerBtn, episodesBtn) {{ setAlignment(Pos.CENTER_LEFT); }}
         );
-
-        // ── MAIN VIEW ────────────────────────────────────────────────
         HBox mainView = new HBox(posterPane, infoBox);
         mainView.setAlignment(Pos.CENTER_LEFT);
         mainView.setPrefSize(740, 420);
 
-        // ── EPISODES LIST VIEW ───────────────────────────────────────
         VBox episodesView = new VBox(0);
         episodesView.setPrefSize(740, 420);
         episodesView.setStyle("-fx-background-color: #07090f;");
 
-        // Header
         Button backToMain = new Button("←");
         backToMain.setStyle(
             "-fx-background-color: rgba(56,189,248,0.1); -fx-background-radius: 50%;" +
@@ -1604,12 +1520,8 @@ public class FeaturedController {
             "-fx-border-color: transparent transparent rgba(56,189,248,0.18) transparent;" +
             "-fx-border-width: 0 0 1 0;"
         );
-
-        // Episode rows container
         VBox episodesList = new VBox(6);
         episodesList.setPadding(new Insets(10, 8, 16, 16));
-
-        // ── ScrollPane — built-in bars hidden, wheel handled manually ──
         ScrollPane episodesScroll = new ScrollPane(episodesList);
         episodesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         episodesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -1626,8 +1538,6 @@ public class FeaturedController {
                     episodesScroll.getVvalue() - e.getDeltaY() * 0.003))
             )
         );
-
-        // ── Custom slim scrollbar ──────────────────────────────────────
         ScrollBar customScrollBar = new ScrollBar();
         customScrollBar.setOrientation(Orientation.VERTICAL);
         customScrollBar.setMin(0);
@@ -1636,64 +1546,33 @@ public class FeaturedController {
         customScrollBar.setUnitIncrement(0.05);
         customScrollBar.setBlockIncrement(0.2);
 
-        // Lock width to exactly 6px
         customScrollBar.setPrefWidth(6);
         customScrollBar.setMinWidth(6);
         customScrollBar.setMaxWidth(6);
 
-        
-
-        // Load scrollbar.css so .thumb gets the blue-black pill look
-        customScrollBar.getStylesheets().add(
+                customScrollBar.getStylesheets().add(
             getClass().getResource("/view/css/scrollbar.css").toExternalForm()
         );
-
-        // Two-way bind: dragging thumb ↔ scrolling pane
         customScrollBar.valueProperty().bindBidirectional(episodesScroll.vvalueProperty());
-
-        // Adjust thumb size to reflect visible portion of content
-        episodesScroll.viewportBoundsProperty().addListener((o, ov, nv) ->
-            updateThumbSize(episodesScroll, customScrollBar));
-
-        // Style the thumb directly after CSS is applied
-        Platform.runLater(() -> {
-            Node thumb = customScrollBar.lookup(".thumb");
-            if (thumb != null) thumb.setStyle(
-                "-fx-background-color: #1e3a5f;" +
-                "-fx-background-radius: 10;" +
-                "-fx-border-color: transparent;"
-            );
+        episodesScroll.viewportBoundsProperty().addListener((o, ov, nv) ->updateThumbSize(episodesScroll, customScrollBar));
+        Platform.runLater(() -> {Node thumb = customScrollBar.lookup(".thumb");
+            if (thumb != null) thumb.setStyle("-fx-background-color: #1e3a5f;" +"-fx-background-radius: 10;" +"-fx-border-color: transparent;"  );
             Node track = customScrollBar.lookup(".track");
-            if (track != null) track.setStyle(
-                "-fx-background-color: transparent;" +
-                "-fx-border-color: transparent;"
-            );
-            // Hide arrow buttons
+            if (track != null) track.setStyle( "-fx-background-color: transparent;" +"-fx-border-color: transparent;" );
+          
             for (String sel : new String[]{".increment-button", ".decrement-button"}) {
                 Node btn = customScrollBar.lookup(sel);
                 if (btn != null) btn.setStyle(
-                    "-fx-pref-width: 0; -fx-pref-height: 0;" +
-                    "-fx-min-width: 0; -fx-min-height: 0;" +
-                    "-fx-max-width: 0; -fx-max-height: 0;" +
-                    "-fx-background-color: transparent;"
-                );
+                    "-fx-pref-width: 0; -fx-pref-height: 0;" +"-fx-min-width: 0; -fx-min-height: 0;" +"-fx-max-width: 0; -fx-max-height: 0;" +"-fx-background-color: transparent;");
+         
             }
-            // Hover: brighten thumb to accent blue
             if (thumb != null) {
-                thumb.setOnMouseEntered(ev -> thumb.setStyle(
-                    "-fx-background-color: #4a90d9;" +
-                    "-fx-background-radius: 10;" +
-                    "-fx-border-color: transparent;"
-                ));
-                thumb.setOnMouseExited(ev -> thumb.setStyle(
-                    "-fx-background-color: #1e3a5f;" +
-                    "-fx-background-radius: 10;" +
-                    "-fx-border-color: transparent;"
-                ));
+                thumb.setOnMouseEntered(ev -> thumb.setStyle("-fx-background-color: #4a90d9;" + "-fx-background-radius: 10;" +
+                    "-fx-border-color: transparent;" ));
+                thumb.setOnMouseExited(ev -> thumb.setStyle( "-fx-background-color: #1e3a5f;" + "-fx-background-radius: 10;" +
+                    "-fx-border-color: transparent;" ));
             }
         });
-
-        // ── Episode detail pane ───────────────────────────────────────
         int userId = Session.getUserId();
         Map<Integer, WatchStatus> progressMap = episodeProgressService.loadUserProgress(userId);
 
@@ -1709,14 +1588,11 @@ public class FeaturedController {
             episodesList.getChildren().add(row);
         }
 
-        // scrollRow: ScrollPane fills width, slim bar on the right edge
         HBox scrollRow = new HBox(0, episodesScroll, customScrollBar);
         HBox.setHgrow(episodesScroll, Priority.ALWAYS);
         VBox.setVgrow(scrollRow, Priority.ALWAYS);
 
         episodesView.getChildren().addAll(epHeader, scrollRow);
-
-        // ── WIRE ACTIONS ─────────────────────────────────────────────
         trailerBtn.setOnAction(e  -> showTrailerPopup(serie, seasonIndex));
         episodesBtn.setOnAction(e -> switchView(contentWrapper, episodesView));
         backToMain.setOnAction(e  -> switchView(contentWrapper, mainView));
@@ -1724,9 +1600,6 @@ public class FeaturedController {
         contentWrapper.getChildren().setAll(mainView);
         return card;
     }
-
-    // ═══════════════════════ EPISODE ROW ═══════════════════════
-    // Single definition — 8 params including episodesView
     private HBox buildEpisodeRow(
             Episode ep, Season s,
             Map<Integer, WatchStatus> progressMap,
@@ -1741,39 +1614,32 @@ public class FeaturedController {
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(12, 16, 12, 16));
 
-        String baseStyle =
-            "-fx-background-color: rgba(15,20,32,0.6);" +
+        String baseStyle ="-fx-background-color: rgba(15,20,32,0.6);" +
             "-fx-background-radius: 10;" +
             "-fx-border-color: rgba(56,189,248,0.07);" +
             "-fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;";
-        String hoverStyle =
-            "-fx-background-color: rgba(56,189,248,0.08);" +
+            
+        String hoverStyle = "-fx-background-color: rgba(56,189,248,0.08);" +
             "-fx-background-radius: 10;" +
             "-fx-border-color: rgba(56,189,248,0.25);" +
             "-fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;";
+           
         row.setStyle(baseStyle);
         row.setOnMouseEntered(e -> row.setStyle(hoverStyle));
         row.setOnMouseExited(e  -> row.setStyle(baseStyle));
-
-        // Number circle
         Label numBadge = new Label(String.format("%02d", ep.getNumEpisode()));
         numBadge.setPrefSize(34, 34); numBadge.setMinSize(34, 34);
         numBadge.setAlignment(Pos.CENTER);
-        numBadge.setStyle(
-            "-fx-background-color: rgba(56,189,248,0.12); -fx-background-radius: 17;" +
+        numBadge.setStyle("-fx-background-color: rgba(56,189,248,0.12); -fx-background-radius: 17;" +
             "-fx-border-color: rgba(56,189,248,0.3); -fx-border-radius: 17; -fx-border-width: 1;" +
-            "-fx-text-fill: #38bdf8; -fx-font-size: 12px; -fx-font-weight: bold;"
-        );
+            "-fx-text-fill: #38bdf8; -fx-font-size: 12px; -fx-font-weight: bold;");
 
-        // Title + stars
         VBox textCol = new VBox(4);
         HBox.setHgrow(textCol, Priority.ALWAYS);
 
         Label epTitleLbl = new Label(ep.getTitle());
-        epTitleLbl.setStyle(
-            "-fx-text-fill: rgba(226,232,240,0.95); -fx-font-size: 14px; -fx-font-weight: bold;"
-        );
-
+        epTitleLbl.setStyle("-fx-text-fill: rgba(226,232,240,0.95); -fx-font-size: 14px; -fx-font-weight: bold;");
+           
         HBox miniStars = new HBox(2);
         miniStars.getChildren().clear(); 
         miniStars.setSpacing(1);
@@ -1808,13 +1674,9 @@ public class FeaturedController {
             miniStars.getChildren().add(starPane);
         }
         textCol.getChildren().addAll(epTitleLbl, miniStars);
-
-        // Duration
         int h = ep.getDuration() / 60, m = ep.getDuration() % 60;
         Label duration = new Label((h > 0 ? h + "h " : "") + m + "m");
         duration.setStyle("-fx-text-fill: rgba(148,163,184,0.6); -fx-font-size: 12px;");
-
-        // Status pill
         String pillText   = switch (status) { case COMPLETED -> "✓ Watched"; case IN_PROGRESS -> "▶ In Progress"; default -> "Not Started"; };
         String pillBg     = switch (status) { case COMPLETED -> "rgba(34,197,94,0.15)";  case IN_PROGRESS -> "rgba(56,189,248,0.15)";  default -> "rgba(100,116,139,0.12)"; };
         String pillBorder = switch (status) { case COMPLETED -> "rgba(34,197,94,0.5)";   case IN_PROGRESS -> "rgba(56,189,248,0.45)";  default -> "rgba(100,116,139,0.25)"; };
@@ -1831,49 +1693,33 @@ public class FeaturedController {
         arrow.setStyle("-fx-text-fill: rgba(56,189,248,0.4); -fx-font-size: 20px;");
 
         row.getChildren().addAll(numBadge, textCol, duration, statusPill, arrow);
-
-        // Click → populate detail + switch view
-        row.setOnMouseClicked(ev -> {
-            populateEpisodeDetail(detailPane, ep, s, contentWrapper, episodesView, popup, userId);
-            switchView(contentWrapper, detailPane);
-        });
-
+        row.setOnMouseClicked(ev -> {populateEpisodeDetail(detailPane, ep, s, contentWrapper, episodesView, popup, userId);
+            switchView(contentWrapper, detailPane);});
         return row;
     }
 
-    // ═══════════════════════ EPISODE DETAIL ═══════════════════════
-    // Single definition — 7 params including contentWrapper + episodesView
+    //episode details   
     private void populateEpisodeDetail(
             StackPane detailPane, Episode ep, Season s,
             StackPane contentWrapper, VBox episodesView,
             Stage popup, int userId) {
 
         detailPane.getChildren().clear();
-
-        // ── COVER ─────────────────────────────────────────────
         ImageView cover = new ImageView();
         cover.setFitWidth(740);
         cover.setFitHeight(350);
         cover.setPreserveRatio(false);
 
         cover.setImage(ImageUtil.load(ep.getCovertUrl()));
-
-
         Region coverGradient = new Region();
         coverGradient.setPrefSize(740, 280);
-        coverGradient.setStyle(
-            "-fx-background-color: linear-gradient(to bottom," +
-            "rgba(7,9,15,0) 0%, rgba(7,9,15,0.6) 55%, rgba(7,9,15,1.0) 100%);"
-        );
-
+        coverGradient.setStyle( "-fx-background-color: linear-gradient(to bottom," +"rgba(7,9,15,0) 0%, rgba(7,9,15,0.6) 55%, rgba(7,9,15,1.0) 100%);");
+           
         StackPane coverPane = new StackPane(cover, coverGradient);
         coverPane.setMaxSize(740, 280);
         StackPane.setAlignment(coverPane, Pos.TOP_CENTER);
-
-        // IMPORTANT: don't block clicks
         coverPane.setMouseTransparent(true);
-
-        // ── PLAY BUTTON ───────────────────────────────────────
+//button play
         Button play = new Button("▶");
         play.setPrefSize(64, 64);
         play.setStyle(
@@ -1882,8 +1728,6 @@ public class FeaturedController {
             "-fx-text-fill: white; -fx-font-size: 22px; -fx-cursor: hand;" +
             "-fx-effect: dropshadow(gaussian, rgba(56,189,248,0.55), 22, 0.4, 0, 0);"
         );
-
-        // Pulse animation
         ScaleTransition pulse = new ScaleTransition(Duration.millis(900), play);
         pulse.setFromX(1.0);
         pulse.setFromY(1.0);
@@ -1892,37 +1736,31 @@ public class FeaturedController {
         pulse.setAutoReverse(true);
         pulse.setCycleCount(Animation.INDEFINITE);
         pulse.play();
-
-        // Hover
+//effet hover
         play.setOnMouseEntered(e -> {
             pulse.stop();
             play.setScaleX(1.18);
             play.setScaleY(1.18);
         });
 
-        play.setOnMouseExited(e -> {
-            play.setScaleX(1.0);
+        play.setOnMouseExited(e -> { play.setScaleX(1.0);
             play.setScaleY(1.0);
             pulse.play();
         });
-
+           
         StackPane.setAlignment(play, Pos.CENTER);
         StackPane.setMargin(play, new Insets(0, 0, 160, 0));
-
-        // ── INFO PANEL ────────────────────────────────────────
         VBox infoPanel = new VBox(8);
         infoPanel.setPadding(new Insets(0, 28, 20, 28));
         infoPanel.setAlignment(Pos.TOP_LEFT);
         StackPane.setAlignment(infoPanel, Pos.BOTTOM_CENTER);
-
         Button backBtn = new Button("← Episodes");
-        backBtn.setStyle(
-            "-fx-background-color: rgba(56,189,248,0.1);" +
+        backBtn.setStyle("-fx-background-color: rgba(56,189,248,0.1);" +
             "-fx-border-color: rgba(56,189,248,0.35);" +
             "-fx-text-fill: #38bdf8;"
         );
+           
         addHoverAnimation(backBtn);
-
         Label epNum = new Label("EPISODE " + ep.getNumEpisode());
         Label epTitle = new Label(ep.getTitle());
 
@@ -1937,37 +1775,23 @@ public class FeaturedController {
         synopsis.setWrapText(true);
 
         infoPanel.getChildren().addAll(backBtn, epNum, epTitle, metaLabel, synopsis);
-
-        // ── ACTIONS ───────────────────────────────────────────
         play.setOnAction(e -> {
             System.out.println("PLAY CLICKED ✅");
 
             try {
                 if (popup != null) popup.close();
 
-                goToLecturePageEpisode(
-                    s.getSerieId(),
-                    s.getSeasonNum(),
-                    ep.getEpId()
-                );
-
-                
-
+                goToLecturePageEpisode(s.getSerieId(),s.getSeasonNum(),ep.getEpId());
+ 
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
 
         backBtn.setOnAction(e -> switchView(contentWrapper, episodesView));
-
-        // ── FINAL LAYOUT (FIXED ORDER) ─────────────────────────
         detailPane.getChildren().addAll(coverPane, infoPanel, play);
-
-        // FORCE play button on top
         play.toFront();
     }
-
-    // ═══════════════════════ VIEW SWITCHER ═══════════════════════
     private void switchView(StackPane wrapper, Node target) {
         if (!wrapper.getChildren().isEmpty()) {
             Node current = wrapper.getChildren().get(0);
@@ -1987,22 +1811,20 @@ public class FeaturedController {
         }
     }
 
-    // ═══════════════════════ BUTTON STYLES ═══════════════════════
+//styles 
     private void styleCardButton(Button btn, boolean primary) {
         if (primary) {
-            btn.setStyle(
-                "-fx-background-color: #38bdf8; -fx-text-fill: #07090f;" +
-                "-fx-font-weight: bold; -fx-font-size: 13px; -fx-background-radius: 8;" +
-                "-fx-padding: 8 20; -fx-cursor: hand;" +
-                "-fx-effect: dropshadow(gaussian, rgba(56,189,248,0.45), 16, 0.3, 0, 0);"
+            btn.setStyle("-fx-background-color: #38bdf8; -fx-text-fill: #07090f;" +
+                         "-fx-font-weight: bold; -fx-font-size: 13px; -fx-background-radius: 8;" +
+                         "-fx-padding: 8 20; -fx-cursor: hand;" +
+                         "-fx-effect: dropshadow(gaussian, rgba(56,189,248,0.45), 16, 0.3, 0, 0);"
             );
+                
         } else {
-            btn.setStyle(
-                "-fx-background-color: rgba(56,189,248,0.08); -fx-text-fill: #38bdf8;" +
-                "-fx-font-size: 13px; -fx-background-radius: 8;" +
-                "-fx-border-color: rgba(56,189,248,0.35); -fx-border-width: 1;" +
-                "-fx-border-radius: 8; -fx-padding: 8 20; -fx-cursor: hand;"
-            );
+            btn.setStyle(  "-fx-background-color: rgba(56,189,248,0.08); -fx-text-fill: #38bdf8;" +
+                           "-fx-font-size: 13px; -fx-background-radius: 8;" +
+                           "-fx-border-color: rgba(56,189,248,0.35); -fx-border-width: 1;" +
+                           "-fx-border-radius: 8; -fx-padding: 8 20; -fx-cursor: hand;" );  
         }
     }
 
@@ -2014,8 +1836,6 @@ public class FeaturedController {
         btn.setOnMouseEntered(e -> up.playFromStart());
         btn.setOnMouseExited(e  -> down.playFromStart());
     }
-
-    // ═══════════════════════ SCROLLBAR HELPERS ═══════════════════════
     private void updateThumbSize(ScrollPane scrollPane, ScrollBar scrollBar) {
         Node content = scrollPane.getContent();
         if (content == null) return;
@@ -2030,8 +1850,7 @@ public class FeaturedController {
             scrollBar.setVisibleAmount(Math.max(0.05, Math.min(nv.getHeight() / ch, 1.0)));
         });
     }
-
-    // ═══════════════════════ NAVIGATION ═══════════════════════
+//navigation to lecturepage
     private void goToLecturePageFilm(int filmId) {
         try {
             FXMLLoader loader = new FXMLLoader(

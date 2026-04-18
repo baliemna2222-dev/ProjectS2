@@ -236,7 +236,7 @@ public class SerieDAO {
         serie.setTitle(rs.getString("title"));
         serie.setSynopsis(rs.getString("synopsis"));
         serie.setCasting(rs.getString("casting"));
-        serie.setDirector(rs.getString("director")); // ✅ FIXED
+        serie.setDirector(rs.getString("director")); 
         serie.setCovertUrl(rs.getString("covert_url"));
         serie.setTitleUrl(rs.getString("title_url"));
         serie.setAge_rating(rs.getString("age_rating"));

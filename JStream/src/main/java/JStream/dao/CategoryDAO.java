@@ -98,7 +98,7 @@ public class CategoryDAO {
         return null;
     }
 
-    // ===== NAME EXISTS (avoid duplicates) =====
+    // ===== NAME EXISTS =====
     public boolean nameExists(String name) {
         String sql = "SELECT category_id FROM category WHERE name = ?";
         try (Connection conn = Database.getConnection();

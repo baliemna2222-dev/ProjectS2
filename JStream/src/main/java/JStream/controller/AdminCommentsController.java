@@ -67,7 +67,7 @@ public class AdminCommentsController {
     }
 
     private VBox buildCommentCard(Comment c, int animDelayMs) {
-        // ── Carte principale ───────────────────────────────────────
+    //carte principal
         VBox card = new VBox(14);
         card.setPadding(new Insets(20));
         card.getStyleClass().add("admin-comment-card");
@@ -77,36 +77,27 @@ public class AdminCommentsController {
         shadow.setOffsetY(8);
         shadow.setColor(Color.color(0, 0, 0, 0.55));
         card.setEffect(shadow);
-
-        // ── Header : avatar + meta + badge ────────────────────────
+//header
         HBox header = new HBox(14);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        // Avatar circle avec initiales
         StackPane avatarPane = new StackPane();
         Circle avatarBg = new Circle(24);
         avatarBg.setFill(Color.web("#1e88e5"));
       
-        // Colonne meta
         VBox metaCol = new VBox(3);
-     // ── CHANGE 1: replace "User #ID" with the actual username ─────────────────
-     // Old:
     
-     // New — assumes Comment exposes getUsername() (add this field/getter):
      Label userLabel = new Label(
          c.getUsername() != null && !c.getUsername().isBlank()
              ? c.getUsername()
-             : "User #" + c.getUserID()   // graceful fallback if username is null
+             : "User #" + c.getUserID() 
      );
 
-     // ── CHANGE 2: update the avatar initials too ──────────────────────────────
-     
-     // New:
      String uname = c.getUsername();
      String avatarText = (uname != null && uname.length() >= 2)
          ? uname.substring(0, 2).toUpperCase()
          : "U" + (c.getUserID() % 100);
-     Label initials = new Label(avatarText);
+     new Label(avatarText);
 
         String targetText = c.isForFilm()
             ? "🎬  Film ID: " + c.getFilmID()
@@ -118,11 +109,8 @@ public class AdminCommentsController {
         );
         metaCol.getChildren().addAll(userLabel, targetLabel);
 
-        // Spacer
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        // Badge Flagged
         Label flagBadge = new Label("🚨  Flagged");
         flagBadge.setStyle(
             "-fx-background-color: rgba(66,165,245,0.16);" +
@@ -135,21 +123,17 @@ public class AdminCommentsController {
 
         header.getChildren().addAll(avatarPane, metaCol, spacer, flagBadge);
 
-        // ── Séparateur ─────────────────────────────────────────────
         Separator sep = new Separator();
         sep.setStyle("-fx-background-color: rgba(66,165,245,0.15); -fx-border-color: transparent;");
         VBox.setMargin(sep, new Insets(0, 0, 2, 0));
 
-        // ── Contenu du commentaire ─────────────────────────────────
         Label contentLabel = new Label("\" " + c.getContent() + " \"");
         contentLabel.getStyleClass().add("admin-comment-content");
         contentLabel.setWrapText(true);
 
-        // ── Boutons d'action ───────────────────────────────────────
         HBox actions = new HBox(12);
         actions.setAlignment(Pos.CENTER_RIGHT);
 
-        // Bouton Ignore Report — outline bleu cyan (comme screenshot)
         Button ignoreBtn = new Button("✓  Ignore Report");
         String ignoreBase =
             "-fx-background-color: transparent;" +
@@ -181,7 +165,6 @@ public class AdminCommentsController {
             removeCardWithAnimation(card);
         });
 
-        // Bouton Delete Comment — rouge vif (comme screenshot)
         Button deleteBtn = new Button("🗑  Delete Comment");
         String deleteBase =
             "-fx-background-color: linear-gradient(to right, #e53935, #c62828);" +
@@ -209,8 +192,7 @@ public class AdminCommentsController {
 
         actions.getChildren().addAll(ignoreBtn, deleteBtn);
         card.getChildren().addAll(header, sep, contentLabel, actions);
-
-        // ── Animation d'entrée ─────────────────────────────────────
+//animation 
         card.setOpacity(0);
         card.setTranslateY(20);
         FadeTransition ft = new FadeTransition(Duration.millis(350), card);
@@ -238,7 +220,6 @@ public class AdminCommentsController {
         ft.play();
         tt.play();
     }
-
     private void updateCountLabel() {
         if (countLabel != null) {
             int remaining = commentsContainer.getChildren().size();

@@ -104,7 +104,6 @@ public class Logincontroller implements Initializable {
             RakshaController controller = loader.getController();
 
             stage.getScene().setRoot(root);
-            // Lier le root à la taille du stage
             if (root instanceof javafx.scene.layout.Region region) {
                 region.prefWidthProperty().bind(stage.widthProperty());
                 region.prefHeightProperty().bind(stage.heightProperty());
@@ -125,8 +124,6 @@ public class Logincontroller implements Initializable {
             e.printStackTrace();
         }
     }
-
-    // ========== LOGIN ==========
     @FXML private void handleLogin(ActionEvent event) {
         clearLoginMessages();
         String username = loginUsername.getText().trim();
@@ -183,7 +180,6 @@ public class Logincontroller implements Initializable {
                 signupError.setVisible(true);
             }
         } else {
-            // Provide clear feedback on what failed
             if(userService.usernameExists(username)) {
                 signupError.setText("Username already exists");
             } else if(userService.emailExists(email)) {
@@ -226,8 +222,6 @@ public class Logincontroller implements Initializable {
                 showError("Email not found or failed to send");
                 return;
             }
-
-            // ✅ Save email before hiding the field
             pendingEmail = email;
 
             showSuccess("✅ Code sent to " + email);
@@ -257,8 +251,6 @@ public class Logincontroller implements Initializable {
                 showForgot();
                 return;
             }
-
-            // ✅ Fetch user by email and log them in
             User user = userService.getUserByEmail(pendingEmail);
 
             if (user != null) {
@@ -282,7 +274,6 @@ public class Logincontroller implements Initializable {
     private void showError(String msg) { messageLabel.setText(msg); messageLabel.setStyle("-fx-text-fill: #ff4d4d;"); messageLabel.setVisible(true);}
     private void showSuccess(String msg) { messageLabel.setText(msg); messageLabel.setStyle("-fx-text-fill: #4dff4d;"); messageLabel.setVisible(true);}
 
-    // ========== CLEAR FIELDS ==========
     private void clearLoginFields() { 
         loginUsername.clear(); 
         loginPassword.clear(); 
@@ -309,7 +300,6 @@ public class Logincontroller implements Initializable {
         messageLabel.setVisible(false);
     }
 
-    // ========== FORM SWITCH ==========
     private void showLogin() {
         loginForm.setVisible(true); 
         signupForm.setVisible(false); 
@@ -331,7 +321,6 @@ public class Logincontroller implements Initializable {
         clearLoginFields(); clearSignupFields(); clearForgotFields();
     }
 
-    // ========== HOME PAGE ==========
     
     private void goToHomepage(ActionEvent event, User user) {
         // Get the stage and current scene
@@ -339,15 +328,12 @@ public class Logincontroller implements Initializable {
         Scene scene = stage.getScene();
         Parent currentRoot = scene.getRoot();
 
-        // Determine target FXML based on role
         final String targetFxml;
         if (user != null && user.getRole() == UserRole.ADMIN) {
             targetFxml = "/view/fxml/admin_home.fxml";
         } else {
             targetFxml = "/view/fxml/HomePage.fxml";
         }
-
-        // Show a spinner overlay while loading
         ProgressIndicator spinner = new ProgressIndicator();
         spinner.setMaxSize(100, 100);
 
@@ -372,16 +358,13 @@ public class Logincontroller implements Initializable {
         loadTask.setOnSucceeded(e -> {
             Parent root = loadTask.getValue();
 
-            // Swap root
             stage.getScene().setRoot(root);
             
-            // Lier le root à la taille du stage
             if (root instanceof javafx.scene.layout.Region region) {
                 region.prefWidthProperty().bind(stage.widthProperty());
                 region.prefHeightProperty().bind(stage.heightProperty());
             }
 
-            // Fade in
             FadeTransition ft = new FadeTransition(Duration.millis(500), root);
             ft.setFromValue(0);
             ft.setToValue(1);

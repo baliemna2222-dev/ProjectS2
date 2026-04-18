@@ -113,7 +113,7 @@ public class EpisodeDAO {
         return null;
     }
 
-    // ===== NEXT EPISODE (for binge-watching auto-play) =====
+    // ===== NEXT EPISODE =====
     public Episode getNextEpisode(int seasonId, int currentNumEpisode) {
         System.out.println("Recherche épisode après : S" + seasonId + " E" + currentNumEpisode);
         String sql = "SELECT * FROM episode " +

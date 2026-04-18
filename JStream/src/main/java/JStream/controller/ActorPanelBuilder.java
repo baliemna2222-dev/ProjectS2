@@ -11,7 +11,6 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
@@ -40,7 +39,7 @@ public class ActorPanelBuilder {
 
     private VBox      actorListBox;
     private TextField searchField;
-    private Node      anchorNode;   // used to find the scene root for overlays
+    private Node      anchorNode;   
 
     private final List<Actor> pendingActors = new ArrayList<>();
 
@@ -51,9 +50,6 @@ public class ActorPanelBuilder {
 
     public void setMode(Mode mode) { this.mode = mode; }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  BUILD PANEL
-    // ─────────────────────────────────────────────────────────────────────────
     public VBox buildPanel() {
         Label sectionTitle = new Label("CAST  &  ACTORS");
         sectionTitle.setStyle(
@@ -65,13 +61,12 @@ public class ActorPanelBuilder {
 
         searchField = new TextField();
         searchField.setPromptText("Search actor by name…");
-        searchField.setStyle(
-            "-fx-background-color:rgba(255,255,255,0.05);-fx-text-fill:" + TEXT +
-            ";-fx-prompt-text-fill:" + MUTED + ";-fx-border-color:" + BORDER_DIM +
-            ";-fx-border-radius:8;-fx-background-radius:8;-fx-padding:9 12;"
+        searchField.setStyle(  "-fx-background-color:rgba(255,255,255,0.05);-fx-text-fill:" + TEXT +
+                              ";-fx-prompt-text-fill:" + MUTED + ";-fx-border-color:" + BORDER_DIM +
+                               ";-fx-border-radius:8;-fx-background-radius:8;-fx-padding:9 12;"
         );
+          
         HBox.setHgrow(searchField, Priority.ALWAYS);
-
         Button newActorBtn = pill("＋  New Actor", ACCENT, "white");
         newActorBtn.setOnAction(e -> showActorFormDialog(null, null));
 
@@ -106,28 +101,15 @@ public class ActorPanelBuilder {
 
         VBox panel = new VBox(10, sectionTitle, sep, topBar, suggestBox, actorListBox);
         panel.setStyle("-fx-padding:4 0 0 0;");
-
-        // Store any node in the panel as our scene anchor
         anchorNode = sectionTitle;
 
         refreshActors();
         return panel;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  OVERLAY HELPER  — replaces all Stage popups
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Wraps `content` in a full-screen semi-transparent backdrop and injects it
-     * into the scene's root StackPane so it floats above all other content.
-     * Returns a Runnable you call to close the overlay.
-     */
     private Runnable showOverlay(Node content) {
-        // Find the scene root — must be (or become) a StackPane
         Scene scene = anchorNode != null ? anchorNode.getScene() : null;
         if (scene == null) {
-            // Panel not yet in a scene — nothing to do
             return () -> {};
         }
 
@@ -135,19 +117,14 @@ public class ActorPanelBuilder {
         if (scene.getRoot() instanceof StackPane sp) {
             root = sp;
         } else {
-            // Wrap existing root in a StackPane so we can layer things
             javafx.scene.Parent oldRoot = scene.getRoot();
             root = new StackPane(oldRoot);
             scene.setRoot(root);
         }
-
-        // Backdrop
         StackPane backdrop = new StackPane(content);
         backdrop.setStyle("-fx-background-color:rgba(0,0,0,0.65);");
         backdrop.setAlignment(Pos.CENTER);
         StackPane.setAlignment(backdrop, Pos.CENTER);
-
-        // Entry animation on content
         content.setScaleX(0.88); content.setScaleY(0.88);
         content.setOpacity(0);
         root.getChildren().add(backdrop);
@@ -156,8 +133,6 @@ public class ActorPanelBuilder {
         ScaleTransition si = new ScaleTransition(Duration.millis(180), content);
         fi.setToValue(1); si.setToX(1); si.setToY(1);
         new ParallelTransition(fi, si).play();
-
-        // Close = animate out then remove backdrop
         StackPane finalRoot = root;
         return () -> {
             FadeTransition fo = new FadeTransition(Duration.millis(140), content);
@@ -168,9 +143,6 @@ public class ActorPanelBuilder {
         };
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  REFRESH
-    // ─────────────────────────────────────────────────────────────────────────
     public void refreshActors() {
         if (actorListBox == null) return;
         actorListBox.getChildren().clear();
@@ -208,10 +180,6 @@ public class ActorPanelBuilder {
             pt.play();
         }
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  ACTOR ROW  — fixed layout so Edit/Delete never get pushed off
-    // ─────────────────────────────────────────────────────────────────────────
     private HBox buildActorRow(Actor actor) {
         ImageView avatar = new ImageView();
         avatar.setFitWidth(38); avatar.setFitHeight(38);
@@ -225,7 +193,7 @@ public class ActorPanelBuilder {
 
         Label nameLbl = new Label(actor.getName());
         nameLbl.setStyle("-fx-text-fill:" + TEXT + ";-fx-font-size:13px;-fx-font-weight:bold;");
-        nameLbl.setMaxWidth(160);          // ← prevents overflow
+        nameLbl.setMaxWidth(160);          
         nameLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
         String roleText = (actor.getRoleName() != null && !actor.getRoleName().isBlank())
@@ -234,21 +202,21 @@ public class ActorPanelBuilder {
         roleLbl.setStyle("-fx-text-fill:" + MUTED + ";-fx-font-size:11px;");
         roleLbl.setMaxWidth(160);
         roleLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
-
         VBox nameCol = new VBox(2, nameLbl, roleLbl);
         nameCol.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(nameCol, Priority.ALWAYS);  // takes all spare space
-
+        
+        HBox.setHgrow(nameCol, Priority.ALWAYS); 
         Button editBtn   = iconBtn("✎", ACCENT2);
         Button unlinkBtn = iconBtn("✕", DANGER);
+        
         editBtn.setOnAction(e   -> showActorFormDialog(actor, actor.getRoleName()));
         unlinkBtn.setOnAction(e -> confirmUnlink(actor));
-
         HBox actions = new HBox(6, editBtn, unlinkBtn);
         actions.setAlignment(Pos.CENTER_RIGHT);
-        actions.setMinWidth(Region.USE_PREF_SIZE); // never shrink below its natural size
+        actions.setMinWidth(Region.USE_PREF_SIZE);
 
         HBox row = new HBox(12, avatarPane, nameCol, actions);
+        
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(8, 12, 8, 12));
 
@@ -261,10 +229,7 @@ public class ActorPanelBuilder {
         row.setOnMouseExited(ev  -> row.setStyle(base));
         return row;
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SUGGESTION ROW
-    // ─────────────────────────────────────────────────────────────────────────
+//rows
     private HBox buildSuggestionRow(Actor actor) {
         ImageView thumb = new ImageView();
         thumb.setFitWidth(28); thumb.setFitHeight(28);
@@ -277,11 +242,9 @@ public class ActorPanelBuilder {
 
         Button linkBtn = pill("Link", ACCENT, "white");
         linkBtn.setStyle(linkBtn.getStyle() + "-fx-font-size:10px;-fx-padding:3 10;");
-        linkBtn.setOnAction(e -> {
-            showRoleInputDialog(actor, null);
-            if (searchField != null) searchField.clear();
-        });
-
+        linkBtn.setOnAction(e -> { showRoleInputDialog(actor, null);
+                                  if (searchField != null) searchField.clear(); });
+    
         HBox row = new HBox(10, thumb, name, linkBtn);
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(6, 8, 6, 8));
@@ -290,10 +253,7 @@ public class ActorPanelBuilder {
         row.setOnMouseExited (e -> row.setStyle("-fx-background-color:transparent;-fx-background-radius:6;-fx-cursor:hand;"));
         return row;
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  ACTOR FORM OVERLAY  (replaces the old Stage-based dialog)
-    // ─────────────────────────────────────────────────────────────────────────
+//actors
     private void showActorFormDialog(Actor existing, String role) {
         boolean isNew = (existing == null);
 
@@ -302,27 +262,23 @@ public class ActorPanelBuilder {
         card.setMaxWidth(420);
         card.setMaxHeight(500);
         card.setPadding(new Insets(30, 32, 30, 32));
-        card.setStyle(
-            "-fx-background-color:#0d1629;-fx-background-radius:18;" +
+        card.setStyle(  "-fx-background-color:#0d1629;-fx-background-radius:18;" +
             "-fx-border-color:rgba(37,99,235,0.28);-fx-border-radius:18;-fx-border-width:1;"
         );
-
         Label cardTitle = new Label(isNew ? "＋  Add New Actor" : "✎  Edit Actor");
         cardTitle.setStyle("-fx-text-fill:white;-fx-font-size:17px;-fx-font-weight:bold;");
-
         Separator s = new Separator();
         s.setStyle("-fx-background-color:" + BORDER_DIM + ";");
-
         ImageView previewImg = new ImageView();
+        
         previewImg.setFitWidth(64); previewImg.setFitHeight(64);
         previewImg.setPreserveRatio(false);
         previewImg.setClip(new Circle(32, 32, 32));
+        
         if (existing != null) loadImage(previewImg, existing.getPhotoUrl(), null);
-
         StackPane avatarPane = new StackPane(previewImg);
         avatarPane.setPrefSize(64, 64); avatarPane.setMinSize(64, 64); avatarPane.setMaxSize(64, 64);
         avatarPane.setStyle("-fx-background-color:rgba(37,99,235,0.15);-fx-background-radius:32;");
-
         final String[] photoPath = { existing != null ? existing.getPhotoUrl() : null };
 
         Button changePhotoBtn = pill("📷  Photo", "rgba(37,99,235,0.20)", ACCENT2);
@@ -333,7 +289,6 @@ public class ActorPanelBuilder {
             fc.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("Images", "*.png","*.jpg","*.jpeg","*.webp")
             );
-            // Use any window available via the scene
             javafx.stage.Window win = anchorNode != null && anchorNode.getScene() != null
                 ? anchorNode.getScene().getWindow() : null;
             File f = fc.showOpenDialog(win);
@@ -350,8 +305,8 @@ public class ActorPanelBuilder {
         TextField nameField = field(existing != null ? existing.getName() : "", "Full name");
         Label roleLbl   = label("Role / Character");
         TextField roleField = field(role != null ? role : "", "e.g. Tony Stark");
-
         Label errLbl = new Label("");
+        
         errLbl.setStyle("-fx-text-fill:#f87171;-fx-font-size:11px;");
         errLbl.setVisible(false); errLbl.setManaged(false);
 
@@ -366,7 +321,6 @@ public class ActorPanelBuilder {
             new VBox(6, roleLbl, roleField),
             errLbl, btnRow
         );
-
         Runnable[] close = { null };
         close[0] = showOverlay(card);
 
@@ -404,31 +358,23 @@ public class ActorPanelBuilder {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  ROLE INPUT OVERLAY
-    // ─────────────────────────────────────────────────────────────────────────
     private void showRoleInputDialog(Actor actor, String existingRole) {
         VBox card = new VBox(18);
         card.setMaxWidth(360);
         card.setMaxHeight(500);
         card.setPadding(new Insets(26, 28, 26, 28));
-        card.setStyle(
-            "-fx-background-color:#0d1629;-fx-background-radius:16;" +
-            "-fx-border-color:rgba(37,99,235,0.25);-fx-border-radius:16;-fx-border-width:1;"
-        );
-
+        card.setStyle( "-fx-background-color:#0d1629;-fx-background-radius:16;" +
+            "-fx-border-color:rgba(37,99,235,0.25);-fx-border-radius:16;-fx-border-width:1;");
+          
         Label title   = new Label("Link  " + actor.getName());
         title.setStyle("-fx-text-fill:white;-fx-font-size:15px;-fx-font-weight:bold;");
         Label roleLbl = label("Role / Character");
         TextField roleField = field(existingRole != null ? existingRole : "", "e.g. Bruce Wayne");
-
         Button linkBtn   = pill("Link Actor", ACCENT, "white");
         Button cancelBtn = pill("Cancel", "rgba(255,255,255,0.07)", MUTED);
         HBox btns = new HBox(10, cancelBtn, linkBtn);
         btns.setAlignment(Pos.CENTER_RIGHT);
-
         card.getChildren().addAll(title, new VBox(6, roleLbl, roleField), btns);
-
         Runnable[] close = { null };
         close[0] = showOverlay(card);
 
@@ -448,31 +394,20 @@ public class ActorPanelBuilder {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  CONFIRM UNLINK OVERLAY
-    // ─────────────────────────────────────────────────────────────────────────
     private void confirmUnlink(Actor actor) {
         VBox card = new VBox(20);
         card.setMaxWidth(360);
         card.setMaxHeight(500);
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(28, 30, 28, 30));
-        card.setStyle(
-            "-fx-background-color:#0f172a;-fx-background-radius:18;" +
-            "-fx-border-color:rgba(220,38,38,0.25);-fx-border-radius:18;-fx-border-width:1;"
-        );
-
+        card.setStyle("-fx-background-color:#0f172a;-fx-background-radius:18;" +
+            "-fx-border-color:rgba(220,38,38,0.25);-fx-border-radius:18;-fx-border-width:1;");
         Label icon = new Label("✕");
         icon.setAlignment(Pos.CENTER);
-        icon.setStyle(
-            "-fx-text-fill:#f87171;-fx-font-size:20px;-fx-font-weight:bold;" +
-            "-fx-background-color:rgba(220,38,38,0.12);-fx-background-radius:28;" +
-            "-fx-min-width:56;-fx-min-height:56;"
-        );
-
+        icon.setStyle( "-fx-text-fill:#f87171;-fx-font-size:20px;-fx-font-weight:bold;" +
+            "-fx-background-color:rgba(220,38,38,0.12);-fx-background-radius:28;" +"-fx-min-width:56;-fx-min-height:56;");
         Label title = new Label("Remove Actor?");
         title.setStyle("-fx-text-fill:white;-fx-font-size:17px;-fx-font-weight:bold;");
-
         Label msg = new Label("\"" + actor.getName() + "\" will be unlinked\nfrom this " +
                               (mode == Mode.FILM ? "film" : "series") + ".");
         msg.setStyle("-fx-text-fill:#64748b;-fx-font-size:13px;-fx-text-alignment:center;");
@@ -502,9 +437,6 @@ public class ActorPanelBuilder {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  PENDING ACTORS
-    // ─────────────────────────────────────────────────────────────────────────
     public void flushPendingActors() {
         int id = entityIdSupplier.getAsInt();
         if (id <= 0) return;
@@ -518,9 +450,6 @@ public class ActorPanelBuilder {
 
     public void clearPending() { pendingActors.clear(); }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  UI HELPERS
-    // ─────────────────────────────────────────────────────────────────────────
     private Button pill(String text, String bg, String fg) {
         Button b = new Button(text);
         b.setStyle(
@@ -571,24 +500,16 @@ public class ActorPanelBuilder {
             }
 
             Image img;
-
-            // ✅ HTTP / HTTPS
             if (path.startsWith("http://") || path.startsWith("https://")) {
                 img = new Image(path, true);
             }
-
-            // ✅ FILE URI (file:/...)
             else if (path.startsWith("file:/")) {
                 img = new Image(path, true);
             }
-
-            // ✅ WINDOWS PATH FIX (C:\...)
             else if (path.matches("^[a-zA-Z]:\\\\.*")) {
                 File f = new File(path);
                 img = new Image(f.toURI().toString(), true);
             }
-
-            // ✅ RELATIVE RESOURCE
             else {
                 var stream = getClass().getResourceAsStream(path);
                 if (stream != null) {

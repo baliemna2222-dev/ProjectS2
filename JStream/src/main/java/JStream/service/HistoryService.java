@@ -22,9 +22,6 @@ public class HistoryService {
         this.featuredService = featuredService;
     }
 
-    /**
-     * Retrieves all featured items (films + series) with user progress.
-     */
     public List<FeaturedItemProgress> getItemsWithProgress(int userId) {
         List<FeaturedItemProgress> result = new ArrayList<>();
 
@@ -37,7 +34,7 @@ public class HistoryService {
                     int lastPos = filmProgressService.getLastPosition(userId, filmItem.getId());
                     result.add(new FeaturedItemProgress(filmItem, status, lastPos));
                 } catch (Exception e) {
-                    e.printStackTrace(); // log per film error
+                    e.printStackTrace(); 
                 }
             }
         } catch (Exception e) {
@@ -52,8 +49,6 @@ public class HistoryService {
             e.printStackTrace();
             epProgressMap = new HashMap<>();
         }
-
-        // Map seriesId -> list of episodes
         Map<Integer, List<Episode>> serieMap = new HashMap<>();
         for (int epId : epProgressMap.keySet()) {
             try {
@@ -67,8 +62,6 @@ public class HistoryService {
                 e.printStackTrace(); // log per episode error
             }
         }
-
-        // Build series progress
         for (Map.Entry<Integer, List<Episode>> entry : serieMap.entrySet()) {
             try {
                 int serieId = entry.getKey();

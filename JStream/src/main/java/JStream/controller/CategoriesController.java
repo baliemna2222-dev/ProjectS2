@@ -2,7 +2,6 @@ package JStream.controller;
 
 import java.util.List;
 
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -23,8 +22,7 @@ public class CategoriesController {
     @FXML private TextField descriptionField;
     @FXML private Button    addButton;
     @FXML private Button    cancelEditButton;
-    @FXML private Label     validationLabel;   // add this Label to your FXML
-
+    @FXML private Label     validationLabel; 
     private CategoryService categoryService = new CategoryService();
     private Category        selectedCategory;
 
@@ -32,8 +30,6 @@ public class CategoriesController {
     public void initialize() {
         loadCategories();
     }
-
-    // ── Load ──────────────────────────────────────────────────────────────────
     private void loadCategories() {
         List<Category> categories = categoryService.getAllCategories();
         categoryListContainer.getChildren().clear();
@@ -41,8 +37,7 @@ public class CategoriesController {
             categoryListContainer.getChildren().add(createCategoryCard(category));
         }
     }
-
-    // ── Card builder ──────────────────────────────────────────────────────────
+//card buid
     private HBox createCategoryCard(Category category) {
         Label title = new Label(category.getName());
         title.getStyleClass().add("category-card-title");
@@ -76,8 +71,6 @@ public class CategoriesController {
 
         return card;
     }
-
-    // ── Edit / cancel ─────────────────────────────────────────────────────────
     private void editCategory(Category category) {
         selectedCategory = category;
         nameField.setText(category.getName());
@@ -98,8 +91,6 @@ public class CategoriesController {
         cancelEditButton.setManaged(false);
         clearValidation();
     }
-
-    // ── Add / update ──────────────────────────────────────────────────────────
     @FXML
     private void addCategory() {
         String name        = nameField.getText().trim();
@@ -110,11 +101,7 @@ public class CategoriesController {
             return;
         }
 
-        // ── FIX: duplicate name check ─────────────────────────────────────────
-        // Only block creation when adding a brand-new category.
-        // When editing, skip the check for the category's own current name.
         if (selectedCategory == null) {
-            // Adding new — name must not already exist (case-insensitive)
             boolean nameExists = categoryService.getAllCategories()
                 .stream()
                 .anyMatch(c -> c.getName().equalsIgnoreCase(name));
@@ -124,7 +111,6 @@ public class CategoriesController {
                 return;
             }
         } else {
-            // Editing — allow keeping the same name, but block collision with others
             boolean nameConflict = categoryService.getAllCategories()
                 .stream()
                 .filter(c -> c.getCategory_id() != selectedCategory.getCategory_id())
@@ -152,8 +138,6 @@ public class CategoriesController {
         cancelEdit();
         loadCategories();
     }
-
-    // ── Delete ────────────────────────────────────────────────────────────────
     private void deleteCategory(Category category) {
         categoryService.deleteCategory(category.getCategory_id());
         if (selectedCategory != null &&
@@ -163,7 +147,7 @@ public class CategoriesController {
         loadCategories();
     }
 
-    // ── Validation helpers ────────────────────────────────────────────────────
+//helpers
     private void showValidation(String msg) {
         if (validationLabel != null) {
             validationLabel.setText(msg);
@@ -171,7 +155,6 @@ public class CategoriesController {
             validationLabel.setManaged(true);
         }
     }
-
     private void clearValidation() {
         if (validationLabel != null) {
             validationLabel.setText("");

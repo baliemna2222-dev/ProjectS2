@@ -30,7 +30,6 @@ import JStream.service.FeaturedService;
 
 public class SeriesAdminController {
 
-    // ── FXML Fields ───────────────────────────────────────────────────────────
     @FXML private TextField   titleField;
     @FXML private TextField   directorField;
     @FXML private TextField   ageRatingField;
@@ -39,8 +38,6 @@ public class SeriesAdminController {
     @FXML private TextField   coverField;
     @FXML private TextField   titleUrlField;
     @FXML private TextField   searchField;
-
-    // ── Chip-based category selector (replaces old ListView) ─────────────────
     @FXML private FlowPane    categoryChipPane;
 
     @FXML private TilePane    seriesContainer;
@@ -51,8 +48,6 @@ public class SeriesAdminController {
     @FXML private Label       serieCountLabel;
     @FXML private VBox        formPanel;
     @FXML private Label       validationLabel;
-
-    // ── State ─────────────────────────────────────────────────────────────────
     private Serie           editingSerie  = null;
     private SerieService    serieService;
     private FeaturedService featuredService;
@@ -60,18 +55,14 @@ public class SeriesAdminController {
 
     private List<Category>         allCategories  = new ArrayList<>();
     private final Set<Integer>     selectedCatIds = new LinkedHashSet<>();
-
-    // ── Actor panel ───────────────────────────────────────────────────────────
     private ActorPanelBuilder actorPanel;
-
-    // ── Palette ───────────────────────────────────────────────────────────────
     private static final String C_ACCENT = "#1d4ed8";
     private static final String C_ACCENT2 = "#0ea5e9";
     private static final String C_TEXT    = "#e2e8f0";
     private static final String C_MUTED   = "#64748b";
     private static final String C_DANGER  = "#ef4444";
 
-    // ── Constructor ───────────────────────────────────────────────────────────
+    //  Constructor
     public SeriesAdminController() {
         this.serieService = new SerieService();
         try {
@@ -80,8 +71,6 @@ public class SeriesAdminController {
             System.err.println("FeaturedService init error: " + e.getMessage());
         }
     }
-
-    // ── Init ──────────────────────────────────────────────────────────────────
     @FXML
     public void initialize() {
         cancelEditBtn.managedProperty().bind(cancelEditBtn.visibleProperty());
@@ -95,7 +84,6 @@ public class SeriesAdminController {
         loadCategoriesOnce();
         loadSeries(serieService.getAllSeries());
 
-        // ── Build and inject the actor panel ──────────────────────────────────
         actorPanel = new ActorPanelBuilder(actorService, () ->
             editingSerie != null ? editingSerie.getSerieId() : -1
         );
@@ -116,8 +104,6 @@ public class SeriesAdminController {
 
         setAddMode();
     }
-
-    // ── Category chips ────────────────────────────────────────────────────────
     private void loadCategoriesOnce() {
         if (featuredService == null) return;
         allCategories = featuredService.getAllCategories();
@@ -164,8 +150,6 @@ public class SeriesAdminController {
                 """);
         }
     }
-
-    // ── Mode switching ────────────────────────────────────────────────────────
     private void setAddMode() {
         editingSerie = null;
         formTitle.setText("✦ Add New Series");
@@ -198,15 +182,12 @@ public class SeriesAdminController {
             serie.getCategories().forEach(c -> selectedCatIds.add(c.getCategory_id()));
         rebuildCategoryChips();
 
-        // Refresh actor panel for this serie
         if (actorPanel != null) actorPanel.refreshActors();
 
         clearValidation();
         scrollPane.setVvalue(0);
         animateFormHighlight();
     }
-
-    // ── FXML Actions ──────────────────────────────────────────────────────────
     @FXML
     private void handleSubmit() {
         if (!validateForm()) return;
@@ -236,7 +217,6 @@ public class SeriesAdminController {
         showToast("Series updated successfully ✓");
     }
 
-    // ── File choosers ─────────────────────────────────────────────────────────
     @FXML private void chooseCoverFile()    { chooseImageFile(coverField,    "Choose Cover Image"); }
     @FXML private void chooseTitleUrlFile() { chooseImageFile(titleUrlField, "Choose Title Logo"); }
 
@@ -250,8 +230,6 @@ public class SeriesAdminController {
         File f = fc.showOpenDialog(target.getScene().getWindow());
         if (f != null) target.setText(f.getAbsolutePath());
     }
-
-    // ── Navigation ────────────────────────────────────────────────────────────
     private void ouvrirDetailsSerie(Serie serie) {
         try {
             String fxmlPath = "/view/fxml/admin_seasons.fxml";
@@ -273,8 +251,6 @@ public class SeriesAdminController {
         if (contentArea instanceof Pane pane) pane.getChildren().setAll(view);
         else                                  scene.setRoot(view);
     }
-
-    // ── Validation ────────────────────────────────────────────────────────────
     private boolean validateForm() {
         List<String> errors = new ArrayList<>();
         if (titleField.getText().isBlank())    errors.add("Title is required");
@@ -296,8 +272,6 @@ public class SeriesAdminController {
     }
     private void showValidation(String msg)  { validationLabel.setText(msg); validationLabel.setVisible(true); }
     private void clearValidation()           { validationLabel.setVisible(false); }
-
-    // ── Load / filter ─────────────────────────────────────────────────────────
     private void loadSeries(List<Serie> series) {
         seriesContainer.getChildren().clear();
         serieCountLabel.setText(series.size() + " series");
@@ -325,8 +299,6 @@ public class SeriesAdminController {
             .toList();
         loadSeries(filtered);
     }
-
-    // ── Card builder ──────────────────────────────────────────────────────────
     private VBox createSerieCard(Serie serie) {
         ImageView imageView = new ImageView();
         imageView.setFitWidth(180); imageView.setFitHeight(250);
@@ -363,8 +335,6 @@ public class SeriesAdminController {
         dirLabel.setStyle("-fx-text-fill: #9ca3af; -fx-font-size: 10px; -fx-font-style: italic;");
         dirLabel.setVisible(!nvl(serie.getDirector()).isEmpty());
         dirLabel.setManaged(!nvl(serie.getDirector()).isEmpty());
-
-        // Actor bubbles
         HBox actorBubbles = buildActorBubbles(serie.getSerieId());
 
         FlowPane chips = new FlowPane();
@@ -427,8 +397,6 @@ public class SeriesAdminController {
         }
         return row;
     }
-
-    // ── Delete dialog ─────────────────────────────────────────────────────────
     private void confirmDelete(Serie serie) {
         Stage popup = new Stage();
         popup.initOwner(scrollPane.getScene().getWindow());
@@ -500,8 +468,6 @@ public class SeriesAdminController {
         });
         popup.showAndWait();
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
     private Serie buildSerieFromForm() {
         Serie s = new Serie();
         populateSerieFromForm(s);

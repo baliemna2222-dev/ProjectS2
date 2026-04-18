@@ -1,15 +1,12 @@
 package JStream.controller;
 
-import java.awt.Scrollbar;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-
 import JStream.entity.Episode;
 import JStream.entity.FeaturedItem;
 import JStream.entity.FeaturedItemProgress;
@@ -47,7 +44,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -56,8 +52,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 import javafx.scene.web.WebView;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
@@ -76,13 +70,11 @@ public class CardController {
     @FXML private Rectangle progressBg;
     private Timeline autoSlide;
     private FeaturedItem currentItem;
-    private FeaturedController featuredController;
     private FeaturedService featuredService = new FeaturedService();
     private EpisodeProgressService episodeProgressService = new EpisodeProgressService();
 
     FilmProgressService filmProgressService = new FilmProgressService(featuredService);
     public void setFeaturedController(FeaturedController controller) {
-        this.featuredController = controller;
 
     }
     @FXML
@@ -96,27 +88,19 @@ public class CardController {
     	            int currentFilmId = "film".equalsIgnoreCase(currentItem.getType()) ? currentItem.getId() : 0;
     	            int currentSerieId = "serie".equalsIgnoreCase(currentItem.getType()) ? currentItem.getSerieId() : 0;
 
-    	            // If the updated item matches this controller's current item, refresh the button
+    	            // If the updated item matches this controller current item, refresh the button
     	            if (currentFilmId == filmId && currentSerieId == serieId) {
     	                updateAddButton(addBtn, currentItem);
     	            }
     	        }
     	    });
     	});
-       
-       
-          }
+         }
 
-    /** Fade buttons in or out */
-   
-    
     public void setItem(FeaturedItem item) {
         this.currentItem = item;
-     // Make the whole card clickable like the play button
         poster.getParent().setOnMouseClicked(e -> {
             if (autoSlide != null) autoSlide.pause(); // pause carousel
-
-            // Same logic as play button
             String type = currentItem.getType().toLowerCase();
             if (type.equals("film")) {
                 showFilmPopup(currentItem);
@@ -124,25 +108,21 @@ public class CardController {
                 showSeriePopup(currentItem);
             }
         });
-        // ------------------ Poster ------------------
         poster.setImage(ImageUtil.load(item.getPosterUrl()));
-        // ------------------ Type Badge ------------------
         if (item.getSerieId() != 0) {
             typeBadge.setText("SERIE");
         } else {
             typeBadge.setText("FILM");
         }
-
-        // ------------------ Button Actions ------------------
         playBtn.setOnAction(e -> {
-            if (autoSlide != null) autoSlide.pause(); // pause carousel
+            if (autoSlide != null) autoSlide.pause();
 
             // Open the correct popup based on type
             String type = currentItem.getType().toLowerCase();
             if (type.equals("film")) {
-                showFilmPopup(currentItem);    // open film popup
+                showFilmPopup(currentItem);    
             } else if (type.equals("serie")) {
-                showSeriePopup(currentItem);   // open series popup
+                showSeriePopup(currentItem);   
             }
         });
         addBtn.setOnAction(e -> handleAddToList());
@@ -156,8 +136,6 @@ public class CardController {
     }
     private MylistService mylistService = new MylistService();
     
-
-    // --- Toggle Add/Remove ---
     @FXML
     private void handleAddToList() {
         if (currentItem == null) return;
@@ -173,15 +151,11 @@ public class CardController {
         } else {
             mylistService.addItem(userId, filmId, serieId);
         }
-
-        // Update this controller's button immediately
         updateAddButton(addBtn, currentItem);
 
-        // Notify all other controllers to update
-        MyListManager.getInstance().notifyItemUpdated(filmId, serieId);
+        MyListManager.getInstance().notifyItemUpdated(filmId, serieId);//notify others to update
     }
 
-    /** Updates the + button to show + or ✔ depending on whether the item is in the list */
     private void updateAddButton(Button button, FeaturedItem item) {
         int userId = Session.getUserId();
         int filmId = 0;
@@ -192,7 +166,6 @@ public class CardController {
         } else if ("serie".equalsIgnoreCase(item.getType())) {
             serieId = item.getSerieId();
         }
-
         if (mylistService.isInList(userId, filmId, serieId)) {
             button.setText("✔");
             pumpButton(button); // optional animation
@@ -201,8 +174,7 @@ public class CardController {
             pumpButton(button);
         }
     }
-
-    /** Simple pump animation for the button */
+    //animation for button
     private void pumpButton(Button button) {
         ScaleTransition st = new ScaleTransition(Duration.millis(150), button);
         st.setFromX(1.0);
@@ -214,7 +186,6 @@ public class CardController {
         st.play();
     }
     private void setupButtonHover(Button button) {
-        // original style
         String style = """
             -fx-background-color: rgba(0,0,0,0.0);
             -fx-text-fill: #1E90FF;
@@ -227,27 +198,22 @@ public class CardController {
             -fx-cursor: hand;
             """;
         button.setStyle(style);
-
-        // Hover animation: scale up
         ScaleTransition scaleUp = new ScaleTransition(Duration.millis(150), button);
         scaleUp.setToX(1.1); // 10% bigger
         scaleUp.setToY(1.1);
-
-        // Hover animation: scale back
         ScaleTransition scaleDown = new ScaleTransition(Duration.millis(150), button);
         scaleDown.setToX(1.0); // back to original size
         scaleDown.setToY(1.0);
-
-        button.setOnMouseEntered(e -> {
-            scaleDown.stop(); // stop any running shrink animation
-            scaleUp.playFromStart(); // play grow animation
-        });
-
-        button.setOnMouseExited(e -> {
-            scaleUp.stop(); // stop any running grow animation
-            scaleDown.playFromStart(); // play shrink animation
-        });
+        button.setOnMouseEntered(e -> { scaleDown.stop();
+                                      scaleUp.playFromStart();
+                                });
+  
+        button.setOnMouseExited(e -> { scaleUp.stop(); 
+                             scaleDown.playFromStart(); 
+                               });
+           
     }
+    //stars
     private void populateStars(double rawAvg) {
         if (starsLabel == null) return;
 
@@ -265,7 +231,6 @@ public class CardController {
         starsLabel = null;
 
         HBox starsBox = new HBox(2);
-        
         HBox.setHgrow(starsBox, javafx.scene.layout.Priority.ALWAYS); 
         starsBox.setMaxWidth(Double.MAX_VALUE);
         
@@ -464,15 +429,11 @@ public class CardController {
                 pulse.setCycleCount(Animation.INDEFINITE);
                 pulse.setAutoReverse(true);
                 pulse.play();
-
-                // Wrap buttons in HBox
                 HBox buttonBox = new HBox(20, trailer, play);
                 buttonBox.setAlignment(Pos.CENTER_RIGHT);
                 buttonBox.setMaxWidth(Double.MAX_VALUE);
 
                 content.getChildren().add(buttonBox);
-
-                // Marquee effect for long labels
                 for (Label lbl : new Label[]{casting, categories, synopsis}) {
                     lbl.widthProperty().addListener((obs, oldVal, newVal) -> {
                         if (lbl.getWidth() > 600) {
@@ -485,11 +446,8 @@ public class CardController {
                         }
                     });
                 }
-             // Status label
-             // 🎯 Status label
                 Label statusLabel = new Label();
-                statusLabel.setStyle(
-                    "-fx-text-fill: white;" +
+                statusLabel.setStyle( "-fx-text-fill: white;" +
                     "-fx-font-size: 14;" +
                     "-fx-font-weight: bold;" +
                     "-fx-padding: 4 10;" +
@@ -497,7 +455,7 @@ public class CardController {
                     "-fx-border-radius: 20;" +
                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4,0,0,2);"
                 );
-
+                  
                 int userId = Session.getUserId();
                 int filmId = film.getFilm_id();
                 int dur = (int) film.getDuration();
@@ -516,11 +474,7 @@ public class CardController {
                         status = WatchStatus.IN_PROGRESS;
                     }
                 }
-
-                // 🏷 Apply text
                 statusLabel.setText(status.toString());
-
-                // 🎨 Apply color
                 switch (status) {
                     case NOT_STARTED -> statusLabel.setStyle(
                         statusLabel.getStyle() + "-fx-background-color: #777777;"
@@ -532,9 +486,7 @@ public class CardController {
                         statusLabel.getStyle() + "-fx-background-color: #00c853;"
                     );
                 }
-
-                // ✅ Add to UI
-                right.getChildren().add(statusLabel);
+                right.getChildren().add(statusLabel);//add to ui
                 play.setOnAction(e -> {
                 	 popup.close(); 
                     goToLecturePageFilm(film.getFilm_id()); // start playback
@@ -580,17 +532,14 @@ public class CardController {
         String videoPath;
 
         if (trailerUrl.startsWith("http")) {
-            // Online video
             videoPath = trailerUrl;
 
         } else {
             java.io.File file = new java.io.File(trailerUrl);
-
             if (file.exists()) {
-                // LOCAL FILE (Windows path)
-                videoPath = file.toURI().toString();  // ✅ VERY IMPORTANT
+                videoPath = file.toURI().toString(); 
             } else {
-                // Try classpath
+               
                 URL resource = getClass().getResource(
                     trailerUrl.startsWith("/") ? trailerUrl : "/" + trailerUrl
                 );
@@ -603,9 +552,7 @@ public class CardController {
                 }
             }
         }
-
         System.out.println("FINAL PATH = " + videoPath);
-        // ── Modern HTML5 player with custom controls ──────────────────
         String html =
         		"<!DOCTYPE html><html><head><style>" +
 
@@ -616,14 +563,12 @@ public class CardController {
 
         		"  video { flex:1; width:100%; min-height:0; object-fit:contain; display:block; cursor:pointer; }" +
 
-        		/* ================= CONTROLS BAR ================= */
         		"  #bar {" +
         		"    background: linear-gradient(to top, rgba(0,0,0,0.98), rgba(0,20,40,0.85));" +
         		"    padding: 6px 18px 10px;" +
         		"    display:flex; flex-direction:column; gap:7px;" +
         		"  }" +
 
-        		/* ================= PROGRESS BAR ================= */
         		"  #prog-wrap {" +
         		"    position:relative; height:4px; background:rgba(255,255,255,0.08);" +
         		"    border-radius:4px; cursor:pointer; transition:height 0.15s;" +
@@ -644,7 +589,6 @@ public class CardController {
 
         		"  #prog-wrap:hover #prog-thumb { opacity:1; }" +
 
-        		/* ================= ROW ================= */
         		"  #row { display:flex; align-items:center; gap:10px; }" +
 
         		"  .btn {" +
@@ -663,10 +607,8 @@ public class CardController {
         		"  .btn:hover { background:rgba(0,140,255,0.25); color:#ffffff; }" +
         		"  .btn:active { background:rgba(0,100,180,0.4); }" +
 
-        		/* ================= TIME ================= */
         		"  #time { font-size:11px; color:rgba(180,200,255,0.75); min-width:105px; letter-spacing:0.3px; }" +
 
-        		/* ================= VOLUME ================= */
         		"  #vol-wrap { display:flex; align-items:center; gap:6px; }" +
 
         		"  #vol { -webkit-appearance:none; width:72px; height:3px;" +
@@ -677,14 +619,12 @@ public class CardController {
 
         		"  #spacer { flex:1; }" +
 
-        		/* ================= SPEED ================= */
         		"  #speed { background:rgba(0,0,0,0.7); border:none;" +
         		"    color:#00aaff; font-size:11px; padding:4px 7px; border-radius:6px;" +
         		"    cursor:pointer; outline:none; }" +
 
         		"  #speed:hover { background:rgba(0,140,255,0.2); }" +
 
-        		/* ================= TOOLTIP ================= */
         		"  #tip { position:fixed; bottom:72px; left:50%; transform:translateX(-50%);" +
         		"    background:rgba(0,0,0,0.85); border:none;" +
         		"    color:#00aaff; font-size:11px; padding:4px 14px; border-radius:20px;" +
@@ -811,25 +751,18 @@ public class CardController {
         WebView webView = new WebView();
         webView.setPrefSize(1500, 700);
         webView.getEngine().loadContent(html);
-
-        // ── Stage ────────────────────────────────────────────────────
         Rectangle2D screenBounds = Screen.getPrimary().getBounds();
         double fullWidth  = screenBounds.getWidth();
         double fullHeight = screenBounds.getHeight();
         double smallWidth = 1200, smallHeight = 660;
-
         Stage popup = new Stage();
         popup.initOwner(rootPane.getScene().getWindow());
         popup.initModality(Modality.WINDOW_MODAL);
         popup.initStyle(StageStyle.TRANSPARENT);
         popup.setWidth(fullWidth); popup.setHeight(fullHeight);
         popup.setX(0); popup.setY(0);
-
-        // ── Backdrop ─────────────────────────────────────────────────
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: rgba(0,0,0,0.88);");
-
-        // ── Card ─────────────────────────────────────────────────────
         VBox card = new VBox(0);
         card.setMaxSize(fullWidth - 40, fullHeight - 40);
         card.setPrefSize(fullWidth - 40, fullHeight - 40);
@@ -849,18 +782,15 @@ public class CardController {
             cardClip.setHeight(nv.getHeight());
         });
         card.setClip(cardClip);
-
-        // ── Card top bar ─────────────────────────────────────────────
         HBox cardBar = new HBox(8);
         cardBar.setAlignment(Pos.CENTER_RIGHT);
         cardBar.setPadding(new Insets(9, 12, 9, 16));
         cardBar.setMinHeight(42); cardBar.setMaxHeight(42);
-        cardBar.setStyle(
-            "-fx-background-color: #0a0e1a;" +
+        cardBar.setStyle(  "-fx-background-color: #0a0e1a;" +
             "-fx-border-color: transparent transparent rgba(56,189,248,0.1) transparent;" +
             "-fx-border-width: 0 0 1 0;"
         );
-
+         
         Region d1 = minidot("#1e3a5f"), d2 = minidot("#2c5282"), d3 = minidot("#4a90d9");
         Region barSpacer = new Region(); HBox.setHgrow(barSpacer, Priority.ALWAYS);
 
@@ -894,7 +824,6 @@ public class CardController {
 
         java.net.URL cssUrl = getClass().getResource("/style/scrollbar.css");
         if (cssUrl != null) scene.getStylesheets().add(cssUrl.toExternalForm());
-
         popup.setScene(scene);
         popup.setAlwaysOnTop(true);
         popup.toFront();
@@ -925,7 +854,6 @@ public class CardController {
         btn.setOnMouseReleased(e -> btn.setStyle(hover));
         return btn;
     }
-
     private Region minidot(String color) {
         Region d = new Region();
         d.setPrefSize(9, 9); d.setMinSize(9, 9); d.setMaxSize(9, 9);
@@ -949,17 +877,14 @@ public class CardController {
 	            popup.initOwner(rootPane.getScene().getWindow());
 	            popup.initModality(Modality.WINDOW_MODAL);
 	            popup.initStyle(StageStyle.TRANSPARENT);
-	            
-	            // ROOT STACKPANE
 	            StackPane root = new StackPane();
 	            root.setStyle("-fx-background-color: rgba(0,0,0,0.0);"); 
 	            root.setTranslateY(50); 
 	            root.setMaxWidth(1200); 
 	            root.setMaxHeight(600);
 	            root.setPadding(new Insets(30));
-	            
-	            // SCROLL PANE
 	            ScrollPane scrollPane = new ScrollPane();
+	            
 	            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 	            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 	            scrollPane.setStyle("-fx-background: rgba(0,0,0,0.0); -fx-background-color:rgba(0,0,0,0.0);");
@@ -990,8 +915,6 @@ public class CardController {
 
 	            scrollPane.setContent(slider);
 	            root.getChildren().add(scrollPane);
-
-	            // --- MODERN BUTTONS ---
 	            Button left = new Button("<");
 	            styleSlideButton(left);
 	            left.setOnAction(e -> {
@@ -1018,8 +941,6 @@ public class CardController {
 	            StackPane.setMargin(right, new Insets(0, 10, 0, 0));
 
 	            root.getChildren().addAll(left, right);
-
-	            // Hover effect for buttons
 	            root.setOnMouseMoved(e -> {
 	                double fadeDuration = 200;
 	                if (e.getX() < 150) fadeButton(left, 1, fadeDuration);
@@ -1028,33 +949,29 @@ public class CardController {
 	                if (e.getX() > root.getWidth() - 150) fadeButton(right, 1, fadeDuration);
 	                else fadeButton(right, 0, fadeDuration);
 	            });
-
-	            // CLOSE BUTTON
 	            Button close = new Button("✕");
 	            addHoverAnimation(close);
 	            close.setStyle("-fx-background-color:#008cff; -fx-text-fill:white; -fx-font-weight:bold; -fx-background-radius:50%; -fx-padding:5 10;");
 	            close.setOnAction(e -> popup.close());
 	            StackPane.setAlignment(close, Pos.TOP_RIGHT);
 	            StackPane.setMargin(close, new Insets(20));
-	            scrollPane.setPrefHeight(600); // taller
-	            scrollPane.setPrefWidth(1400);  // slightly narrower than full width
+	            scrollPane.setPrefHeight(600);
+	            scrollPane.setPrefWidth(1400);  
 	            scrollPane.setMaxWidth(1400);
 	            scrollPane.setMaxHeight(500);
 	            root.getChildren().add(close);
 
-	            // Center first slide
 	            currentIndex[0] = 0;
 	            updateSeasonSlider(cards, currentIndex[0]);
 	            Platform.runLater(() -> centerSlide(scrollPane, cards.get(0), slider));
 
-	            // Fade in popup
 	            root.setOpacity(0);
 	            FadeTransition fade = new FadeTransition(Duration.millis(400), root);
 	            fade.setToValue(1);
 	            fade.play();
 
 	            
-	            Scene scene = new Scene(root); // no fixed size
+	            Scene scene = new Scene(root); 
 	            scene.setFill(Color.TRANSPARENT);
 
 	            popup.setScene(scene);
@@ -1062,7 +979,7 @@ public class CardController {
 	            popup.initModality(Modality.WINDOW_MODAL);
 	            popup.initStyle(StageStyle.TRANSPARENT);
 
-	            // make it full screen relative to owner
+	            // make it full screen 
 	            popup.setWidth(rootPane.getScene().getWidth());
 	            popup.setHeight(rootPane.getScene().getHeight());
 
@@ -1081,24 +998,19 @@ public class CardController {
 	            	    : seasons.get(0).getTitleUrl();
 
 	            	seriesTitle.setImage(ImageUtil.load(titleUrl));
-	            // --- BOTTOM SPACE / Series description ---
 	            Label seriesDescription = new Label(serie.getSynopsis() != null ? serie.getSynopsis() : "No description available");
 	            seriesDescription.setWrapText(true);
 	            seriesDescription.setTextFill(Color.LIGHTGRAY);
 	            seriesDescription.setStyle("-fx-font-size:16;");
 	            seriesDescription.setMaxWidth(1000);
 
-	            // Wrap the scrollPane with VBox
-	            VBox container = new VBox(20); // 20px spacing
+	            VBox container = new VBox(20); 
 	            container.setAlignment(Pos.TOP_CENTER);
 	            container.getChildren().addAll(seriesTitle, scrollPane, seriesDescription);
-
-	            // Replace root.getChildren().add(scrollPane) with:
 	            root.getChildren().add(container);
 	            
 	        }
 
-	        // Style buttons for modern look
 	        private void styleSlideButton(Button btn) {
 	            btn.setStyle("-fx-background-color: transparent;" +
 	                         "-fx-text-fill: #00aaff;" +
@@ -1108,17 +1020,13 @@ public class CardController {
 	            btn.setOpacity(0); // hidden initially
 	        }
 
-	        // Fade helper
-	      
-	    // Helper: fade button to target opacity
-	    private void fadeButton(Button button, double targetOpacity, double durationMs) {
+	   	    private void fadeButton(Button button, double targetOpacity, double durationMs) {
 	        Timeline timeline = new Timeline(
 	                new KeyFrame(Duration.millis(durationMs),
 	                        new KeyValue(button.opacityProperty(), targetOpacity, Interpolator.EASE_BOTH))
 	        );
 	        timeline.play();
 	    }
-	    // --- Update card scale & opacity ---
 	    private void updateSeasonSlider(List<StackPane> cards, int currentIndex) {
 	        for (int i = 0; i < cards.size(); i++) {
 	            StackPane card = cards.get(i);
@@ -1151,8 +1059,6 @@ public class CardController {
 	            anim.play();
 	        }
 	    }
-
-	    // --- Center clicked card ---
 	    private void centerSlide(ScrollPane scrollPane, StackPane card, HBox slider) {
 	        double scrollWidth = slider.getWidth();
 	        double scrollPaneWidth = scrollPane.getViewportBounds().getWidth();
@@ -1172,15 +1078,14 @@ public class CardController {
 
 	        StackPane card = new StackPane();
 	        card.setPrefSize(740, 420);
-	        card.setStyle(
-	            "-fx-background-color: #07090f;" +
+	        card.setStyle(   "-fx-background-color: #07090f;" +
 	            "-fx-background-radius: 18;" +
 	            "-fx-border-color: rgba(56,189,248,0.18);" +
 	            "-fx-border-width: 1.5;" +
 	            "-fx-border-radius: 18;" +
 	            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.85), 40, 0.6, 0, 8);"
 	        );
-
+	         
 	        Rectangle clip = new Rectangle(740, 420);
 	        clip.setArcWidth(36); clip.setArcHeight(36);
 	        card.setClip(clip);
@@ -1208,11 +1113,8 @@ public class CardController {
 	        posterClip.setArcHeight(20);
 	        posterWrapper.setClip(posterClip);
 
-	        // OPTIONAL: slight zoom to avoid empty gaps
-	        poster.setScaleX(1.05);
+	        poster.setScaleX(1.05);//zoom to avoid empty gaps
 	        poster.setScaleY(1.05);
-
-	        // Fade overlay (your code is good 👍)
 	        Region posterFade = new Region();
 	        posterFade.setPrefSize(300, 420);
 	        posterFade.setStyle(
@@ -1220,12 +1122,11 @@ public class CardController {
 	            "  transparent 0%, rgba(7,9,15,0.55) 70%, rgba(7,9,15,1.0) 100%);"
 	        );
 
-	        // Final container
 	        StackPane posterPane = new StackPane(posterWrapper, posterFade);
 	        posterPane.setPrefSize(300, 420);
 	        posterPane.setMaxSize(300, 420);
 	        StackPane.setAlignment(posterPane, Pos.CENTER_LEFT);
-	        // ── INFO PANEL ───────────────────────────────────────────────
+	        //  INFO PANEL 
 	        VBox infoBox = new VBox(12);
 	        infoBox.setPadding(new Insets(28, 24, 24, 18));
 	        infoBox.setAlignment(Pos.TOP_LEFT);
@@ -1270,10 +1171,10 @@ public class CardController {
 	            double fill = Math.min(1.0, Math.max(0.0, rating - (i - 1)));
 
 	            if (fill >= 1.0) {
-	                // Full Blue Star
+	                // full blue stars
 	                starPane.getChildren().add(fgStar);
 	            } else if (fill <= 0) {
-	                // Full Empty Star
+	                // full empty stars
 	                starPane.getChildren().add(bgStar);
 	            } else {
 	                javafx.scene.shape.Rectangle clip1 = new javafx.scene.shape.Rectangle(fill * size, 25);
@@ -1334,17 +1235,16 @@ public class CardController {
 	            new HBox(12, trailerBtn, episodesBtn) {{ setAlignment(Pos.CENTER_LEFT); }}
 	        );
 
-	        // ── MAIN VIEW ────────────────────────────────────────────────
+	        // main view
 	        HBox mainView = new HBox(posterPane, infoBox);
 	        mainView.setAlignment(Pos.CENTER_LEFT);
 	        mainView.setPrefSize(740, 420);
 
-	        // ── EPISODES LIST VIEW ───────────────────────────────────────
+	        //episode list view
 	        VBox episodesView = new VBox(0);
 	        episodesView.setPrefSize(740, 420);
 	        episodesView.setStyle("-fx-background-color: #07090f;");
-
-	        // Header
+//back button
 	        Button backToMain = new Button("←");
 	        backToMain.setStyle(
 	            "-fx-background-color: rgba(56,189,248,0.1); -fx-background-radius: 50%;" +
@@ -1374,11 +1274,8 @@ public class CardController {
 	            "-fx-border-width: 0 0 1 0;"
 	        );
 
-	        // Episode rows container
 	        VBox episodesList = new VBox(6);
 	        episodesList.setPadding(new Insets(10, 8, 16, 16));
-
-	        // ── ScrollPane — built-in bars hidden, wheel handled manually ──
 	        ScrollPane episodesScroll = new ScrollPane(episodesList);
 	        episodesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 	        episodesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -1395,8 +1292,6 @@ public class CardController {
 	                    episodesScroll.getVvalue() - e.getDeltaY() * 0.003))
 	            )
 	        );
-
-	        // ── Custom slim scrollbar ──────────────────────────────────────
 	        ScrollBar customScrollBar = new ScrollBar();
 	        customScrollBar.setOrientation(Orientation.VERTICAL);
 	        customScrollBar.setMin(0);
@@ -1404,69 +1299,42 @@ public class CardController {
 	        customScrollBar.setValue(0);
 	        customScrollBar.setUnitIncrement(0.05);
 	        customScrollBar.setBlockIncrement(0.2);
-
-	        // Lock width to exactly 6px
 	        customScrollBar.setPrefWidth(6);
 	        customScrollBar.setMinWidth(6);
 	        customScrollBar.setMaxWidth(6);
 
-	        
-
-	        // Load scrollbar.css so .thumb gets the blue-black pill look
-	        customScrollBar.getStylesheets().add(
+	  	        customScrollBar.getStylesheets().add(
 	            getClass().getResource("/view/css/scrollbar.css").toExternalForm()
 	        );
-
-	        // Two-way bind: dragging thumb ↔ scrolling pane
 	        customScrollBar.valueProperty().bindBidirectional(episodesScroll.vvalueProperty());
 
 	        // Adjust thumb size to reflect visible portion of content
 	        episodesScroll.viewportBoundsProperty().addListener((o, ov, nv) ->
 	            updateThumbSize(episodesScroll, customScrollBar));
-
-	        // Style the thumb directly after CSS is applied
-	        Platform.runLater(() -> {
-	            Node thumb = customScrollBar.lookup(".thumb");
-	            if (thumb != null) thumb.setStyle(
-	                "-fx-background-color: #1e3a5f;" +
-	                "-fx-background-radius: 10;" +
-	                "-fx-border-color: transparent;"
-	            );
+	        Platform.runLater(() -> { Node thumb = customScrollBar.lookup(".thumb");
+	                                    if (thumb != null) thumb.setStyle( "-fx-background-color: #1e3a5f;" + "-fx-background-radius: 10;" +
+	                                                                        "-fx-border-color: transparent;");
+	        
 	            Node track = customScrollBar.lookup(".track");
-	            if (track != null) track.setStyle(
-	                "-fx-background-color: transparent;" +
-	                "-fx-border-color: transparent;"
-	            );
+	            if (track != null) track.setStyle("-fx-background-color: transparent;" + "-fx-border-color: transparent;");
 	            // Hide arrow buttons
 	            for (String sel : new String[]{".increment-button", ".decrement-button"}) {
 	                Node btn = customScrollBar.lookup(sel);
-	                if (btn != null) btn.setStyle(
-	                    "-fx-pref-width: 0; -fx-pref-height: 0;" +
-	                    "-fx-min-width: 0; -fx-min-height: 0;" +
-	                    "-fx-max-width: 0; -fx-max-height: 0;" +
-	                    "-fx-background-color: transparent;"
-	                );
-	            }
-	            // Hover: brighten thumb to accent blue
+	                if (btn != null) btn.setStyle(  "-fx-pref-width: 0; -fx-pref-height: 0;" +  "-fx-min-width: 0; -fx-min-height: 0;" +
+	                                               "-fx-max-width: 0; -fx-max-height: 0;" +   "-fx-background-color: transparent;");
+	           }
 	            if (thumb != null) {
-	                thumb.setOnMouseEntered(ev -> thumb.setStyle(
-	                    "-fx-background-color: #4a90d9;" +
-	                    "-fx-background-radius: 10;" +
-	                    "-fx-border-color: transparent;"
-	                ));
-	                thumb.setOnMouseExited(ev -> thumb.setStyle(
-	                    "-fx-background-color: #1e3a5f;" +
-	                    "-fx-background-radius: 10;" +
-	                    "-fx-border-color: transparent;"
-	                ));
+	                thumb.setOnMouseEntered(ev -> thumb.setStyle(  "-fx-background-color: #4a90d9;" +  "-fx-background-radius: 10;" +
+	                                                                  "-fx-border-color: transparent;"));
+	                                
+	                thumb.setOnMouseExited(ev -> thumb.setStyle(  "-fx-background-color: #1e3a5f;" +   "-fx-background-radius: 10;" +
+	                                                                "-fx-border-color: transparent;"));       
 	            }
 	        });
 	      
 	        int userId = Session.getUserId();
 	        Map<Integer, WatchStatus> progressMap = episodeProgressService.loadUserProgress(userId);
-
-	        // Build the shared episode detail pane
-	        StackPane episodeDetailPane = new StackPane();
+	        StackPane episodeDetailPane = new StackPane(); // episode detail pane
 	        episodeDetailPane.setPrefSize(740, 420);
 	        episodeDetailPane.setStyle("-fx-background-color: #07090f;");
 
@@ -1483,8 +1351,6 @@ public class CardController {
 	        VBox.setVgrow(scrollRow, Priority.ALWAYS);
 	        
 	        episodesView.getChildren().addAll(epHeader, scrollRow);
-
-	        // ── WIRE ACTIONS ─────────────────────────────────────────────
 	        trailerBtn.setOnAction(e  -> showTrailerPopup(serie, seasonIndex));
 	        episodesBtn.setOnAction(e -> switchView(contentWrapper, episodesView));
 	        backToMain.setOnAction(e  -> switchView(contentWrapper, mainView));
@@ -1492,7 +1358,6 @@ public class CardController {
 	        contentWrapper.getChildren().setAll(mainView);
 	        return card;
 	    }
-	    // Single definition — 8 params including episodesView
 	    private HBox buildEpisodeRow(
 	            Episode ep, Season s,
 	            Map<Integer, WatchStatus> progressMap,
@@ -1530,24 +1395,17 @@ public class CardController {
 	            "-fx-border-color: rgba(56,189,248,0.3); -fx-border-radius: 17; -fx-border-width: 1;" +
 	            "-fx-text-fill: #38bdf8; -fx-font-size: 12px; -fx-font-weight: bold;"
 	        );
-
-	        // Title + stars
 	        VBox textCol = new VBox(4);
 	        HBox.setHgrow(textCol, Priority.ALWAYS);
 
 	        Label epTitleLbl = new Label(ep.getTitle());
-	        epTitleLbl.setStyle(
-	            "-fx-text-fill: rgba(226,232,240,0.95); -fx-font-size: 14px; -fx-font-weight: bold;"
-	        );
-
+	        epTitleLbl.setStyle(  "-fx-text-fill: rgba(226,232,240,0.95); -fx-font-size: 14px; -fx-font-weight: bold;");
 	        HBox miniStars = new HBox(2);
 	        miniStars.getChildren().clear(); 
 	        miniStars.setSpacing(1); 
 	        miniStars.setAlignment(Pos.CENTER_LEFT);
-
 	        double rawRating = ep.getRating(); 
 	        double size = 10.0;
-
 	        for (int i = 1; i <= 5; i++) {
 	            StackPane starPane = new StackPane();
 	            starPane.setAlignment(Pos.CENTER_LEFT);
@@ -1574,12 +1432,10 @@ public class CardController {
 	            miniStars.getChildren().add(starPane);
 	        }
 	        textCol.getChildren().addAll(epTitleLbl, miniStars);
-
 	        // Duration
 	        int h = ep.getDuration() / 60, m = ep.getDuration() % 60;
 	        Label duration = new Label((h > 0 ? h + "h " : "") + m + "m");
 	        duration.setStyle("-fx-text-fill: rgba(148,163,184,0.6); -fx-font-size: 12px;");
-
 	        // Status pill
 	        String pillText   = switch (status) { case COMPLETED -> "✓ Watched"; case IN_PROGRESS -> "▶ In Progress"; default -> "Not Started"; };
 	        String pillBg     = switch (status) { case COMPLETED -> "rgba(34,197,94,0.15)";  case IN_PROGRESS -> "rgba(56,189,248,0.15)";  default -> "rgba(100,116,139,0.12)"; };
@@ -1595,10 +1451,7 @@ public class CardController {
 
 	        Label arrow = new Label("›");
 	        arrow.setStyle("-fx-text-fill: rgba(56,189,248,0.4); -fx-font-size: 20px;");
-
 	        row.getChildren().addAll(numBadge, textCol, duration, statusPill, arrow);
-
-	        // Click → populate detail + switch view
 	        row.setOnMouseClicked(ev -> {
 	            populateEpisodeDetail(detailPane, ep, s, contentWrapper, episodesView, popup, userId);
 	            switchView(contentWrapper, detailPane);
@@ -1607,23 +1460,18 @@ public class CardController {
 	        return row;
 	    }
 
-	    // ═══════════════════════ EPISODE DETAIL ═══════════════════════
-	    // Single definition — 7 params including contentWrapper + episodesView
+//episode details
 	    private void populateEpisodeDetail(
 	            StackPane detailPane, Episode ep, Season s,
 	            StackPane contentWrapper, VBox episodesView,
 	            Stage popup, int userId) {
 
 	        detailPane.getChildren().clear();
-
-	        // ── COVER ─────────────────────────────────────────────
 	        ImageView cover = new ImageView();
 	        cover.setFitWidth(740);
 	        cover.setFitHeight(280);
 	        cover.setPreserveRatio(false);
-
 	        cover.setImage(ImageUtil.load(ep.getCovertUrl()));
-
 
 	        Region coverGradient = new Region();
 	        coverGradient.setPrefSize(740, 280);
@@ -1635,11 +1483,8 @@ public class CardController {
 	        StackPane coverPane = new StackPane(cover, coverGradient);
 	        coverPane.setMaxSize(740, 280);
 	        StackPane.setAlignment(coverPane, Pos.TOP_CENTER);
+	        coverPane.setMouseTransparent(true);//to not to block clicks
 
-	        // IMPORTANT: don't block clicks
-	        coverPane.setMouseTransparent(true);
-
-	        // ── PLAY BUTTON ───────────────────────────────────────
 	        Button play = new Button("▶");
 	        play.setPrefSize(64, 64);
 	        play.setStyle(
@@ -1649,7 +1494,6 @@ public class CardController {
 	            "-fx-effect: dropshadow(gaussian, rgba(56,189,248,0.55), 22, 0.4, 0, 0);"
 	        );
 
-	        // Pulse animation
 	        ScaleTransition pulse = new ScaleTransition(Duration.millis(900), play);
 	        pulse.setFromX(1.0);
 	        pulse.setFromY(1.0);
@@ -1659,23 +1503,16 @@ public class CardController {
 	        pulse.setCycleCount(Animation.INDEFINITE);
 	        pulse.play();
 
-	        // Hover
-	        play.setOnMouseEntered(e -> {
-	            pulse.stop();
-	            play.setScaleX(1.18);
-	            play.setScaleY(1.18);
-	        });
-
-	        play.setOnMouseExited(e -> {
-	            play.setScaleX(1.0);
-	            play.setScaleY(1.0);
-	            pulse.play();
-	        });
-
+	        play.setOnMouseEntered(e -> { pulse.stop();
+	                                     play.setScaleX(1.18);
+	                                     play.setScaleY(1.18);});
+	                                                               
+	        play.setOnMouseExited(e -> { play.setScaleX(1.0);
+	                                     play.setScaleY(1.0);
+	                                     pulse.play();});
+	        
 	        StackPane.setAlignment(play, Pos.CENTER);
 	        StackPane.setMargin(play, new Insets(0, 0, 160, 0));
-
-	        // ── INFO PANEL ────────────────────────────────────────
 	        VBox infoPanel = new VBox(8);
 	        infoPanel.setPadding(new Insets(0, 28, 20, 28));
 	        infoPanel.setAlignment(Pos.TOP_LEFT);
@@ -1703,37 +1540,21 @@ public class CardController {
 	        synopsis.setWrapText(true);
 
 	        infoPanel.getChildren().addAll(backBtn, epNum, epTitle, metaLabel, synopsis);
-
-	        // ── ACTIONS ───────────────────────────────────────────
-	        play.setOnAction(e -> {
-	            System.out.println("PLAY CLICKED ✅");
-
+	        play.setOnAction(e -> {  System.out.println("PLAY CLICKED ✅");
 	            try {
 	                if (popup != null) popup.close();
 
-	                goToLecturePageEpisode(
-	                    s.getSerieId(),
-	                    s.getSeasonNum(),
-	                    ep.getEpId()
-	                );
-
-	                
-
+	                goToLecturePageEpisode( s.getSerieId(),s.getSeasonNum(),ep.getEpId());
+  
 	            } catch (Exception ex) {
 	                ex.printStackTrace();
 	            }
 	        });
 
 	        backBtn.setOnAction(e -> switchView(contentWrapper, episodesView));
-
-	        // ── FINAL LAYOUT (FIXED ORDER) ─────────────────────────
 	        detailPane.getChildren().addAll(coverPane, infoPanel, play);
-
-	        // FORCE play button on top
 	        play.toFront();
 	    }
-
-	    // ═══════════════════════ VIEW SWITCHER ═══════════════════════
 	    private void switchView(StackPane wrapper, Node target) {
 	        if (!wrapper.getChildren().isEmpty()) {
 	            Node current = wrapper.getChildren().get(0);
@@ -1753,7 +1574,6 @@ public class CardController {
 	        }
 	    }
 
-	   
 	    private void updateThumbSize(ScrollPane scrollPane, ScrollBar scrollBar) {
 	    	Node content = scrollPane.getContent();
 	        if (content == null) return;
@@ -1765,8 +1585,6 @@ public class CardController {
 	            if (contentHeight <= 0) return;
 
 	            double ratio = viewportHeight / contentHeight;
-
-	            // clamp
 	            ratio = Math.max(0.05, Math.min(ratio, 1.0));
 
 	            scrollBar.setVisibleAmount(ratio);
@@ -1801,8 +1619,7 @@ public class CardController {
 	            );
 	        }
 	    }
-
-	 	private void goToLecturePageFilm(int filmId) {
+	private void goToLecturePageFilm(int filmId) {
     	    try {
     	        FXMLLoader loader = new FXMLLoader(
     	            getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml")
@@ -1811,12 +1628,8 @@ public class CardController {
 
     	        LecturePageController controller = loader.getController();
     	        controller.initFilm(filmId);
-
-    	        // 🔥 Get current stage
     	        Stage stage = (Stage) rootPane.getScene().getWindow();
-
-    	        // 🔥 Replace scene
-    	        stage.getScene().setRoot(root);
+    	        stage.getScene().setRoot(root);//replace scean
 
     	    } catch (IOException e) {
     	        e.printStackTrace();
@@ -1831,11 +1644,7 @@ public class CardController {
 
     	        LecturePageController controller = loader.getController();
     	        controller.initEpisode(serieId, seasonNum, episodeNum);
- 
-    	        // 🔥 Get current stage
-    	        Stage stage = (Stage) rootPane.getScene().getWindow();
-
-    	        // 🔥 Replace scene
+     	        Stage stage = (Stage) rootPane.getScene().getWindow();
     	        stage.getScene().setRoot(root);
 
     	    } catch (IOException e) {
@@ -1860,32 +1669,21 @@ public class CardController {
 	    	     show(typeBadge);
 	    	     FeaturedItem item = data.getItem();
 	    	     this.currentItem = item;
+	    	     poster.getParent().setOnMouseClicked(e -> { if (autoSlide != null) autoSlide.pause(); //make button clickable
+	    	                                              String type = currentItem.getType().toLowerCase();
+	    	                                                  if (type.equals("film")) {
+	    	                                                           showFilmPopup(currentItem);
+	    	                                                  } else if (type.equals("serie")) {
+	    	                                                           showSeriePopup(currentItem);
+	    	                                                          }});
 
-	    	     // ------------------ Make the card clickable ------------------
-	    	     poster.getParent().setOnMouseClicked(e -> {
-	    	         if (autoSlide != null) autoSlide.pause(); // pause carousel
-
-	    	         String type = currentItem.getType().toLowerCase();
-	    	         if (type.equals("film")) {
-	    	             showFilmPopup(currentItem);
-	    	         } else if (type.equals("serie")) {
-	    	             showSeriePopup(currentItem);
-	    	         }
-	    	     });
-
-	    	     // ------------------ Poster ------------------
 	    	     poster.setImage(ImageUtil.load(item.getPosterUrl()));
-
-	    	     // ------------------ Type Badge ------------------
 	    	     if (item.getSerieId() != 0) {
 	    	         typeBadge.setText("SERIE");
 	    	     } else {
 	    	         typeBadge.setText("FILM");
 	    	     }
-
-	    	     // ------------------ Button Actions ------------------
-	    	     playBtn.setOnAction(e -> {
-	    	         if (autoSlide != null) autoSlide.pause(); // pause carousel
+	    	     playBtn.setOnAction(e -> {  if (autoSlide != null) autoSlide.pause();
 
 	    	         String type = currentItem.getType().toLowerCase();
 	    	         if (type.equals("film")) {
@@ -1894,19 +1692,14 @@ public class CardController {
 	    	             showSeriePopup(currentItem);
 	    	         }
 	    	     });
-
-	    	     addBtn.setOnAction(e -> handleAddToList());
+	    	       	    	     addBtn.setOnAction(e -> handleAddToList());
 	    	     updateAddButton(addBtn, item);
-
-	    	     // ------------------ Rating Stars ------------------
 	    	     populateStars(item.getRating());
-	    	     // ------------------ Progress Line ------------------
 	    	     int lastPos = data.getLastPosition();
 	    	     int totalDuration = 1; // default to avoid division by zero
 
 	    	     try {
 	    	         if (item.getType().equalsIgnoreCase("film")) {
-	    	             // Get film duration
 	    	             Film film = featuredService.getFilmDetails(item.getId());
 	    	             if (film != null) totalDuration = (int) film.getDuration(); // duration in seconds
 	    	         } else if (item.getType().equalsIgnoreCase("serie")) {
@@ -1915,8 +1708,6 @@ public class CardController {
 	    	             if (serie != null) {
 	    	                 List<Episode> episodes = featuredService.getEpisodesBySerie(serie.getSerieId());
 	    	                 totalDuration = episodes.stream().mapToInt(Episode::getDuration).sum();
-
-	    	                 // Compute last position across episodes
 	    	                 lastPos = 0;
 	    	                 for (Episode ep : episodes) {
 	    	                     WatchStatus epStatus = episodeProgressService.getEpisodeStatus(Session.getUserId(), ep.getEpId());
@@ -1932,16 +1723,11 @@ public class CardController {
 	    	         }
 	    	     } catch (SQLException e) {
 	    	         e.printStackTrace();
-	    	         // fallback in case of DB failure
-	    	         lastPos = 0;
+	    	         lastPos = 0;// fallback in case of DB failure
 	     	         totalDuration = 1;
 	    	     }
-
-	    	     // Compute progress safely
 	    	     double progress = (double) lastPos / totalDuration;
 	    	     progress = Math.max(0, Math.min(progress, 1));
-
-	    	     // Set progress rectangle
 	    	     progressFill.setWidth(180 * progress);
 	    	     switch (data.getStatus()) {
 	    	         case COMPLETED -> progressFill.setStyle("-fx-fill: #00FFAA;");
@@ -1950,24 +1736,18 @@ public class CardController {
 	    	     }
 	    	    
 	    	 }
-	    	 public void setItem2(FeaturedItem item) {
+  	 public void setItem2(FeaturedItem item) {
 	    	        this.currentItem = item;
-	    	        
-	    	     // Make the whole card clickable like the play button
-	    	        poster.getParent().setOnMouseClicked(e -> {
-	    	            if (autoSlide != null) autoSlide.pause(); // pause carousel
-
-	    	            // Same logic as play button
+	    	        	    	        poster.getParent().setOnMouseClicked(e -> {  if (autoSlide != null) autoSlide.pause();
 	    	            String type = currentItem.getType().toLowerCase();
 	    	            if (type.equals("film")) {
 	    	                showFilmPopup(currentItem);
 	    	            } else if (type.equals("serie")) {
 	    	                showSeriePopup(currentItem);
 	    	            }
+	    	          
 	    	        });
-	    	        // ------------------ Poster ------------------
 	    	        poster.setImage(ImageUtil.load(item.getPosterUrl()));
-	    	        // ------------------ Type Badge ------------------
 	    	       
 	    	        addBtn.setOnAction(e -> handleAddToList());
 	    	        updateAddButton(addBtn, item);
@@ -1979,18 +1759,18 @@ public class CardController {
 	    	        
 	    	        
 	    	    }
-	    	 private void show(Node node) {
+  	 private void show(Node node) {
 	    		 if (node == null) return;
 	    		    node.setVisible(true);
 	    		    node.setManaged(true);
 	    		}
 
-	    		private void hide(Node node) {
+	 private void hide(Node node) {
 	    			if (node == null) return;
 	    		    node.setVisible(false);
 	    		    node.setManaged(false);
 	    		}
-	    		public void setItem_mylist(FeaturedItem item) {
+	 public void setItem_mylist(FeaturedItem item) {
 	    		    this.currentItem = item;
 
 	    		    poster.getParent().setOnMouseClicked(e -> {
@@ -2005,18 +1785,12 @@ public class CardController {
 	    		            showSeriePopup(currentItem);
 	    		        }
 	    		    });
-
-	    		    // ------------------ Poster ------------------
 	    		    poster.setImage(ImageUtil.load(item.getPosterUrl()));
-
-	    		    // ------------------ Type Badge ------------------
 	    		    if (item.getSerieId() != 0) {
 	    		        typeBadge.setText("SERIE");
 	    		    } else {
 	    		        typeBadge.setText("FILM");
 	    		    }
-
-	    		    // ------------------ PLAY BUTTON ------------------
 	    		    playBtn.setOnAction(e -> {
 	    		        try {
 	    		            String type = currentItem.getType().toLowerCase();
@@ -2031,44 +1805,30 @@ public class CardController {
 	    		                Map<Integer, WatchStatus> progressMap =
 	    		                        episodeProgressService.loadUserProgress(userId);
 
-	    		                // 🔥 Ensure correct order (important!)
 	    		                serie.getSeasons().sort(Comparator.comparingInt(Season::getSeasonNum));
 
 	    		                Episode inProgressEpisode = null;
 	    		                Episode nextEpisode = null;
 	    		                int targetSeasonNum = 0;
-
-	    		                // 🔍 Find best episode (priority logic)
 	    		                outer:
 	    		                for (Season s : serie.getSeasons()) {
 
 	    		                    s.getEpisodes().sort(Comparator.comparingInt(Episode::getNumEpisode));
 
 	    		                    for (Episode ep : s.getEpisodes()) {
-
-	    		                        WatchStatus status = progressMap.getOrDefault(
-	    		                                ep.getEpId(),
-	    		                                WatchStatus.NOT_STARTED
-	    		                        );
-
-	    		                        // 🎯 1. Resume where user stopped
-	    		                        if (status == WatchStatus.IN_PROGRESS) {
+	    		                        WatchStatus status = progressMap.getOrDefault(   ep.getEpId(),  WatchStatus.NOT_STARTED);
+	    			    		             if (status == WatchStatus.IN_PROGRESS) {
 	    		                            inProgressEpisode = ep;
 	    		                            targetSeasonNum = s.getSeasonNum();
 	    		                            break outer;
 	    		                        }
-
-	    		                        // ▶️ 2. First not started episode
 	    		                        if (status == WatchStatus.NOT_STARTED && nextEpisode == null) {
 	    		                            nextEpisode = ep;
 	    		                            targetSeasonNum = s.getSeasonNum();
 	    		                        }
 	    		                    }
 	    		                }
-
-	    		                // 🎬 Final decision
 	    		                Episode targetEpisode;
-
 	    		                if (inProgressEpisode != null) {
 	    		                    targetEpisode = inProgressEpisode;
 
@@ -2076,32 +1836,20 @@ public class CardController {
 	    		                    targetEpisode = nextEpisode;
 
 	    		                } else {
-	    		                    // 🔁 All watched → restart
 	    		                    Season firstSeason = serie.getSeasons().get(0);
 	    		                    targetEpisode = firstSeason.getEpisodes().get(0);
 	    		                    targetSeasonNum = firstSeason.getSeasonNum();
 	    		                }
-
-	    		                // 🚀 Navigate (LecturePageController handles progress saving)
-	    		                goToLecturePageEpisode(
-	    		                        serie.getSerieId(),
-	    		                        targetSeasonNum,
-	    		                        targetEpisode.getEpId()
-	    		                );
-
-	    		                // ❌ REMOVED: markInProgress here — LecturePageController handles this
+	    		                goToLecturePageEpisode(serie.getSerieId(),targetSeasonNum,targetEpisode.getEpId() );
+	    		                  
 	    		            }
 
 	    		        } catch (Exception ex) {
 	    		            ex.printStackTrace();
 	    		        }
 	    		    });
-
-	    		    // ------------------ OTHER BUTTONS ------------------
 	    		    addBtn.setOnAction(e -> handleAddToList());
 	    		    updateAddButton(addBtn, item);
-
-	    		    // ------------------ UI ------------------
 	    		    populateStars(item.getRating());
 	    		    show(playBtn);
 	    		    show(addBtn);

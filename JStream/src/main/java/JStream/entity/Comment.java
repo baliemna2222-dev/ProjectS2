@@ -11,7 +11,7 @@ public class Comment {
     private boolean flagged;
     private Timestamp creates_at;
     private Timestamp updated_at;
-    private String username;   // populated by a JOIN in CommentService
+    private String username;   
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
@@ -41,7 +41,7 @@ public class Comment {
     public int getFilmID()                          { return filmID; }
     public void setFilmID(int filmID)               { this.filmID = filmID; }
 
-    public int getEpID()                            { return epID; }   // ← was wrongly named getSerieID()
+    public int getEpID()                            { return epID; }  
     public void setEpID(int epID)                   { this.epID = epID; }
 
     public String getContent()                      { return content; }

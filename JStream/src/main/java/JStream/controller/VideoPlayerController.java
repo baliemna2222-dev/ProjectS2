@@ -41,8 +41,6 @@ import javafx.util.Duration;
 import java.io.File;
 
 public class VideoPlayerController {
-
-    // ── FXML ───────────────────────────────────────────────────
     @FXML private MediaView         mediaView;
     @FXML private StackPane         rootPane;
     @FXML private HBox              topBar;
@@ -53,55 +51,39 @@ public class VideoPlayerController {
                                     btnNextEpisode;
     @FXML private Label             titleLabel, timeLabel;
     @FXML private ProgressIndicator loadingSpinner;
-
-    // ── Fill overlays (cyan Region behind each slider) ─────────
     @FXML private Region    seekFill, volumeFill;
     @FXML private StackPane seekBarWrapper, volumeSliderWrapper;
-
-    // ── Player state ───────────────────────────────────────────
     private MediaPlayer mediaPlayer;
     private Stage       stage;
     private boolean     isPlaying           = true;
     private boolean     isMuted             = false;
     private boolean     wasPausedBeforeSeek = false;
     private boolean     videoReady          = false;
+
     private String      pendingUrl;
     private String      pendingTitle;
-
-    // ── Context ────────────────────────────────────────────────
     private Integer filmId            = null;
     private Integer episodeId         = null;
     private Integer currentSeasonId   = null;
     private Integer currentNumEpisode = null;
-
-    // ── Services ───────────────────────────────────────────────
     private final FeaturedService        featuredService        = new FeaturedService();
     private       FilmProgressService    filmProgressService;
     private       EpisodeProgressService episodeProgressService;
     private final EpisodeService         episodeService         = new EpisodeService();
     private final SerieService           serieService           = new SerieService();
-
-    // ── Parent controller ──────────────────────────────────────
     private LecturePageController parentController;
-
-    // ── Timers ─────────────────────────────────────────────────
     private Timeline idleTimer, progressTimer, saveTimer;
-
-    // ── Binge ──────────────────────────────────────────────────
     private Timeline  bingeTimer;
     private StackPane bingeOverlay;
     private Label     bingeCountdownLabel;
     private Arc       bingeArc;
-
-    // ── End overlay ────────────────────────────────────────────
     private StackPane endOverlay;
 
     private static final int    BINGE_COUNTDOWN = 10;
     private static final double MED_W = 960, MED_H = 540;
+    private static final double THUMB_RADIUS = 8.0;
 
-    // ─────────────────────────────────────────────────────────────
     //  INIT
-    // ─────────────────────────────────────────────────────────────
     @FXML
     public void initialize() {
         filmProgressService    = new FilmProgressService(featuredService);
@@ -118,14 +100,20 @@ public class VideoPlayerController {
         mediaView.fitWidthProperty().bind(rootPane.widthProperty());
         mediaView.fitHeightProperty().bind(rootPane.heightProperty());
         mediaView.setPreserveRatio(true);
+        Platform.runLater(() -> {
+            paintFill(false, volumeSlider.getValue() / 100.0);
 
-        Platform.runLater(() -> paintFill(false, volumeSlider.getValue() / 100.0));
+            seekBarWrapper.widthProperty().addListener((obs, o, n) -> {
+                if (n.doubleValue() > 0) {
+                    double max = seekBar.getMax();
+                    paintFill(true, max > 0 ? seekBar.getValue() / max : 0);
+                }
+            });
+            volumeSliderWrapper.widthProperty().addListener((obs, o, n) -> {
+                if (n.doubleValue() > 0) paintFill(false, volumeSlider.getValue() / 100.0);
+            });
+        });
     }
-
-    // ─────────────────────────────────────────────────────────────
-    //  FILL PAINT
-    // ─────────────────────────────────────────────────────────────
-    private static final double THUMB_RADIUS = 8.0;
 
     private void paintFill(boolean isSeek, double pct) {
         pct = Math.min(1.0, Math.max(0.0, pct));
@@ -134,20 +122,17 @@ public class VideoPlayerController {
         if (fill == null || wrap == null) return;
 
         double totalW = wrap.getWidth();
-        if (totalW <= 0) totalW = isSeek ? wrap.getPrefWidth() : 90.0;
+        if (totalW <= 0) return;  // layout not ready — listener will repaint
 
-        double usable = totalW - THUMB_RADIUS * 2;
+        double usable = Math.max(0, totalW - THUMB_RADIUS * 2);
         double fillW  = THUMB_RADIUS + usable * pct;
-        fill.setPrefWidth(Math.max(0, fillW));
+        fill.setPrefWidth(fillW);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  PUBLIC API
-    // ─────────────────────────────────────────────────────────────
     public void setParentController(LecturePageController c) { parentController = c; }
 
     public void loadVideo(String url, String title) {
-        pendingUrl = resolveUrl(url);   // 🔥 FIX HERE
+        pendingUrl   = url;
         pendingTitle = title != null ? title : "";
     }
 
@@ -185,14 +170,16 @@ public class VideoPlayerController {
         final int finalStart = startPos;
 
         if (mediaPlayer != null) {
-            mediaPlayer.stop(); mediaPlayer.dispose();
-            mediaPlayer = null; videoReady = false;
+            mediaPlayer.stop();
+            mediaPlayer.dispose();
+            mediaPlayer = null;
+            videoReady  = false;
         }
 
         String finalUrl = resolveUrl(pendingUrl);
 
         if (finalUrl == null || !finalUrl.contains(":")) {
-            
+            loadingSpinner.setVisible(false);
             return;
         }
 
@@ -200,11 +187,12 @@ public class VideoPlayerController {
         try {
             media = new Media(finalUrl);
         } catch (Exception e) {
-            
+            loadingSpinner.setVisible(false);
             e.printStackTrace();
             return;
         }
-        mediaPlayer  = new MediaPlayer(media);
+
+        mediaPlayer = new MediaPlayer(media);
         mediaView.setMediaPlayer(mediaPlayer);
         mediaView.setPreserveRatio(true);
 
@@ -215,10 +203,12 @@ public class VideoPlayerController {
             mediaPlayer.setVolume(volumeSlider.getValue() / 100.0);
             mediaPlayer.play();
             isPlaying = true;
-            btnPlay.setText("⏸");
-            progressTimer.play();
-            saveTimer.play();
-            Platform.runLater(() -> paintFill(false, volumeSlider.getValue() / 100.0));
+            Platform.runLater(() -> {
+                btnPlay.setText("⏸");
+                progressTimer.play();
+                saveTimer.play();
+                paintFill(false, volumeSlider.getValue() / 100.0);
+            });
         });
 
         mediaPlayer.setOnError(() -> {
@@ -229,14 +219,16 @@ public class VideoPlayerController {
         mediaPlayer.setOnEndOfMedia(this::handleEndOfMedia);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  END OF MEDIA
-    // ─────────────────────────────────────────────────────────────
     private void handleEndOfMedia() {
+        if (progressTimer != null) progressTimer.stop();
+        if (saveTimer     != null) saveTimer.stop();
+
         saveProgressToDB(true);
+
         Platform.runLater(() -> {
             isPlaying = false;
             btnPlay.setText("▶");
+
             if (episodeId == null || currentSeasonId == null || currentNumEpisode == null) {
                 showEndOverlay(null);
                 return;
@@ -248,9 +240,6 @@ public class VideoPlayerController {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  END OVERLAY
-    // ─────────────────────────────────────────────────────────────
     private void showEndOverlay(Episode nextEpisode) {
         hideEndOverlay();
         endOverlay = new StackPane();
@@ -268,19 +257,24 @@ public class VideoPlayerController {
         card.setMaxWidth(420);
 
         Label check = new Label("✓");
-        check.setStyle("-fx-text-fill: #00c8f0; -fx-font-size: 38px; -fx-font-weight: bold;" +
+        check.setStyle(
+            "-fx-text-fill: #00c8f0; -fx-font-size: 38px; -fx-font-weight: bold;" +
             "-fx-effect: dropshadow(gaussian,rgba(0,200,240,0.7),22,0,0,0);");
 
         Label sub = new Label(nextEpisode != null ? "Episode complete" : "You've finished watching");
         sub.setStyle("-fx-text-fill: rgba(255,255,255,0.4); -fx-font-size: 13px;");
 
         Label ttl = new Label(pendingTitle);
-        ttl.setWrapText(true); ttl.setMaxWidth(340); ttl.setAlignment(Pos.CENTER);
-        ttl.setStyle("-fx-text-fill: white; -fx-font-size: 19px; -fx-font-weight: bold;" +
+        ttl.setWrapText(true);
+        ttl.setMaxWidth(340);
+        ttl.setAlignment(Pos.CENTER);
+        ttl.setStyle(
+            "-fx-text-fill: white; -fx-font-size: 19px; -fx-font-weight: bold;" +
             "-fx-text-alignment: center;");
 
         Region divider = new Region();
-        divider.setPrefHeight(1); divider.setMaxWidth(180);
+        divider.setPrefHeight(1);
+        divider.setMaxWidth(180);
         divider.setStyle("-fx-background-color: rgba(0,200,240,0.12);");
 
         Button again = makeBtn("↺  Watch Again", true);
@@ -298,7 +292,8 @@ public class VideoPlayerController {
         }
 
         Button back = new Button("← Back to details");
-        back.setStyle("-fx-background-color: transparent; -fx-text-fill: rgba(255,255,255,0.28);" +
+        back.setStyle(
+            "-fx-background-color: transparent; -fx-text-fill: rgba(255,255,255,0.28);" +
             "-fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 4 0 0 0;");
         back.setOnMouseEntered(e -> back.setStyle(back.getStyle().replace("0.28", "0.55")));
         back.setOnMouseExited (e -> back.setStyle(back.getStyle().replace("0.55", "0.28")));
@@ -334,32 +329,30 @@ public class VideoPlayerController {
     }
 
     private void hideEndOverlay() {
-        if (endOverlay != null) { rootPane.getChildren().remove(endOverlay); endOverlay = null; }
-    }
-
-    private void replayCurrentVideo() {
-        videoReady = false;
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.seek(Duration.ZERO);
-            mediaPlayer.play();
-            isPlaying  = true;
-            btnPlay.setText("⏸");
-            videoReady = true;
-            progressTimer.play();
-            saveTimer.play();
+        if (endOverlay != null) {
+            rootPane.getChildren().remove(endOverlay);
+            endOverlay = null;
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  NEXT SEASON
-    // ─────────────────────────────────────────────────────────────
+    private void replayCurrentVideo() {
+        if (mediaPlayer == null) return;
+        mediaPlayer.seek(Duration.ZERO);
+        mediaPlayer.play();
+        isPlaying  = true;
+        videoReady = true;
+        btnPlay.setText("⏸");
+        if (progressTimer != null) progressTimer.play();
+        if (saveTimer     != null) saveTimer.play();
+    }
+//NEXT SEANSON
     private void tryNextSeason() {
         try {
             int serieId = episodeService.getSerieIdBySeasonId(currentSeasonId);
             Serie serie = serieService.getSerieById(serieId);
             if (serie == null || serie.getSeasons() == null) {
-                Platform.runLater(() -> showEndOverlay(null)); return;
+                Platform.runLater(() -> showEndOverlay(null));
+                return;
             }
 
             int curNum = -1;
@@ -372,7 +365,8 @@ public class VideoPlayerController {
                 if (s.getSeasonNum() == curNum + 1) { next = s; break; }
 
             if (next == null || next.getEpisodes() == null || next.getEpisodes().isEmpty()) {
-                Platform.runLater(() -> showEndOverlay(null)); return;
+                Platform.runLater(() -> showEndOverlay(null));
+                return;
             }
 
             Episode first = next.getEpisodes().get(0);
@@ -386,23 +380,19 @@ public class VideoPlayerController {
             Platform.runLater(() -> showEndOverlay(null));
         }
     }
-
-    // ─────────────────────────────────────────────────────────────
-    //  NEXT EPISODE BUTTON
-    // ─────────────────────────────────────────────────────────────
+//Next EPISODE
     private void showNextEpisodeButton(Episode next) {
         btnNextEpisode.setVisible(true);
         btnNextEpisode.setManaged(true);
         btnNextEpisode.setText("▶  Next: E" + next.getNumEpisode());
         btnNextEpisode.setOnAction(e -> {
-            stopBingeTimer(); hideBingeOverlay(); hideNextEpisodeButton();
+            stopBingeTimer();
+            hideBingeOverlay();
+            hideNextEpisodeButton();
             launchNextEpisode(next);
         });
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  BINGE OVERLAY  ← arc fix here
-    // ─────────────────────────────────────────────────────────────
     private void showBingeOverlay(Episode nextEpisode) {
         bingeOverlay = new StackPane();
         bingeOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.72);");
@@ -426,32 +416,25 @@ public class VideoPlayerController {
         ep.setWrapText(true);
         ep.setMaxWidth(320);
 
-        // ── Arc countdown (FIXED) ──────────────────────────────
-        // StackPane centers its children at (0,0) in local space,
-        // so the Arc center must be (0,0), NOT (38,38).
         StackPane arcContainer = new StackPane();
-        arcContainer.setPrefSize(76, 76);
-
-        // Background ring — Circle(radius) constructor, no center args
-        Circle arcBg = new Circle(34);
+        arcContainer.setPrefSize(80, 80);
+        Circle arcBg = new Circle(0, 0, 36);
         arcBg.setFill(Color.TRANSPARENT);
         arcBg.setStroke(Color.web("#1e2a38"));
         arcBg.setStrokeWidth(4);
-
-        // Progress arc — center at 0,0 so it aligns with the Circle above
-        bingeArc = new Arc(0, 0, 30, 30, 90, 360);
+        bingeArc = new Arc(0, 0, 32, 32, 90, 360);
         bingeArc.setType(ArcType.OPEN);
         bingeArc.setFill(Color.TRANSPARENT);
         bingeArc.setStroke(Color.web("#00c8f0"));
         bingeArc.setStrokeWidth(4);
         bingeArc.setStrokeLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+        bingeArc.setLength(360); 
 
         bingeCountdownLabel = new Label(String.valueOf(BINGE_COUNTDOWN));
         bingeCountdownLabel.setStyle(
             "-fx-text-fill: #00c8f0; -fx-font-size: 20px; -fx-font-weight: bold;");
 
         arcContainer.getChildren().addAll(arcBg, bingeArc, bingeCountdownLabel);
-        // ── End arc fix ───────────────────────────────────────
 
         Button watch  = makeBtn("▶  Watch Now", true);
         Button cancel = new Button("Cancel");
@@ -467,40 +450,39 @@ public class VideoPlayerController {
         bingeOverlay.getChildren().add(card);
         rootPane.getChildren().add(bingeOverlay);
 
-        watch.setOnAction(e  -> { stopBingeTimer(); hideBingeOverlay(); hideNextEpisodeButton(); launchNextEpisode(nextEpisode); });
-        cancel.setOnAction(e -> { stopBingeTimer(); hideBingeOverlay(); showEndOverlay(nextEpisode); });
+        watch.setOnAction(e  -> {
+            stopBingeTimer(); hideBingeOverlay(); hideNextEpisodeButton();
+            launchNextEpisode(nextEpisode);
+        });
+        cancel.setOnAction(e -> {
+            stopBingeTimer(); hideBingeOverlay();
+            showEndOverlay(nextEpisode);
+        });
 
         startBingeTimer(nextEpisode);
     }
 
     private void startBingeTimer(Episode nextEpisode) {
         final int[] rem = {BINGE_COUNTDOWN};
-
         bingeTimer = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-            rem[0]--;
-
-            // Always update UI on the JavaFX thread
             Platform.runLater(() -> {
-                if (bingeCountdownLabel != null)
-                    bingeCountdownLabel.setText(String.valueOf(rem[0]));
-                if (bingeArc != null)
-                    // Sweep from 360 down to 0 as countdown reaches zero
-                    bingeArc.setLength(360.0 * rem[0] / BINGE_COUNTDOWN);
-            });
+                final int snap = --rem[0];
 
-            if (rem[0] <= 0) {
-                stopBingeTimer();
-                Platform.runLater(() -> {
+                if (bingeCountdownLabel != null)
+                    bingeCountdownLabel.setText(String.valueOf(snap));
+                if (bingeArc != null)
+                    bingeArc.setLength(360.0 * snap / BINGE_COUNTDOWN);
+                if (snap <= 0) {
+                    stopBingeTimer();
                     hideBingeOverlay();
                     hideNextEpisodeButton();
                     launchNextEpisode(nextEpisode);
-                });
-            }
+                }
+            });
         }));
-        bingeTimer.setCycleCount(BINGE_COUNTDOWN);
+        bingeTimer.setCycleCount(Timeline.INDEFINITE); 
         bingeTimer.play();
     }
-
     private void stopBingeTimer() {
         if (bingeTimer != null) { bingeTimer.stop(); bingeTimer = null; }
     }
@@ -513,7 +495,6 @@ public class VideoPlayerController {
             bingeArc            = null;
         }
     }
-
     private void hideNextEpisodeButton() {
         if (btnNextEpisode != null) {
             btnNextEpisode.setVisible(false);
@@ -521,68 +502,66 @@ public class VideoPlayerController {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  LAUNCH NEXT EPISODE
-    // ─────────────────────────────────────────────────────────────
     private void launchNextEpisode(Episode next) {
-        stopBingeTimer(); hideBingeOverlay(); hideEndOverlay(); hideNextEpisodeButton();
+        stopBingeTimer();
+        hideBingeOverlay();
+        hideEndOverlay();
+        hideNextEpisodeButton();
         if (progressTimer != null) progressTimer.stop();
         if (saveTimer     != null) saveTimer.stop();
         videoReady = false;
         if (mediaPlayer != null) {
-            mediaPlayer.stop(); mediaPlayer.dispose(); mediaPlayer = null;
+            mediaPlayer.stop();
+            mediaPlayer.dispose();
+            mediaPlayer = null;
         }
 
-        try {
-            int serieId = episodeService.getSerieIdBySeasonId(currentSeasonId);
-            Serie serie = serieService.getSerieById(serieId);
+        filmId            = null;
+        episodeId         = next.getEpId();
+        currentSeasonId   = next.getSeasonId();
+        currentNumEpisode = next.getNumEpisode();
+        pendingUrl        = next.getVideoUrl();
+        pendingTitle      = next.getTitle();
 
-            filmId            = null;
-            episodeId         = next.getEpId();
-            currentSeasonId   = next.getSeasonId();
-            currentNumEpisode = next.getNumEpisode();
-            pendingUrl        = next.getVideoUrl();
-            pendingTitle      = next.getTitle();
+        Platform.runLater(() -> {
+            if (parentController != null) {
+                try {
+                    int serieId = episodeService.getSerieIdBySeasonId(currentSeasonId);
+                    Serie serie = serieService.getSerieById(serieId);
 
-            Platform.runLater(() -> {
-                if (parentController != null) {
-                    try {
-                        int sn = 1;
-                        if (serie != null && serie.getSeasons() != null)
-                            for (Season s : serie.getSeasons())
-                                if (s.getSeasonId() == next.getSeasonId()) { sn = s.getSeasonNum(); break; }
-                        parentController.updateUI(
-                            next.getTitle(),
-                            next.getResume() != null ? next.getResume()
-                                : (serie != null ? serie.getSynopsis() : ""),
-                            next.getDuration() + " min",
-                            serie != null ? serie.getRating()  : 0,
-                            serie != null ? serie.getCasting() : "",
-                            "S" + sn + " - E" + next.getNumEpisode(),
-                            next.getVideoUrl(),
-                            next.getEpId());
-                    } catch (Exception e) { e.printStackTrace(); }
-                }
-                startPlayback();
-            });
-        } catch (Exception e) { e.printStackTrace(); }
+                    int sn = 1;
+                    if (serie != null && serie.getSeasons() != null)
+                        for (Season s : serie.getSeasons())
+                            if (s.getSeasonId() == next.getSeasonId()) { sn = s.getSeasonNum(); break; }
+
+                    parentController.updateUI(
+                        next.getTitle(),
+                        next.getResume() != null ? next.getResume()
+                            : (serie != null ? serie.getSynopsis() : ""),
+                        next.getDuration() + " min",
+                        serie != null ? serie.getRating()  : 0,
+                        serie != null ? serie.getCasting() : "",
+                        "S" + sn + " - E" + next.getNumEpisode(),
+                        next.getVideoUrl(),
+                        next.getEpId());
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+            startPlayback();
+        });
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  TIMERS
-    // ─────────────────────────────────────────────────────────────
     private void setupTimers() {
-        idleTimer     = new Timeline(new KeyFrame(Duration.seconds(3), e -> fadeUI(0)));
+        idleTimer = new Timeline(new KeyFrame(Duration.seconds(3), e -> fadeUI(0)));
         idleTimer.setCycleCount(1);
+
         progressTimer = new Timeline(new KeyFrame(Duration.millis(500), e -> updateProgress()));
         progressTimer.setCycleCount(Timeline.INDEFINITE);
-        saveTimer     = new Timeline(new KeyFrame(Duration.seconds(10), e -> saveProgressToDB()));
+
+        saveTimer = new Timeline(new KeyFrame(Duration.seconds(10), e -> saveProgressToDB()));
         saveTimer.setCycleCount(Timeline.INDEFINITE);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  MOUSE & KEYBOARD
-    // ─────────────────────────────────────────────────────────────
+//short cuts
     private void setupMouseAndKeyboardEvents() {
         rootPane.setOnMouseMoved(e -> { fadeUI(1); idleTimer.playFromStart(); });
         bottomControls.setOnMouseEntered(e -> { fadeUI(1); idleTimer.stop(); });
@@ -618,10 +597,6 @@ public class VideoPlayerController {
             }
         });
     }
-
-    // ─────────────────────────────────────────────────────────────
-    //  SLIDERS
-    // ─────────────────────────────────────────────────────────────
     private void setupSliders() {
         volumeSlider.valueProperty().addListener((obs, o, n) -> {
             double vol = n.doubleValue() / 100.0;
@@ -635,28 +610,23 @@ public class VideoPlayerController {
             if (max > 0) paintFill(true, n.doubleValue() / max);
         });
 
-        seekBarWrapper.widthProperty().addListener((obs, o, n) -> {
-            double max = seekBar.getMax();
-            if (max > 0) paintFill(true, seekBar.getValue() / max);
-        });
-        volumeSliderWrapper.widthProperty().addListener((obs, o, n) ->
-            paintFill(false, volumeSlider.getValue() / 100.0));
-
         seekBar.setOnMousePressed(e -> {
             if (mediaPlayer == null) return;
             wasPausedBeforeSeek = !isPlaying;
             mediaPlayer.pause();
         });
+
         seekBar.setOnMouseReleased(e -> {
             if (mediaPlayer == null) return;
             mediaPlayer.seek(Duration.seconds(seekBar.getValue()));
-            if (!wasPausedBeforeSeek) mediaPlayer.play();
+            if (!wasPausedBeforeSeek) {
+                mediaPlayer.play();
+                isPlaying = true;
+                btnPlay.setText("⏸");
+            }
         });
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  CONTROL BUTTONS
-    // ─────────────────────────────────────────────────────────────
     private void setupControlButtons() {
         btnPlay.setOnAction(e    -> togglePlay());
         btnMute.setOnAction(e    -> toggleMute());
@@ -668,12 +638,10 @@ public class VideoPlayerController {
         if (btnMiniPlayer != null) setupButtonHover(btnMiniPlayer);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  PROGRESS
-    // ─────────────────────────────────────────────────────────────
     private void updateProgress() {
         if (mediaPlayer == null || !videoReady) return;
-        Duration cur = mediaPlayer.getCurrentTime(), tot = mediaPlayer.getTotalDuration();
+        Duration cur = mediaPlayer.getCurrentTime();
+        Duration tot = mediaPlayer.getTotalDuration();
         if (tot != null && tot.toSeconds() > 0) {
             double pct = cur.toSeconds() / tot.toSeconds();
             Platform.runLater(() -> {
@@ -699,14 +667,20 @@ public class VideoPlayerController {
             else                             episodeProgressService.markInProgress(uid, episodeId, cur);
         }
     }
-
-    // ─────────────────────────────────────────────────────────────
-    //  PLAYBACK CONTROLS
-    // ─────────────────────────────────────────────────────────────
+//PLAYBACK BUTTON
     private void togglePlay() {
         if (mediaPlayer == null) return;
-        if (isPlaying) { mediaPlayer.pause(); btnPlay.setText("▶"); saveProgressToDB(); }
-        else           { mediaPlayer.play();  btnPlay.setText("⏸"); }
+        if (isPlaying) {
+            mediaPlayer.pause();
+            btnPlay.setText("▶");
+            saveProgressToDB();
+            idleTimer.stop();
+            fadeUI(1);
+        } else {
+            mediaPlayer.play();
+            btnPlay.setText("⏸");
+            idleTimer.playFromStart();
+        }
         isPlaying = !isPlaying;
     }
 
@@ -726,8 +700,10 @@ public class VideoPlayerController {
         if (stage == null) return;
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();
         if (stage.isFullScreen()) {
-            stage.setFullScreen(false); stage.setAlwaysOnTop(true);
-            stage.setWidth(MED_W); stage.setHeight(MED_H);
+            stage.setFullScreen(false);
+            stage.setAlwaysOnTop(true);
+            stage.setWidth(MED_W);
+            stage.setHeight(MED_H);
             stage.setX((screen.getWidth()  - MED_W) / 2);
             stage.setY((screen.getHeight() - MED_H) / 2);
         } else {
@@ -737,24 +713,30 @@ public class VideoPlayerController {
     }
 
     private void closePlayer() {
-        stopBingeTimer(); hideBingeOverlay(); hideEndOverlay(); hideNextEpisodeButton();
-        saveProgressToDB(); videoReady = false;
+        stopBingeTimer();
+        hideBingeOverlay();
+        hideEndOverlay();
+        hideNextEpisodeButton();
+        saveProgressToDB();
+        videoReady = false;
         if (progressTimer != null) progressTimer.stop();
         if (idleTimer     != null) idleTimer.stop();
         if (saveTimer     != null) saveTimer.stop();
-        if (mediaPlayer   != null) { mediaPlayer.stop(); mediaPlayer.dispose(); mediaPlayer = null; }
+        if (mediaPlayer   != null) {
+            mediaPlayer.stop();
+            mediaPlayer.dispose();
+            mediaPlayer = null;
+        }
         if (stage != null) stage.close();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  UI HELPERS
-    // ─────────────────────────────────────────────────────────────
     private void fadeUI(double opacity) {
-        if (!isPlaying && opacity == 0) return;
         FadeTransition ft1 = new FadeTransition(Duration.millis(280), topBar);
         FadeTransition ft2 = new FadeTransition(Duration.millis(280), bottomControls);
-        ft1.setToValue(opacity); ft2.setToValue(opacity);
-        ft1.play(); ft2.play();
+        ft1.setToValue(opacity);
+        ft2.setToValue(opacity);
+        ft1.play();
+        ft2.play();
     }
 
     private void updateVolumeIcon(double vol) {
@@ -773,12 +755,11 @@ public class VideoPlayerController {
         b.setOpacity(0.75);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  UTILITIES
-    // ─────────────────────────────────────────────────────────────
     private String resolveUrl(String url) {
+        if (url == null || url.isBlank()) return null;
         try {
-            if (url.startsWith("http")) return url;
+            if (url.startsWith("http://") || url.startsWith("https://")
+                    || url.startsWith("file:///")) return url;
             java.net.URL res = getClass().getResource(url);
             if (res != null) return res.toExternalForm();
             File f = new File(url);

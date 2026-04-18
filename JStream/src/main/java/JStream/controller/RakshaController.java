@@ -54,8 +54,6 @@ public class RakshaController {
         bindVideoToContainer();
         styleScrollPane();
         setupVideos();
-
-        // ✅ Wait until scene + stage are fully ready
         rootPane.sceneProperty().addListener((obsScene, oldScene, newScene) -> {
             if (newScene != null) {
                 newScene.windowProperty().addListener((obsWin, oldWin, newWin) -> {
@@ -63,11 +61,9 @@ public class RakshaController {
                         stage.showingProperty().addListener((obs, wasShowing, isShowing) -> {
                             if (isShowing) initLayoutBindings(stage);
                         });
-                        // In case already showing
                         if (stage.isShowing()) initLayoutBindings(stage);
                     }
                 });
-                // In case window already attached
                 if (newScene.getWindow() instanceof Stage stage) {
                     if (stage.isShowing()) initLayoutBindings(stage);
                     else stage.showingProperty().addListener((obs, wasShowing, isShowing) -> {
@@ -78,16 +74,12 @@ public class RakshaController {
         });
     }
 
-    /**
-     * Set dynamic bindings for responsive layout. Call this after loading FXML.
-     */
+
     public void initLayoutBindings(Stage stage) {
         if (rootPane instanceof Region r) {
             r.prefWidthProperty().bind(stage.widthProperty());
             r.prefHeightProperty().bind(stage.heightProperty());
         }
-
-        // ✅ ScrollPane fills rootPane exactly
         scrollPane.prefWidthProperty().bind(rootPane.widthProperty());
         scrollPane.prefHeightProperty().bind(rootPane.heightProperty());
         scrollPane.maxWidthProperty().bind(rootPane.widthProperty());
@@ -99,7 +91,6 @@ public class RakshaController {
         heroBackground.fitWidthProperty().bind(videoContainer.widthProperty());
         heroBackground.fitHeightProperty().bind(videoContainer.heightProperty());
 
-        // ✅ Width only — never bind height on scroll content
         if (scrollPane.getContent() instanceof Region content) {
             content.prefWidthProperty().bind(scrollPane.widthProperty());
         }
@@ -115,9 +106,7 @@ public class RakshaController {
             )
         );
     }
-    // ─────────────────────────────────────────────
-    // GRADIENT OVERLAYS
-    // ─────────────────────────────────────────────
+  
     private void setupGradientOverlays() {
         LinearGradient bottomGrad = new LinearGradient(
             0, 1, 0, 0, true, CycleMethod.NO_CYCLE,
@@ -139,7 +128,6 @@ public class RakshaController {
             new BackgroundFill(leftGrad, CornerRadii.EMPTY, Insets.EMPTY)
         ));
 
-        // Make overlays always fill heroPane
         Platform.runLater(() -> {
             overlayBottom.prefWidthProperty().bind(heroPane.widthProperty());
             overlayBottom.prefHeightProperty().bind(heroPane.heightProperty());
@@ -148,9 +136,6 @@ public class RakshaController {
         });
     }
 
-    // ─────────────────────────────────────────────
-    // VIDEO PLAYBACK
-    // ─────────────────────────────────────────────
     private void setupVideos() {
         try {
             URL resource = getClass().getResource("/assets/videos/shorts");
@@ -221,9 +206,6 @@ public class RakshaController {
         mediaPlayer.setOnError(() -> System.err.println("MediaPlayer error: " + mediaPlayer.getError()));
     }
 
-    // ─────────────────────────────────────────────
-    // BUTTON ACTION
-    // ─────────────────────────────────────────────
     @FXML
     private void handleStartWatching() {
         try {
@@ -231,12 +213,9 @@ public class RakshaController {
             Parent root = loader.load();
 
             Stage stage = (Stage) heroBackground.getScene().getWindow();
-
-            // ✅ Reuse existing scene instead of creating a new one
             stage.getScene().setRoot(root);
             stage.setMaximized(true);
 
-            // ✅ Bind login root to stage size
             ((Region) root).prefWidthProperty().bind(stage.widthProperty());
             ((Region) root).prefHeightProperty().bind(stage.heightProperty());
 
@@ -245,9 +224,6 @@ public class RakshaController {
         }
     }
 
-    /**
-     * Release media resources. Call on stage close.
-     */
     public void stopVideo() {
         if (mediaPlayer != null) {
             mediaPlayer.stop();

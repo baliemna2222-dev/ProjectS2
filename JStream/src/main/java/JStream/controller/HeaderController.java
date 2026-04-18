@@ -61,20 +61,13 @@ import javafx.stage.*;
 import javafx.util.Duration;
 
 public class HeaderController {
-
-    // ── FXML FIELDS ──────────────────────────────────────────────────────────
     @FXML private HBox rootPane;
     @FXML private ImageView logoImage;
 
-    // Nav buttons & underlines
     @FXML private Button btnHome, btnMovies, btnSeries, btnMyList, btnHistory;
     @FXML private Rectangle lineHome, lineMovies, lineSeries, lineMyList, lineHistory;
     @FXML private HBox buttonsBox;
-
-    // Hamburger
     @FXML private Button btnHamburger;
-
-    // Search
     @FXML private StackPane searchStack;
     @FXML private TextField searchInput;
     @FXML private Button clearBtn, btnResearch;
@@ -86,8 +79,6 @@ public class HeaderController {
 
     // Profile
     @FXML private Button profile;
-
-    // ── PRIVATE STATE ────────────────────────────────────────────────────────
     private Button    activeButton;
     private Rectangle activeLine;
     private Timeline  autoSlide;
@@ -106,19 +97,13 @@ public class HeaderController {
     private final Popup  suggestionsPopup   = new Popup();
     private final VBox   suggestionsContent = new VBox();
 
-    // Track current page for restoration
      static String lastActiveFxml = "/view/fxml/HomePage.fxml";
-
-    // ── SERVICES ─────────────────────────────────────────────────────────────
     private final FeaturedService        featuredService        = new FeaturedService();
     private final EpisodeProgressService episodeProgressService = new EpisodeProgressService();
     private final FilmProgressService    filmProgressService    = new FilmProgressService(featuredService);
     private final UserService            userService            = new UserService();
     private final NotificationService    notificationService    = new NotificationService();
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // INITIALIZE
-    // ─────────────────────────────────────────────────────────────────────────
     @FXML
     private void initialize() {
         logoImage.setImage(new Image(getClass().getResourceAsStream("/assets/images/logo/Raksha.png")));
@@ -132,17 +117,12 @@ public class HeaderController {
         setupNavButtons();
         setupHamburgerMenu();
         setupResponsiveLayout();
-
-        // Restore last active tab based on fxml path
         Platform.runLater(() -> restoreActiveTab(lastActiveFxml));
 
         // Load notifications after UI is ready
         Platform.runLater(this::loadNotifications);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // RESPONSIVE LAYOUT
-    // ─────────────────────────────────────────────────────────────────────────
     private void setupResponsiveLayout() {
         Platform.runLater(() -> {
             Scene scene = rootPane.getScene();
@@ -179,7 +159,6 @@ public class HeaderController {
         if (btnHamburger != null) {
             btnHamburger.setVisible(collapsed);
             btnHamburger.setManaged(collapsed);
-            // ✅ Push hamburger to the far right
             if (collapsed) {
                 HBox.setHgrow(btnHamburger, Priority.ALWAYS);
                 btnHamburger.setMaxWidth(Double.MAX_VALUE);
@@ -193,9 +172,6 @@ public class HeaderController {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // HAMBURGER MENU
-    // ─────────────────────────────────────────────────────────────────────────
     private Popup hamburgerPopup;
     private void setupHamburgerMenu() {
         if (btnHamburger == null) return;
@@ -206,14 +182,11 @@ public class HeaderController {
         );
         btnHamburger.setVisible(false);
         btnHamburger.setManaged(false);
-
-        // ── Overlay (dark transparent background) ────────────────────────────
         StackPane overlay = new StackPane();
         overlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
         overlay.setVisible(false);
         overlay.setPickOnBounds(true);
 
-        // ── Drawer panel (20% width, slides from right) ───────────────────────
         VBox drawer = new VBox(0);
         drawer.setStyle(
             "-fx-background-color: #0d1117;" +
@@ -221,8 +194,6 @@ public class HeaderController {
             "-fx-border-width: 0 0 0 1;"
         );
         drawer.setAlignment(Pos.TOP_LEFT);
-
-        // Drawer header
         HBox drawerHeader = new HBox();
         drawerHeader.setPadding(new Insets(20, 16, 16, 20));
         drawerHeader.setAlignment(Pos.CENTER_LEFT);
@@ -290,8 +261,6 @@ public class HeaderController {
                     "-fx-border-color: rgba(0,140,255,0.25); -fx-border-width: 1; -fx-border-radius: 10; -fx-cursor: hand;"
                 );
             }
-
-            // Active indicator bar
             Region activeBar = new Region();
             activeBar.setPrefWidth(3);
             activeBar.setPrefHeight(24);
@@ -320,25 +289,18 @@ public class HeaderController {
         }
 
         drawer.getChildren().addAll(drawerHeader, headerDivider, navItems);
-
-        // ── Layout: overlay + drawer aligned to RIGHT ─────────────────────────
         StackPane.setAlignment(drawer, Pos.CENTER_RIGHT);
         overlay.getChildren().add(drawer);
-
-        // Close on overlay click
         overlay.setOnMouseClicked(e -> {
             if (e.getTarget() == overlay) closeDrawerAnim(overlay, drawer);
         });
         closeDrawer.setOnAction(e -> closeDrawerAnim(overlay, drawer));
-
-        // ── Attach to scene ───────────────────────────────────────────────────
         btnHamburger.setOnAction(e -> {
             Scene scene = btnHamburger.getScene();
             if (scene == null) return;
 
             Parent sceneRoot = scene.getRoot();
             if (!(sceneRoot instanceof StackPane)) {
-                // Wrap existing root in a StackPane
                 StackPane wrapper = new StackPane();
                 wrapper.getChildren().add(sceneRoot);
                 scene.setRoot(wrapper);
@@ -346,8 +308,6 @@ public class HeaderController {
             }
 
             StackPane rootStack = (StackPane) sceneRoot;
-
-            // Bind drawer width to 20% of scene
             drawer.prefWidthProperty().bind(scene.widthProperty().multiply(0.20));
             drawer.maxWidthProperty().bind(scene.widthProperty().multiply(0.20));
             drawer.prefHeightProperty().bind(scene.heightProperty());
@@ -357,8 +317,6 @@ public class HeaderController {
             if (!rootStack.getChildren().contains(overlay)) {
                 rootStack.getChildren().add(overlay);
             }
-
-            // Slide in from right
             overlay.setVisible(true);
             overlay.setOpacity(0);
             drawer.setTranslateX(drawer.getPrefWidth() > 0 ? drawer.getPrefWidth() : 300);
@@ -387,9 +345,6 @@ public class HeaderController {
         pt.play();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SEARCH BAR
-    // ─────────────────────────────────────────────────────────────────────────
     private void setupSearchBar() {
         StackPane.setAlignment(clearBtn, Pos.CENTER_RIGHT);
         StackPane.setMargin(clearBtn, new Insets(0, 5, 0, 0));
@@ -425,13 +380,9 @@ public class HeaderController {
             collapse.play();
         }
     }
-
     @FXML
     private void clearSearchInput() { searchInput.clear(); }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SEARCH SUGGESTIONS
-    // ─────────────────────────────────────────────────────────────────────────
     private void setupSearchSuggestions() {
         ScrollPane scroll = new ScrollPane(suggestionsContent);
         scroll.setPrefWidth(300);
@@ -535,7 +486,6 @@ public class HeaderController {
             suggestionsPopup.setY(bounds.getMaxY() + 5);
         }
     }
-
     private HBox createSuggestionBox(String title, String posterUrl, boolean isSearchResult) {
         HBox box = new HBox(10);
         box.setPrefWidth(300);
@@ -635,9 +585,6 @@ public class HeaderController {
         } catch (Exception ex) { ex.printStackTrace(); }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // BELL NOTIFICATION
-    // ─────────────────────────────────────────────────────────────────────────
     private void setupBellNotification() {
         bellIcon.setImage(new Image(getClass().getResourceAsStream("/assets/images/bellwhiter.png")));
 
@@ -656,8 +603,6 @@ public class HeaderController {
         }
 
         buildNotificationPopup();
-
-        // ✅ No sound on click — just open the panel
         bellContainer.setOnMouseClicked(e -> {
             if (notificationPopup.isShowing()) {
                 notificationPopup.hide();
@@ -672,8 +617,6 @@ public class HeaderController {
         });
 
         bellContainer.setCursor(javafx.scene.Cursor.HAND);
-
-        // ✅ Start a background timer that checks every 60 seconds for new episodes
         Timeline periodicCheck = new Timeline(
             new KeyFrame(Duration.seconds(10), e -> {
                 checkNewEpisodeNotifications(Session.getUserId());
@@ -682,9 +625,6 @@ public class HeaderController {
         periodicCheck.setCycleCount(Animation.INDEFINITE);
         periodicCheck.play();
     }
- // ─────────────────────────────────────────────────────────────────────────
- // BELL SOUND & ANIMATION
- // ─────────────────────────────────────────────────────────────────────────
  private void playBellSound() {
      try {
          if (bellSound != null) bellSound.play();
@@ -721,8 +661,6 @@ public class HeaderController {
 	        "-fx-background-radius: 12;" +
 	        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 24, 0.4, 0, 6);"
 	    );
-
-	    // ---------------- HEADER ----------------
 	    HBox header = new HBox();
 	    header.setPadding(new Insets(14, 16, 12, 16));
 	    header.setAlignment(Pos.CENTER_LEFT);
@@ -740,8 +678,6 @@ public class HeaderController {
 
 	    Region headerSpacer = new Region();
 	    HBox.setHgrow(headerSpacer, Priority.ALWAYS);
-
-	    // ✔ Mark all read
 	    Button markAllRead = new Button("Mark all read");
 	    markAllRead.setStyle(
 	        "-fx-background-color: transparent; -fx-text-fill: #008cff; -fx-font-size: 11; -fx-cursor: hand;"
@@ -752,8 +688,6 @@ public class HeaderController {
 	        updateBadge();
 	        refreshNotificationPanel();
 	    });
-
-	    // 🗑 Clear all
 	    Button deleteAllBtn = new Button("Clear all");
 	    deleteAllBtn.setStyle(
 	        "-fx-background-color: transparent; -fx-text-fill: #ff4d4f; -fx-font-size: 11; -fx-cursor: hand;"
@@ -772,8 +706,6 @@ public class HeaderController {
 	        markAllRead,
 	        deleteAllBtn
 	    );
-
-	    // ---------------- LIST ----------------
 	    notificationListBox = new VBox(0);
 	    notificationListBox.setStyle("-fx-background-color: #0d1117;");
 
@@ -791,7 +723,6 @@ public class HeaderController {
 	    root.getChildren().addAll(header, scroll);
 	    notificationPopup.getContent().add(root);
 	}
-
 	private void loadNotifications() {
 	    int userId = Session.getUserId();
 
@@ -822,8 +753,6 @@ public class HeaderController {
 	        boolean hasNew = false;
 
 	        for (NewEpisodeInfo info : newEps) {
-
-	            // 🔥 CHECK DB OR HASHSET HERE
 	            if (notificationService.isAlreadyNotified(userId, info.getEpId())) {
 	                continue;
 	            }
@@ -841,7 +770,6 @@ public class HeaderController {
 
 	            hasNew = true;
 	        }
-
 	        if (hasNew) {
 	            Platform.runLater(() -> {
 	                playBellSound();
@@ -877,8 +805,6 @@ public class HeaderController {
 	                : "-fx-background-color: transparent;";
 
 	        row.setStyle(rowBg + "-fx-cursor: hand;");
-
-	        // ---------------- TOP LINE ----------------
 	        HBox topLine = new HBox(8);
 	        topLine.setAlignment(Pos.CENTER_LEFT);
 
@@ -897,8 +823,6 @@ public class HeaderController {
 
 	        Region spacer = new Region();
 	        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-	        // ❌ Delete button
 	        Button deleteBtn = new Button("✕");
 	        deleteBtn.setStyle(
 	            "-fx-background-color: transparent;" +
@@ -936,8 +860,6 @@ public class HeaderController {
 	        });
 
 	        topLine.getChildren().addAll(titleLbl, spacer, deleteBtn);
-
-	        // ---------------- BODY ----------------
 	        Label bodyLbl = new Label(n.getBody());
 	        bodyLbl.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 11;");
 	        bodyLbl.setWrapText(true);
@@ -965,7 +887,6 @@ public class HeaderController {
 	        notificationListBox.getChildren().addAll(row, div);
 	    }
 	}
-
 	private void updateBadge() {
 	    Platform.runLater(() -> {
 	        if (notificationCircle != null) {
@@ -977,7 +898,6 @@ public class HeaderController {
 	        }
 	    });
 	}
-
 	private String formatNotifTime(LocalDateTime dt) {
 	    if (dt == null) return "";
 
@@ -991,9 +911,6 @@ public class HeaderController {
 	    return dt.format(DateTimeFormatter.ofPattern("MMM d"));
 	}
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // NAV BUTTONS
-    // ─────────────────────────────────────────────────────────────────────────
     private void setupNavButtons() {
         setupButton(btnHome,    lineHome,    this::goToHomepage,    "/view/fxml/HomePage.fxml");
         setupButton(btnMovies,  lineMovies,  this::goToFilmView,    "/view/fxml/FilmView.fxml");
@@ -1002,8 +919,6 @@ public class HeaderController {
         if (btnHistory != null)
             setupButton(btnHistory, lineHistory, this::goToMyHistoryView, "/view/fxml/MyHistory.fxml");
     }
-
- // ─── REPLACE restoreActiveTab ─────────────────────────────────────────────
     private void restoreActiveTab(String fxmlPath) {
         Button btn  = switch (fxmlPath) {
             case "/view/fxml/FilmView.fxml"   -> btnMovies;
@@ -1021,18 +936,14 @@ public class HeaderController {
         };
 
         if (btn == null || line == null) return;
-
-        // Mark button as active immediately (color)
         activeButton = btn;
         activeLine   = line;
         setButtonActive(btn);
-        line.setWidth(0); // start at 0 until layout is ready
-
-        // Wait for the scene AND layout to be fully complete before reading btn.getWidth()
+        line.setWidth(0); 
         waitForLayoutThenShowLine(btn, line);
     }
 
-    // ─── ADD THIS NEW HELPER ──────────────────────────────────────────────────
+//helper
     private void waitForLayoutThenShowLine(Button btn, Rectangle line) {
         // If scene not yet attached, wait for it
         if (btn.getScene() == null) {
@@ -1048,15 +959,13 @@ public class HeaderController {
             });
             return;
         }
-
-        // Scene is attached – wait for a pulse where width > 0
         javafx.animation.AnimationTimer timer = new javafx.animation.AnimationTimer() {
             private int attempts = 0;
             @Override
             public void handle(long now) {
                 attempts++;
                 double w = btn.getWidth();
-                if (w > 0 || attempts > 120) {  // give up after ~2 seconds
+                if (w > 0 || attempts > 120) {  // give up after 2 seconds
                     stop();
                     if (w > 0) {
                         line.setWidth(0);
@@ -1070,8 +979,6 @@ public class HeaderController {
         };
         timer.start();
     }
-
- // ─── REPLACE activate ─────────────────────────────────────────────────────
     private void activate(Button btn, Rectangle line) {
         if (activeButton != null && activeButton != btn) {
             setButtonInactive(activeButton);
@@ -1119,9 +1026,6 @@ public class HeaderController {
         ).play());
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // NAVIGATION
-    // ─────────────────────────────────────────────────────────────────────────
     public void goToHomepage()      { navigateTo("/view/fxml/HomePage.fxml"); }
     public void goToFilmView()      { navigateTo("/view/fxml/FilmView.fxml"); }
     public void goToSeriesView()    { navigateTo("/view/fxml/SeriesView.fxml"); }
@@ -1137,26 +1041,22 @@ public class HeaderController {
 
             Parent newRoot = FXMLLoader.load(url);
             lastActiveFxml = fxmlPath;
-
-            // Get the scene from any known node
             Scene scene = btnHome.getScene();
             if (scene == null) scene = rootPane.getScene();
 
             scene.setRoot(newRoot);
 
             // Scroll reset
-            Platform.runLater(() -> {
-                newRoot.lookupAll(".scroll-pane").forEach(node -> ((ScrollPane) node).setVvalue(0));
+            Platform.runLater(() -> {newRoot.lookupAll(".scroll-pane").forEach(node -> ((ScrollPane) node).setVvalue(0));
                 newRoot.lookupAll(".list-view").forEach(node  -> ((ListView<?>) node).scrollTo(0));
             });
+                
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    // ─────────────────────────────────────────────────────────────────────────
-    // PROFILE
-    // ─────────────────────────────────────────────────────────────────────────
+
     private void loadUserProfile() {
         String path = userService.getProfilePhoto(Session.getUserId());
         if (path != null && !path.isEmpty()) applyProfileImage(profile, path);
@@ -1187,9 +1087,6 @@ public class HeaderController {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // PROFILE POPUP
-    // ─────────────────────────────────────────────────────────────────────────
     private void setupProfilePopup() {
         profilePopup = new Popup();
         profilePopup.setAutoHide(true);
@@ -1258,17 +1155,14 @@ public class HeaderController {
                 Session.setProfileImagePath(url);
             }
         });
-
         applyProfileImage(profile, imagePath);
 
         Label usernameLabel = new Label(Session.getUsername());
         usernameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 15; -fx-font-weight: bold;");
         UsernameChangeNotifier.addListener(usernameLabel::setText);
-
         String email = userService.getEmail(Session.getUserId());
         Label emailLabel = new Label(email != null ? email : "");
         emailLabel.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 12;");
-
         HBox avatarRow = new HBox(14, avatarStack, new VBox(4, usernameLabel, emailLabel));
         avatarRow.setAlignment(Pos.CENTER_LEFT);
         ((VBox) avatarRow.getChildren().get(1)).setAlignment(Pos.CENTER_LEFT);
@@ -1277,7 +1171,6 @@ public class HeaderController {
         Region div1 = new Region();
         div1.setPrefHeight(1);
         div1.setStyle("-fx-background-color: #21262d;");
-
         VBox menu = new VBox(2);
         menu.setPadding(new Insets(8, 8, 8, 8));
         menu.getChildren().addAll(
@@ -1289,7 +1182,6 @@ public class HeaderController {
         Region div2 = new Region();
         div2.setPrefHeight(1);
         div2.setStyle("-fx-background-color: #21262d;");
-
         HBox logoutRow = new HBox();
         logoutRow.setPadding(new Insets(8, 8, 8, 8));
         Button btnLogout = new Button("Sign out");
@@ -1313,7 +1205,6 @@ public class HeaderController {
         root.getChildren().addAll(banner, div1, menu, div2, logoutRow);
         profilePopup.getContent().add(root);
     }
-
     private HBox makeMenuItem(String icon, String label, Runnable action) {
         HBox row = new HBox(10);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -1329,16 +1220,11 @@ public class HeaderController {
         Label arrow = new Label("›");
         arrow.setStyle("-fx-text-fill: #484f58; -fx-font-size: 16;");
         row.getChildren().addAll(ico, lbl, spacer, arrow);
-
         row.setOnMouseEntered(e -> row.setStyle("-fx-background-color: #161b22; -fx-background-radius: 8; -fx-cursor: hand;"));
         row.setOnMouseExited (e -> row.setStyle("-fx-background-color: transparent; -fx-background-radius: 8; -fx-cursor: hand;"));
         row.setOnMouseClicked(e -> action.run());
         return row;
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // SETTINGS POPUP
-    // ─────────────────────────────────────────────────────────────────────────
     private void showSettingsPopup() {
         profilePopup.hide();
 
@@ -1355,11 +1241,11 @@ public class HeaderController {
         VBox card = new VBox(0);
         card.setMaxWidth(480);
         card.setMaxHeight(500);
-        card.setStyle(
-            "-fx-background-color: #0d1117; -fx-border-color: #30363d; -fx-border-width: 1;" +
+        card.setStyle( "-fx-background-color: #0d1117; -fx-border-color: #30363d; -fx-border-width: 1;" +
             "-fx-border-radius: 14; -fx-background-radius: 14;" +
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 30, 0.4, 0, 8);"
         );
+           
 
         HBox header = new HBox();
         header.setPadding(new Insets(20, 20, 16, 24));
@@ -1368,27 +1254,24 @@ public class HeaderController {
             "-fx-background-color: #161b22; -fx-background-radius: 14 14 0 0;" +
             "-fx-border-color: transparent transparent #21262d transparent; -fx-border-width: 1;"
         );
-
         Label titleLabel = new Label("Account settings");
         titleLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");
         Region headerSpacer = new Region(); HBox.setHgrow(headerSpacer, Priority.ALWAYS);
-
         Button closeBtn = new Button("✕");
         closeBtn.setStyle(
             "-fx-background-color: #21262d; -fx-text-fill: #8b949e; -fx-font-size: 12;" +
             "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
             "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
         );
-        closeBtn.setOnMouseEntered(e -> closeBtn.setStyle(
-            "-fx-background-color: #30363d; -fx-text-fill: white; -fx-font-size: 12;" +
+        closeBtn.setOnMouseEntered(e -> closeBtn.setStyle(  "-fx-background-color: #30363d; -fx-text-fill: white; -fx-font-size: 12;" +
             "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
             "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
         ));
-        closeBtn.setOnMouseExited(e -> closeBtn.setStyle(
-            "-fx-background-color: #21262d; -fx-text-fill: #8b949e; -fx-font-size: 12;" +
+        closeBtn.setOnMouseExited(e -> closeBtn.setStyle( "-fx-background-color: #21262d; -fx-text-fill: #8b949e; -fx-font-size: 12;" +
             "-fx-background-radius: 50%; -fx-min-width: 28; -fx-min-height: 28;" +
             "-fx-max-width: 28; -fx-max-height: 28; -fx-padding: 0; -fx-cursor: hand;"
         ));
+           
         closeBtn.setOnAction(e -> settingsStage.close());
         header.getChildren().addAll(titleLabel, headerSpacer, closeBtn);
 
@@ -1400,12 +1283,10 @@ public class HeaderController {
 
         VBox usernameGroup = makeSettingsField("Username", Session.getUsername());
         TextField tfUsername = (TextField) ((VBox) usernameGroup).getChildren().get(1);
-
         Label usernameErr = new Label();
         usernameErr.setStyle("-fx-text-fill: #f85149; -fx-font-size: 12;");
         usernameErr.setVisible(false);
         usernameErr.setManaged(false);
-
         VBox passwordGroup = makeSettingsFieldPassword("New password", "Leave blank to keep current");
 
         Region div = new Region(); div.setPrefHeight(1);
@@ -1413,7 +1294,6 @@ public class HeaderController {
 
         HBox actions = new HBox(10);
         actions.setAlignment(Pos.CENTER_RIGHT);
-
         Button btnCancel = new Button("Cancel");
         btnCancel.setStyle(
             "-fx-background-color: #21262d; -fx-text-fill: #c9d1d9; -fx-font-size: 13;" +
@@ -1449,7 +1329,6 @@ public class HeaderController {
         Label successLabel = new Label("Changes saved successfully");
         successLabel.setStyle("-fx-text-fill: #3fb950; -fx-font-size: 13;");
         successBanner.getChildren().add(successLabel);
-
         btnSave.setOnAction(e -> {
             boolean saved = false;
             usernameErr.setVisible(false); usernameErr.setManaged(false);
@@ -1466,14 +1345,12 @@ public class HeaderController {
                     saved = true;
                 }
             }
-
             String newPassword = pfPassword.getText();
             if (!newPassword.isEmpty()) {
                 userService.updateUserPassword(Session.getUserId(), newPassword);
                 pfPassword.clear();
                 saved = true;
             }
-
             if (saved) {
                 successBanner.setVisible(true); successBanner.setManaged(true);
                 new Timeline(new KeyFrame(Duration.seconds(2), ev -> {
@@ -1481,7 +1358,6 @@ public class HeaderController {
                 })).play();
             }
         });
-
         actions.getChildren().addAll(btnCancel, btnSave);
         body.getChildren().addAll(sectionLabel, usernameGroup, usernameErr, passwordGroup, successBanner, div, actions);
         card.getChildren().addAll(header, body);
@@ -1531,17 +1407,14 @@ public class HeaderController {
             "-fx-border-color: #8b949e; -fx-border-width: 1; -fx-border-radius: 8;" +
             "-fx-background-radius: 8; -fx-font-size: 13; -fx-padding: 10 12;"
         ));
-        pf.setOnMouseExited(e -> pf.setStyle(
-            "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-prompt-text-fill: #484f58;" +
+        pf.setOnMouseExited(e -> pf.setStyle( "-fx-background-color: #010409; -fx-text-fill: #c9d1d9; -fx-prompt-text-fill: #484f58;" +
             "-fx-border-color: #30363d; -fx-border-width: 1; -fx-border-radius: 8;" +
             "-fx-background-radius: 8; -fx-font-size: 13; -fx-padding: 10 12;"
         ));
+           
         return new VBox(6, lbl, pf);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // FILM POPUP
-    // ─────────────────────────────────────────────────────────────────────────
     public void showFilmPopup(FeaturedItem item) {
         Stage popup = new Stage();
         popup.initOwner(rootPane.getScene().getWindow());
@@ -1703,9 +1576,6 @@ public class HeaderController {
         popup.showAndWait();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SERIE POPUP
-    // ─────────────────────────────────────────────────────────────────────────
     public void showSeriePopup(FeaturedItem item) {
         if (item == null || !"serie".equalsIgnoreCase(item.getType())) return;
 
@@ -1810,9 +1680,6 @@ public class HeaderController {
         popup.showAndWait();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SEASON CARD
-    // ─────────────────────────────────────────────────────────────────────────
     private StackPane createSeasonCard(Serie serie, int seasonIndex, Stage popup) {
         Season s = serie.getSeasons().get(seasonIndex);
 
@@ -1834,15 +1701,12 @@ public class HeaderController {
         StackPane contentWrapper = new StackPane();
         contentWrapper.setPrefSize(740, 420);
         card.getChildren().add(contentWrapper);
-
-        // ── POSTER ───────────────────────────────────────────────────
         ImageView poster = new ImageView();
         poster.setFitWidth(300);
         poster.setFitHeight(420);
         poster.setPreserveRatio(true);
         poster.setSmooth(true);
         poster.setCache(true);
-
         try {
             poster.setImage(new Image(s.getPosterUrl(), true));
         } catch (Exception ignored) {}
@@ -1871,8 +1735,6 @@ public class HeaderController {
         posterPane.setPrefSize(300, 420);
         posterPane.setMaxSize(300, 420);
         StackPane.setAlignment(posterPane, Pos.CENTER_LEFT);
-
-        // ── INFO PANEL ───────────────────────────────────────────────
         VBox infoBox = new VBox(12);
         infoBox.setPadding(new Insets(28, 24, 24, 18));
         infoBox.setAlignment(Pos.TOP_LEFT);
@@ -1917,7 +1779,6 @@ public class HeaderController {
             "-fx-text-fill: "        + (isOngoing ? "#4ade80" : "#94a3b8") + ";" +
             "-fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 1.5; -fx-padding: 3 10;"
         );
-
         Label episodeCount = new Label(epCount + " Episodes");
         episodeCount.setStyle("-fx-text-fill: rgba(148,163,184,0.75); -fx-font-size: 13px;");
 
@@ -1932,7 +1793,6 @@ public class HeaderController {
         divider.setStyle(
             "-fx-background-color: linear-gradient(to right, transparent, rgba(56,189,248,0.4), transparent);"
         );
-
         Button trailerBtn  = new Button("▶  Trailer");
         Button episodesBtn = new Button("≡  Episodes");
         styleCardButton(trailerBtn,  false);
@@ -1958,13 +1818,9 @@ public class HeaderController {
         HBox mainView = new HBox(posterPane, infoBox);
         mainView.setAlignment(Pos.CENTER_LEFT);
         mainView.setPrefSize(740, 420);
-
-        // ── EPISODES LIST VIEW ───────────────────────────────────────
         VBox episodesView = new VBox(0);
         episodesView.setPrefSize(740, 420);
         episodesView.setStyle("-fx-background-color: #07090f;");
-
-        // Header
         Button backToMain = new Button("←");
         backToMain.setStyle(
             "-fx-background-color: rgba(56,189,248,0.1); -fx-background-radius: 50%;" +
@@ -1992,11 +1848,8 @@ public class HeaderController {
             "-fx-border-width: 0 0 1 0;"
         );
 
-        // Episode rows container
         VBox episodesList = new VBox(6);
         episodesList.setPadding(new Insets(10, 8, 16, 16));
-
-        // ── ScrollPane — built-in bars hidden, wheel handled manually ──
         ScrollPane episodesScroll = new ScrollPane(episodesList);
         episodesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         episodesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -2013,8 +1866,6 @@ public class HeaderController {
                     episodesScroll.getVvalue() - e.getDeltaY() * 0.003))
             )
         );
-
-        // ── Custom slim scrollbar ──────────────────────────────────────
         ScrollBar customScrollBar = new ScrollBar();
         customScrollBar.setOrientation(Orientation.VERTICAL);
         customScrollBar.setMin(0);
@@ -2022,27 +1873,16 @@ public class HeaderController {
         customScrollBar.setValue(0);
         customScrollBar.setUnitIncrement(0.05);
         customScrollBar.setBlockIncrement(0.2);
-
-        // Lock width to exactly 6px
         customScrollBar.setPrefWidth(6);
         customScrollBar.setMinWidth(6);
         customScrollBar.setMaxWidth(6);
 
-        
-
-        // Load scrollbar.css so .thumb gets the blue-black pill look
-        customScrollBar.getStylesheets().add(
+          customScrollBar.getStylesheets().add(
             getClass().getResource("/view/css/scrollbar.css").toExternalForm()
         );
-
-        // Two-way bind: dragging thumb ↔ scrolling pane
         customScrollBar.valueProperty().bindBidirectional(episodesScroll.vvalueProperty());
-
-        // Adjust thumb size to reflect visible portion of content
         episodesScroll.viewportBoundsProperty().addListener((o, ov, nv) ->
             updateThumbSize(episodesScroll, customScrollBar));
-
-        // Style the thumb directly after CSS is applied
         Platform.runLater(() -> {
             Node thumb = customScrollBar.lookup(".thumb");
             if (thumb != null) thumb.setStyle(
@@ -2065,7 +1905,6 @@ public class HeaderController {
                     "-fx-background-color: transparent;"
                 );
             }
-            // Hover: brighten thumb to accent blue
             if (thumb != null) {
                 thumb.setOnMouseEntered(ev -> thumb.setStyle(
                     "-fx-background-color: #4a90d9;" +
@@ -2079,15 +1918,12 @@ public class HeaderController {
                 ));
             }
         });
-
-        // ── Episode detail pane ───────────────────────────────────────
         int userId = Session.getUserId();
         Map<Integer, WatchStatus> progressMap = episodeProgressService.loadUserProgress(userId);
 
         StackPane episodeDetailPane = new StackPane();
         episodeDetailPane.setPrefSize(740, 420);
         episodeDetailPane.setStyle("-fx-background-color: #07090f;");
-
         for (Episode ep : s.getEpisodes()) {
             HBox row = buildEpisodeRow(
                 ep, s, progressMap, contentWrapper,
@@ -2096,14 +1932,12 @@ public class HeaderController {
             episodesList.getChildren().add(row);
         }
 
-        // scrollRow: ScrollPane fills width, slim bar on the right edge
         HBox scrollRow = new HBox(0, episodesScroll, customScrollBar);
         HBox.setHgrow(episodesScroll, Priority.ALWAYS);
         VBox.setVgrow(scrollRow, Priority.ALWAYS);
 
         episodesView.getChildren().addAll(epHeader, scrollRow);
 
-        // ── WIRE ACTIONS ─────────────────────────────────────────────
         trailerBtn.setOnAction(e  -> showTrailerPopup(serie, seasonIndex));
         episodesBtn.setOnAction(e -> switchView(contentWrapper, episodesView));
         backToMain.setOnAction(e  -> switchView(contentWrapper, mainView));
@@ -2111,7 +1945,6 @@ public class HeaderController {
         contentWrapper.getChildren().setAll(mainView);
         return card;
     }
-    // ═══════════════════════ EPISODE ROW ═══════════════════════
     private HBox buildEpisodeRow(
             Episode ep, Season s,
             Map<Integer, WatchStatus> progressMap,
@@ -2177,8 +2010,6 @@ public class HeaderController {
         });
         return row;
     }
-
-    // ═══════════════════════ EPISODE DETAIL ═══════════════════════
     private void populateEpisodeDetail(
             StackPane detailPane, Episode ep, Season s,
             StackPane contentWrapper, VBox episodesView,
@@ -2251,8 +2082,6 @@ public class HeaderController {
         detailPane.getChildren().addAll(coverPane, infoPanel, play);
         play.toFront();
     }
-
-    // ═══════════════════════ VIEW SWITCHER ═══════════════════════
     private void switchView(StackPane wrapper, Node target) {
         if (!wrapper.getChildren().isEmpty()) {
             Node current = wrapper.getChildren().get(0);
@@ -2288,9 +2117,6 @@ public class HeaderController {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // TRAILER POPUP
-    // ─────────────────────────────────────────────────────────────────────────
 	private void showTrailerPopup(Object item, int seasonIndex) {
         String trailerUrl = null;
 
@@ -2309,8 +2135,6 @@ public class HeaderController {
         URL videoUrl = getClass().getResource(trailerUrl);
         if (videoUrl == null) { System.out.println("Video file not found: " + trailerUrl); return; }
         String videoPath = trailerUrl.startsWith("http") ? trailerUrl : videoUrl.toExternalForm();
-
-        // ── Modern HTML5 player with custom controls ──────────────────
         String html =
         		"<!DOCTYPE html><html><head><style>" +
 
@@ -2320,15 +2144,11 @@ public class HeaderController {
         		"         width:100vw; height:100vh; font-family:'Segoe UI',sans-serif; }" +
 
         		"  video { flex:1; width:100%; min-height:0; object-fit:contain; display:block; cursor:pointer; }" +
-
-        		/* ================= CONTROLS BAR ================= */
         		"  #bar {" +
         		"    background: linear-gradient(to top, rgba(0,0,0,0.98), rgba(0,20,40,0.85));" +
         		"    padding: 6px 18px 10px;" +
         		"    display:flex; flex-direction:column; gap:7px;" +
         		"  }" +
-
-        		/* ================= PROGRESS BAR ================= */
         		"  #prog-wrap {" +
         		"    position:relative; height:4px; background:rgba(255,255,255,0.08);" +
         		"    border-radius:4px; cursor:pointer; transition:height 0.15s;" +
@@ -2348,8 +2168,6 @@ public class HeaderController {
         		"    opacity:0; transition:opacity 0.15s; pointer-events:none; }" +
 
         		"  #prog-wrap:hover #prog-thumb { opacity:1; }" +
-
-        		/* ================= ROW ================= */
         		"  #row { display:flex; align-items:center; gap:10px; }" +
 
         		"  .btn {" +
@@ -2367,11 +2185,8 @@ public class HeaderController {
 
         		"  .btn:hover { background:rgba(0,140,255,0.25); color:#ffffff; }" +
         		"  .btn:active { background:rgba(0,100,180,0.4); }" +
-
-        		/* ================= TIME ================= */
         		"  #time { font-size:11px; color:rgba(180,200,255,0.75); min-width:105px; letter-spacing:0.3px; }" +
 
-        		/* ================= VOLUME ================= */
         		"  #vol-wrap { display:flex; align-items:center; gap:6px; }" +
 
         		"  #vol { -webkit-appearance:none; width:72px; height:3px;" +
@@ -2381,15 +2196,12 @@ public class HeaderController {
         		"    background:#00aaff; border-radius:50%; box-shadow:0 0 6px rgba(0,170,255,0.7); }" +
 
         		"  #spacer { flex:1; }" +
-
-        		/* ================= SPEED ================= */
         		"  #speed { background:rgba(0,0,0,0.7); border:none;" +
         		"    color:#00aaff; font-size:11px; padding:4px 7px; border-radius:6px;" +
         		"    cursor:pointer; outline:none; }" +
 
         		"  #speed:hover { background:rgba(0,140,255,0.2); }" +
 
-        		/* ================= TOOLTIP ================= */
         		"  #tip { position:fixed; bottom:72px; left:50%; transform:translateX(-50%);" +
         		"    background:rgba(0,0,0,0.85); border:none;" +
         		"    color:#00aaff; font-size:11px; padding:4px 14px; border-radius:20px;" +
@@ -2511,8 +2323,6 @@ public class HeaderController {
         WebView webView = new WebView();
         webView.setPrefSize(1500, 700);
         webView.getEngine().loadContent(html);
-
-        // ── Stage ────────────────────────────────────────────────────
         Rectangle2D screenBounds = Screen.getPrimary().getBounds();
         double fullWidth  = screenBounds.getWidth();
         double fullHeight = screenBounds.getHeight();
@@ -2525,11 +2335,8 @@ public class HeaderController {
         popup.setWidth(fullWidth); popup.setHeight(fullHeight);
         popup.setX(0); popup.setY(0);
 
-        // ── Backdrop ─────────────────────────────────────────────────
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: rgba(0,0,0,0.88);");
-
-        // ── Card ─────────────────────────────────────────────────────
         VBox card = new VBox(0);
         card.setMaxSize(fullWidth - 40, fullHeight - 40);
         card.setPrefSize(fullWidth - 40, fullHeight - 40);
@@ -2549,8 +2356,6 @@ public class HeaderController {
             cardClip.setHeight(nv.getHeight());
         });
         card.setClip(cardClip);
-
-        // ── Card top bar ─────────────────────────────────────────────
         HBox cardBar = new HBox(8);
         cardBar.setAlignment(Pos.CENTER_RIGHT);
         cardBar.setPadding(new Insets(9, 12, 9, 16));
@@ -2633,9 +2438,6 @@ public class HeaderController {
         HBox.setMargin(d, new Insets(0, 1, 0, 0));
         return d;
     }
-    // ─────────────────────────────────────────────────────────────────────────
-    // LECTURE PAGE NAVIGATION
-    // ─────────────────────────────────────────────────────────────────────────
     private void goToLecturePageFilm(int filmId) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("view/fxml/LecturePage.fxml"));
@@ -2654,9 +2456,7 @@ public class HeaderController {
         } catch (IOException e) { e.printStackTrace(); }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SEASON SLIDER HELPERS
-    // ─────────────────────────────────────────────────────────────────────────
+ 
     private void updateSeasonSlider(List<StackPane> cards, int currentIndex) {
         for (int i = 0; i < cards.size(); i++) {
             int offset = i - currentIndex;
@@ -2695,9 +2495,6 @@ public class HeaderController {
         )).play();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SCROLLBAR HELPERS
-    // ─────────────────────────────────────────────────────────────────────────
     private void updateThumbSize(ScrollPane scrollPane, ScrollBar scrollBar) {
         Node content = scrollPane.getContent();
         if (content == null) return;
@@ -2712,9 +2509,6 @@ public class HeaderController {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // STYLE HELPERS
-    // ─────────────────────────────────────────────────────────────────────────
     private void addHoverAnimation(Button btn) {
         ScaleTransition up   = new ScaleTransition(Duration.millis(120), btn); up.setToX(1.15);  up.setToY(1.15);
         ScaleTransition down = new ScaleTransition(Duration.millis(120), btn); down.setToX(1.0); down.setToY(1.0);

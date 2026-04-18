@@ -36,8 +36,6 @@ public class HistoryController {
             historyContainer.getChildren().clear();
 
             for (FeaturedItemProgress progress : list) {
-
-                // ❗ Only show watched items
                 if (progress.getStatus() == WatchStatus.NOT_STARTED)
                     continue;
 
@@ -47,11 +45,10 @@ public class HistoryController {
 
                 StackPane card = loader.load();
 
-                // Set data to controller
+    
                 CardController controller = loader.getController();
                 controller.setData(progress);
 
-                // 〽️ Add hover effect
                 card.setOnMouseEntered(event -> {
                     card.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 15, 0, 0, 5);"
                             + "-fx-scale-x: 1.05; -fx-scale-y: 1.05;");

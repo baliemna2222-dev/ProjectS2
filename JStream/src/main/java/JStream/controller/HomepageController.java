@@ -26,10 +26,9 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 public class HomepageController {
 	    @FXML
-	    private VBox categoryContainer;       // Your main container
-	           // Holds filter buttons
-	    private ScrollPane filterScrollPane;  // ScrollPane wrapping filters
-	    private VBox resultsContainer;        // Holds filtered content
+	    private VBox categoryContainer;       
+	    private ScrollPane filterScrollPane;  
+	    private VBox resultsContainer;        
 
 	    private final FeaturedService featuredService = new FeaturedService();
 
@@ -55,19 +54,16 @@ public class HomepageController {
 
 	        for (Node carousel : normalCategoryCarousels) {
 	            carousel.setVisible(!anyFilterSelected);
-	            carousel.setManaged(!anyFilterSelected); // also remove from layout space
+	            carousel.setManaged(!anyFilterSelected); 
 	        }
 	    }
 
-	    // ---------------- REFRESH FILTERED CONTENT ----------------
 	    private void loadFilterCarousel(List<Category> categories) {
 
-	        // ---------------- FILTER BAR ----------------
 	        filterContainer = new HBox(20);
 	        filterContainer.setPadding(new Insets(15, 20, 30, 20));
 	        filterContainer.setAlignment(Pos.CENTER_LEFT);
 
-	        // 🎯 Button creator
 	        var createButton = (java.util.function.Function<String, Button>) name -> {
 	            Button btn = new Button(name);
 
@@ -130,7 +126,7 @@ public class HomepageController {
 	                    addFilter(name);
 	                }
 
-	                refreshFilteredContent();  // updates results and normal carousels
+	                refreshFilteredContent();  
 	            });
 
 	            return btn;
@@ -151,8 +147,6 @@ public class HomepageController {
 	        for (int year = 2026; year >= 2000; year--) {
 	            filterContainer.getChildren().add(createButton.apply(String.valueOf(year)));
 	        }
-
-	        // Scroll + Arrows
 	        filterScrollPane = new ScrollPane(filterContainer);
 	        filterScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 	        filterScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -168,22 +162,17 @@ public class HomepageController {
 	        left.setOnAction(e -> filterScrollPane.setHvalue(filterScrollPane.getHvalue() - 0.3));
 	        right.setOnAction(e -> filterScrollPane.setHvalue(filterScrollPane.getHvalue() + 0.3));
 
-	     // 🔥 Arrows OUTSIDE the buttons
 	        HBox carousel = new HBox(15);
 	        carousel.setAlignment(Pos.CENTER);
 
-	        // Give space on left/right (this is what you want)
 	        carousel.setPadding(new Insets(10, 30, 20, 30));
 	        carousel.setStyle("-fx-background-color: black;");
 	        left.setTranslateY(-10);
 	        right.setTranslateY(-10);
-	        // Let scroll take available space
 	        HBox.setHgrow(filterScrollPane, Priority.ALWAYS);
 	        filterScrollPane.setMaxWidth(Double.MAX_VALUE);
 
-	        // Add in correct order
 	        carousel.getChildren().addAll(left, filterScrollPane, right);
-	        // Add filter carousel at top
 	        categoryContainer.getChildren().add(carousel);
 	        Pane divider = new Pane();
 	        divider.setPrefHeight(3);
@@ -194,22 +183,17 @@ public class HomepageController {
 	            -fx-background-radius: 2;
 	            -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.7), 10, 0.4, 0, 0);
 	        """); 
-
-	        // Add spacing around it (important!)
 	        VBox.setMargin(divider, new Insets(10, 60, 20, 60));
 
-	        // Add to layout
 	        categoryContainer.getChildren().add(divider);
-	        // Results container
 	        resultsContainer = new VBox();
 	        resultsContainer.setSpacing(15);
-	        resultsContainer.setPadding(new Insets(20, 60, 20, 60)); // 👈 equal left/right space
+	        resultsContainer.setPadding(new Insets(20, 60, 20, 60)); 
 	        resultsContainer.setStyle("-fx-background-color: black;");
 	        categoryContainer.getChildren().add(resultsContainer);
-	        refreshFilteredContent(); // initial load
+	        refreshFilteredContent(); 
 	    }
 
-	    // ---------------- REFRESH FILTERED CONTENT ----------------
 	    private void refreshFilteredContent() {
 	        try {
 	            resultsContainer.getChildren().clear(); // remove old results
@@ -252,16 +236,15 @@ public class HomepageController {
 
 	                resultsContainer.getChildren().add(scroll);
 	            } else {
-	            	Label empty = new Label("😞 No results found");
+	            	Label empty = new Label("No results found");
 	            	empty.setStyle("""
 	            	    -fx-text-fill: white;
 	            	    -fx-font-size: 28px;
 	            	    -fx-font-weight: bold;
 	            	""");
 
-	            	// Wrapper to center it
 	            	StackPane emptyWrapper = new StackPane(empty);
-	            	emptyWrapper.setPrefHeight(500); // 👈 gives vertical space
+	            	emptyWrapper.setPrefHeight(500); 
 	            	emptyWrapper.setAlignment(Pos.CENTER);
 
 	            	resultsContainer.getChildren().add(emptyWrapper);
@@ -276,7 +259,6 @@ public class HomepageController {
 	        }
 	    }
 
-	    // ---------------- HOVER EFFECT ----------------
 	    private void addHoverEffect(Node card) {
 	        ScaleTransition scaleUp = new ScaleTransition(Duration.millis(180), card);
 	        scaleUp.setToX(1.1);
@@ -288,7 +270,7 @@ public class HomepageController {
 
 	        card.setOnMouseEntered(e -> {
 	            scaleUp.playFromStart();
-	            card.setViewOrder(-1); // bring front
+	            card.setViewOrder(-1); 
 	        });
 
 	        card.setOnMouseExited(e -> {
@@ -296,7 +278,6 @@ public class HomepageController {
 	            card.setViewOrder(0);
 	        });
 	    }
-	    // 🎯 HANDLE FILTER LOGIC
 	    private void addFilter(String value) {
 	        value = value.toLowerCase();
 
@@ -320,9 +301,6 @@ public class HomepageController {
 	            selectedCategories.remove(value);
 	        }
 	    }
-
-
-	    // 🎨 ARROW STYLE
 	    private void styleArrowButton(Button btn) {
 	        btn.setStyle("""
 	            -fx-background-color: transparent;
@@ -345,7 +323,6 @@ public class HomepageController {
 	            List<Category> categories = featuredService.getAllCategories();
 	            List<FeaturedItem> topRated = featuredService.getTopRated(10);
 
-	            // 🔥 TOP RATED
 	            if (!topRated.isEmpty()) {
 	                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Carousel.fxml"));
 	                Node carouselNode = loader.load();
@@ -358,8 +335,6 @@ public class HomepageController {
 
 	                loadFilterCarousel(categories);
 	            }
-
-	            // 🔥 NORMAL CATEGORIES
 	            for (Category category : categories) {
 	                List<FeaturedItem> items = featuredService.getItemsByCategory(category.getName());
 	                if (items.isEmpty()) continue;
@@ -373,11 +348,9 @@ public class HomepageController {
 
 	                categoryContainer.getChildren().add(carouselNode);
 
-	                // Store the node so we can toggle visibility later
 	                normalCategoryCarousels.add(carouselNode);
 	            }
 
-	            // ✅ Correctly set visibility based on filters
 	            updateNormalCategoryCarouselsVisibility();
 
 	        } catch (IOException e) {
