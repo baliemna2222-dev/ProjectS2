@@ -20,6 +20,9 @@ public class FeaturedDAO {
 	public List<FeaturedItem> getLatestFeatured(int limit) throws SQLException {
 	    List<FeaturedItem> featured = new ArrayList<>();
 
+	    int filmLimit = limit -1;
+	    int seasonLimit = limit - filmLimit+1; // to handle odd numbers
+
 	    // -------- FILMS --------
 	    String filmSql =
 	        "SELECT f.*, GROUP_CONCAT(c.name SEPARATOR ',') AS categories " +
@@ -32,7 +35,7 @@ public class FeaturedDAO {
 	    try (Connection conn = Database.getConnection();
 	         PreparedStatement ps = conn.prepareStatement(filmSql)) {
 
-	        ps.setInt(1, limit);
+	        ps.setInt(1, filmLimit);
 	        ResultSet rs = ps.executeQuery();
 
 	        while (rs.next()) {
@@ -91,7 +94,7 @@ public class FeaturedDAO {
 	    try (Connection conn = Database.getConnection();
 	         PreparedStatement ps = conn.prepareStatement(seasonSql)) {
 
-	        ps.setInt(1, limit);
+	        ps.setInt(1, seasonLimit);
 	        ResultSet rs = ps.executeQuery();
 
 	        while (rs.next()) {
@@ -114,7 +117,7 @@ public class FeaturedDAO {
 	                rs.getString("status"),
 	                rs.getInt("season_num"),
 	                rs.getInt("last_episode")
-	            )); 
+	            ));
 	        }
 	    }
 
@@ -825,7 +828,7 @@ public class FeaturedDAO {
 	                    rs.getInt("film_id"),
 	                    rs.getString("title"),
 	                    rs.getString("synopsis"),
-	                    rs.getString("trailor_url"),
+	                    rs.getString("trailer_url"),
 	                    rs.getString("image_url"),
 	                    rs.getString("title_image_url"),
 	                    rs.getString("poster_url"),

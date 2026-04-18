@@ -27,6 +27,7 @@ import JStream.service.MylistService;
 import JStream.service.NotificationService;
 import JStream.service.RatingService;
 import JStream.service.UserService;
+import JStream.utils.ImageUtil;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
@@ -71,12 +72,12 @@ import javafx.util.Duration;
 public class LecturePageController {
 
     // ── Services ──────────────────────────────────────────────────────────────
-    private final RatingService      ratingService      = new RatingService();
-    private final CommentService     commentService     = new CommentService();
-    private final MylistService      mylistService      = new MylistService();
-    private final ActorService       actorService       = new ActorService();
-    private final UserService        userService        = new UserService();
-    private final FeaturedService    featuredService    = new FeaturedService();
+    private final RatingService       ratingService       = new RatingService();
+    private final CommentService      commentService      = new CommentService();
+    private final MylistService       mylistService       = new MylistService();
+    private final ActorService        actorService        = new ActorService();
+    private final UserService         userService         = new UserService();
+    private final FeaturedService     featuredService     = new FeaturedService();
     private final NotificationService notificationService = new NotificationService();
 
     // ── Resolved context ──────────────────────────────────────────────────────
@@ -188,7 +189,6 @@ public class LecturePageController {
         initCommentSlots();
         populateStars(0);
 
-        // Scroll to top when page loads
         if (mainScrollPane != null) {
             Platform.runLater(() -> mainScrollPane.setVvalue(0));
         }
@@ -198,12 +198,9 @@ public class LecturePageController {
     //  NAVBAR SETUP
     // =========================================================================
     private void setupNavbar() {
-        try {
-            if (logoNav  != null) logoNav.setImage(
-                new Image(getClass().getResourceAsStream("/assets/images/logo/Raksha.png")));
-            if (bellIcon != null) bellIcon.setImage(
-                new Image(getClass().getResourceAsStream("/assets/images/bellwhiter.png")));
-        } catch (Exception ignored) {}
+        // Use ImageUtil for navbar assets
+        if (logoNav  != null) logoNav.setImage(ImageUtil.load("/assets/images/logo/Raksha.png"));
+        if (bellIcon != null) bellIcon.setImage(ImageUtil.load("/assets/images/bellwhiter.png"));
 
         // Load bell sound
         try {
@@ -212,7 +209,6 @@ public class LecturePageController {
             bellSound.setVolume(0.6);
         } catch (Exception ignored) {}
 
-        // Bell click → open/close panel (same as HeaderController)
         if (bellContainer != null) {
             bellContainer.setOnMouseClicked(e -> {
                 if (notificationPopup != null && notificationPopup.isShowing()) {
@@ -233,7 +229,7 @@ public class LecturePageController {
     }
 
     // =========================================================================
-    //  NOTIFICATION POPUP  (mirrors HeaderController exactly)
+    //  NOTIFICATION POPUP
     // =========================================================================
     private void buildNotificationPopup() {
         notificationPopup = new Popup();
@@ -250,7 +246,6 @@ public class LecturePageController {
             "-fx-background-radius: 12;" +
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 24, 0.4, 0, 6);");
 
-        // ── Header ────────────────────────────────────────────────────────────
         HBox header = new HBox();
         header.setPadding(new Insets(14, 16, 12, 16));
         header.setAlignment(Pos.CENTER_LEFT);
@@ -294,7 +289,6 @@ public class LecturePageController {
             titleLbl, new HBox(6, notifBadgeLabel),
             headerSpacer, markAllRead, deleteAllBtn);
 
-        // ── List ──────────────────────────────────────────────────────────────
         notificationListBox = new VBox(0);
         notificationListBox.setStyle("-fx-background-color: #0d1117;");
 
@@ -447,17 +441,17 @@ public class LecturePageController {
         try { if (bellSound != null) bellSound.play(); } catch (Exception ignored) {}
         if (bellIcon == null) return;
         new Timeline(
-            new KeyFrame(Duration.ZERO,         new KeyValue(bellIcon.rotateProperty(),   0)),
-            new KeyFrame(Duration.millis(100),   new KeyValue(bellIcon.rotateProperty(), -10)),
-            new KeyFrame(Duration.millis(200),   new KeyValue(bellIcon.rotateProperty(),  10)),
-            new KeyFrame(Duration.millis(300),   new KeyValue(bellIcon.rotateProperty(), -15)),
-            new KeyFrame(Duration.millis(400),   new KeyValue(bellIcon.rotateProperty(),  15)),
-            new KeyFrame(Duration.millis(500),   new KeyValue(bellIcon.rotateProperty(), -20)),
-            new KeyFrame(Duration.millis(600),   new KeyValue(bellIcon.rotateProperty(),  20)),
-            new KeyFrame(Duration.millis(700),   new KeyValue(bellIcon.rotateProperty(), -15)),
-            new KeyFrame(Duration.millis(800),   new KeyValue(bellIcon.rotateProperty(),  15)),
-            new KeyFrame(Duration.millis(900),   new KeyValue(bellIcon.rotateProperty(), -10)),
-            new KeyFrame(Duration.millis(1000),  new KeyValue(bellIcon.rotateProperty(),   0))
+            new KeyFrame(Duration.ZERO,        new KeyValue(bellIcon.rotateProperty(),   0)),
+            new KeyFrame(Duration.millis(100),  new KeyValue(bellIcon.rotateProperty(), -10)),
+            new KeyFrame(Duration.millis(200),  new KeyValue(bellIcon.rotateProperty(),  10)),
+            new KeyFrame(Duration.millis(300),  new KeyValue(bellIcon.rotateProperty(), -15)),
+            new KeyFrame(Duration.millis(400),  new KeyValue(bellIcon.rotateProperty(),  15)),
+            new KeyFrame(Duration.millis(500),  new KeyValue(bellIcon.rotateProperty(), -20)),
+            new KeyFrame(Duration.millis(600),  new KeyValue(bellIcon.rotateProperty(),  20)),
+            new KeyFrame(Duration.millis(700),  new KeyValue(bellIcon.rotateProperty(), -15)),
+            new KeyFrame(Duration.millis(800),  new KeyValue(bellIcon.rotateProperty(),  15)),
+            new KeyFrame(Duration.millis(900),  new KeyValue(bellIcon.rotateProperty(), -10)),
+            new KeyFrame(Duration.millis(1000), new KeyValue(bellIcon.rotateProperty(),   0))
         ).play();
     }
 
@@ -569,7 +563,7 @@ public class LecturePageController {
 
             updateUI(posterUrl, currentEpisode.getTitle(),
                 currentEpisode.getResume() != null ? currentEpisode.getResume() : currentSerie.getSynopsis(),
-                currentEpisode.getDuration() + " min",  displayRating,
+                currentEpisode.getDuration() + " min", displayRating,
                 currentSerie.getCasting(), currentSerie.getDirector(), coverUrl,
                 "S" + seasonNum + " · E" + currentEpisode.getNumEpisode(),
                 currentEpisode.getVideoUrl(), currentEpisode.getEpId());
@@ -620,11 +614,12 @@ public class LecturePageController {
             else                  episodeInfoLabel.setVisible(false);
         }
 
+        // ── ImageUtil replaces raw new Image(...) calls ────────────────────────
         if (bgImagePath != null && backgroundImage != null)
-            try { backgroundImage.setImage(new Image(bgImagePath, true)); } catch (Exception ignored) {}
+            backgroundImage.setImage(ImageUtil.load(bgImagePath));
 
         if (poster != null && posterImage != null)
-            try { posterImage.setImage(new Image(poster, true)); } catch (Exception ignored) {}
+            posterImage.setImage(ImageUtil.load(poster));
 
         populateStars(rating);
 
@@ -735,7 +730,6 @@ public class LecturePageController {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    /** Stop the periodic notification timer when leaving this page. */
     private void stopPeriodicNotifCheck() {
         if (notifPeriodicCheck != null) notifPeriodicCheck.stop();
     }
@@ -867,23 +861,18 @@ public class LecturePageController {
                 paintInteractive(idx);
                 ratingHint.setText(ratingLabel(idx));
                 ratingHint.setStyle("-fx-text-fill: #00d4ff; -fx-font-size: 11px; -fx-font-weight: bold;");
-
                 ScaleTransition scaleUp = new ScaleTransition(Duration.millis(120), star);
-                scaleUp.setToX(1.25);
-                scaleUp.setToY(1.25);
-                scaleUp.playFromStart();
+                scaleUp.setToX(1.25); scaleUp.setToY(1.25); scaleUp.playFromStart();
             });
 
             star.setOnMouseExited(e -> {
                 paintInteractive(selectedStarNote);
                 ratingHint.setText(selectedStarNote > 0 ? ratingLabel(selectedStarNote) : "Tap to rate");
                 ratingHint.setStyle("-fx-text-fill: #3e4560; -fx-font-size: 11px; -fx-font-style: italic;");
-
                 ScaleTransition scaleDown = new ScaleTransition(Duration.millis(120), star);
-                scaleDown.setToX(1.0);
-                scaleDown.setToY(1.0);
-                scaleDown.playFromStart();
+                scaleDown.setToX(1.0); scaleDown.setToY(1.0); scaleDown.playFromStart();
             });
+
             star.setOnMouseClicked(e -> {
                 selectedStarNote = idx;
                 paintInteractive(selectedStarNote);
@@ -891,8 +880,7 @@ public class LecturePageController {
                 ratingHint.setStyle("-fx-text-fill: #00d4ff; -fx-font-size: 11px; -fx-font-weight: bold;");
                 ScaleTransition bounce = new ScaleTransition(Duration.millis(100), star);
                 bounce.setToX(1.4); bounce.setToY(1.4);
-                bounce.setAutoReverse(true); bounce.setCycleCount(2);
-                bounce.play();
+                bounce.setAutoReverse(true); bounce.setCycleCount(2); bounce.play();
             });
             starsRow.getChildren().add(star);
         }
@@ -901,7 +889,7 @@ public class LecturePageController {
     }
 
     private String ratingLabel(double stars) {
-        return switch ((int)stars) {
+        return switch ((int) stars) {
             case 1 -> "Poor"; case 2 -> "Fair"; case 3 -> "Good";
             case 4 -> "Great"; case 5 -> "Outstanding!"; default -> "Tap to rate";
         };
@@ -970,7 +958,7 @@ public class LecturePageController {
 
         String content = commentInput != null ? commentInput.getText().trim() : "";
         if (!content.isEmpty()) {
-            int filmId = resolvedFilmId != null ? resolvedFilmId : 0;
+            int filmId = resolvedFilmId    != null ? resolvedFilmId    : 0;
             int epId   = resolvedEpisodeId != null ? resolvedEpisodeId : 0;
             Comment comment = new Comment(0, userId, filmId, epId, content, false, null, null);
             if (commentService.postComment(comment)) {
@@ -1172,24 +1160,22 @@ public class LecturePageController {
         Node avatar;
         String photoUrl = actor.getPhotoUrl();
         if (photoUrl != null && !photoUrl.isBlank()) {
-            try {
-                String resolvedUrl;
-                if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://") || photoUrl.startsWith("file:"))
-                    resolvedUrl = photoUrl;
-                else {
-                    URL resource = getClass().getResource(photoUrl.startsWith("/") ? photoUrl : "/" + photoUrl);
-                    resolvedUrl = resource != null ? resource.toExternalForm() : new java.io.File(photoUrl).toURI().toString();
-                }
-                ImageView iv = new ImageView(new Image(resolvedUrl, true));
-                iv.setFitWidth(60); iv.setFitHeight(60); iv.setPreserveRatio(false);
-                iv.setClip(new Circle(30, 30, 30));
-                Circle ring = new Circle(30);
-                ring.setFill(Color.TRANSPARENT);
-                ring.setStroke(Color.web("#00d4ff", 0.3)); ring.setStrokeWidth(1.5);
-                StackPane photoPane = new StackPane(iv, ring);
-                photoPane.setMinSize(60, 60); photoPane.setMaxSize(60, 60);
+            // ── ImageUtil replaces the try/catch URL resolution block ──────────
+            Image actorImage = ImageUtil.load(photoUrl);
+            ImageView iv = new ImageView(actorImage);
+            iv.setFitWidth(60); iv.setFitHeight(60); iv.setPreserveRatio(false);
+            iv.setClip(new Circle(30, 30, 30));
+            Circle ring = new Circle(30);
+            ring.setFill(Color.TRANSPARENT);
+            ring.setStroke(Color.web("#00d4ff", 0.3)); ring.setStrokeWidth(1.5);
+            StackPane photoPane = new StackPane(iv, ring);
+            photoPane.setMinSize(60, 60); photoPane.setMaxSize(60, 60);
+            // Fall back to initials avatar if the image has an error
+            if (actorImage.isError()) {
+                avatar = buildInitialsAvatar(actor.getName());
+            } else {
                 avatar = photoPane;
-            } catch (Exception ex) { avatar = buildInitialsAvatar(actor.getName()); }
+            }
         } else {
             avatar = buildInitialsAvatar(actor.getName());
         }
@@ -1214,21 +1200,21 @@ public class LecturePageController {
         card.setOnMouseClicked(e -> showActorPopup(actor));
         return card;
     }
+
     private void showActorPopup(Actor actor) {
         Stage popup = new Stage();
         popup.initOwner(mainContainer.getScene().getWindow());
         popup.initModality(Modality.APPLICATION_MODAL);
         popup.initStyle(StageStyle.TRANSPARENT);
 
-        // ── Full-screen dimmed overlay ────────────────────────────────────────────
         StackPane overlay = new StackPane();
         overlay.setStyle("-fx-background-color: rgba(0,0,0,0.82);");
-        overlay.setPrefSize(400, 360); 
+        overlay.setPrefSize(400, 360);
         overlay.setMaxSize(450, 450);
-        // ── Outer card ────────────────────────────────────────────────────────────
+
         VBox card = new VBox(0);
         card.setAlignment(Pos.TOP_CENTER);
-        card.setPrefWidth(350); // Set this about 50-100px smaller than the overlay width
+        card.setPrefWidth(350);
         card.setMaxWidth(350);
         card.setStyle(
             "-fx-background-color: #0b0e18;" +
@@ -1238,14 +1224,11 @@ public class LecturePageController {
             "-fx-border-width: 1;" +
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.95), 80, 0.5, 0, 20);");
 
-        // =========================================================================
-        //  PHOTO ZONE (full bleed, with fade-to-card at bottom)
-        // =========================================================================
+        // ── Photo zone ────────────────────────────────────────────────────────
         StackPane photoZone = new StackPane();
         photoZone.setPrefSize(320, 260);
         photoZone.setMaxSize(320, 260);
 
-        // ── Background tint behind initials fallback ──────────────────────────────
         Region photoBg = new Region();
         photoBg.setPrefSize(320, 260);
         photoBg.setStyle("-fx-background-color: #08111f; -fx-background-radius: 24 24 0 0;");
@@ -1255,15 +1238,10 @@ public class LecturePageController {
         boolean hasPhoto = photoUrl != null && !photoUrl.isBlank();
 
         if (hasPhoto) {
-            try {
-                String resolvedUrl;
-                if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://") || photoUrl.startsWith("file:"))
-                    resolvedUrl = photoUrl;
-                else {
-                    java.net.URL res = getClass().getResource(photoUrl.startsWith("/") ? photoUrl : "/" + photoUrl);
-                    resolvedUrl = res != null ? res.toExternalForm() : new java.io.File(photoUrl).toURI().toString();
-                }
-                ImageView bigPhoto = new ImageView(new Image(resolvedUrl, true));
+            // ── ImageUtil replaces the try/catch URL resolution block ──────────
+            Image actorImg = ImageUtil.load(photoUrl);
+            if (!actorImg.isError()) {
+                ImageView bigPhoto = new ImageView(actorImg);
                 bigPhoto.setFitWidth(320);
                 bigPhoto.setFitHeight(260);
                 bigPhoto.setPreserveRatio(false);
@@ -1271,21 +1249,19 @@ public class LecturePageController {
                 clip.setArcWidth(48); clip.setArcHeight(48);
                 bigPhoto.setClip(clip);
                 photoZone.getChildren().add(bigPhoto);
-            } catch (Exception ex) {
+            } else {
                 photoZone.getChildren().add(buildLargeInitialsAvatar(actor.getName(), 320, 260));
             }
         } else {
             photoZone.getChildren().add(buildLargeInitialsAvatar(actor.getName(), 320, 260));
         }
 
-        // ── Cinematic bottom fade so photo bleeds into card bg ────────────────────
         Region fadeOut = new Region();
         fadeOut.setPrefSize(320, 260);
         fadeOut.setMouseTransparent(true);
         fadeOut.setStyle("-fx-background-color: linear-gradient(to bottom, transparent 40%, #0b0e18 100%);");
         photoZone.getChildren().add(fadeOut);
 
-        // ── Close button (top-right, on top of photo) ─────────────────────────────
         Button closeBtn = new Button("✕");
         closeBtn.setPrefSize(32, 32); closeBtn.setMinSize(32, 32); closeBtn.setMaxSize(32, 32);
         final String CB  = "-fx-background-color:rgba(0,0,0,0.55);-fx-text-fill:rgba(255,255,255,0.55);-fx-font-size:12px;-fx-background-radius:50%;-fx-cursor:hand;-fx-border-color:rgba(255,255,255,0.1);-fx-border-radius:50%;-fx-border-width:1;";
@@ -1298,55 +1274,40 @@ public class LecturePageController {
         StackPane.setMargin(closeBtn, new Insets(12, 12, 0, 0));
         photoZone.getChildren().add(closeBtn);
 
-        // =========================================================================
-        //  INFO ZONE
-        // =========================================================================
+        // ── Info zone ─────────────────────────────────────────────────────────
         VBox infoZone = new VBox(0);
         infoZone.setAlignment(Pos.TOP_CENTER);
         infoZone.setPadding(new Insets(4, 24, 0, 24));
 
-        // ── Name ──────────────────────────────────────────────────────────────────
         Label nameLbl = new Label(actor.getName());
         nameLbl.setStyle(
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 22px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-letter-spacing: -0.5px;");
+            "-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold; -fx-letter-spacing: -0.5px;");
         nameLbl.setAlignment(Pos.CENTER);
         nameLbl.setWrapText(true);
         nameLbl.setMaxWidth(280);
         VBox.setMargin(nameLbl, new Insets(0, 0, 6, 0));
 
-        // ── "Actor" subtitle ──────────────────────────────────────────────────────
         Label subtitleLbl = new Label("A C T O R");
         subtitleLbl.setStyle(
-            "-fx-text-fill: rgba(0,212,255,0.45);" +
-            "-fx-font-size: 10px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-letter-spacing: 2px;");
+            "-fx-text-fill: rgba(0,212,255,0.45); -fx-font-size: 10px;" +
+            "-fx-font-weight: bold; -fx-letter-spacing: 2px;");
         VBox.setMargin(subtitleLbl, new Insets(0, 0, 16, 0));
 
         infoZone.getChildren().addAll(nameLbl, subtitleLbl);
 
-        // ── Role pill ─────────────────────────────────────────────────────────────
         if (actor.getRoleName() != null && !actor.getRoleName().isBlank()) {
             HBox rolePill = new HBox(6);
             rolePill.setAlignment(Pos.CENTER);
             rolePill.setStyle(
                 "-fx-background-color: rgba(0,212,255,0.07);" +
                 "-fx-border-color: rgba(0,212,255,0.18);" +
-                "-fx-border-radius: 40;" +
-                "-fx-background-radius: 40;" +
-                "-fx-padding: 7 20;");
+                "-fx-border-radius: 40; -fx-background-radius: 40; -fx-padding: 7 20;");
 
             Label asLbl = new Label("as");
             asLbl.setStyle("-fx-text-fill: rgba(0,212,255,0.45); -fx-font-size: 11px;");
 
             Label roleLbl = new Label(actor.getRoleName());
-            roleLbl.setStyle(
-                "-fx-text-fill: #00d4ff;" +
-                "-fx-font-size: 13px;" +
-                "-fx-font-weight: bold;");
+            roleLbl.setStyle("-fx-text-fill: #00d4ff; -fx-font-size: 13px; -fx-font-weight: bold;");
 
             rolePill.getChildren().addAll(asLbl, roleLbl);
             VBox.setMargin(rolePill, new Insets(0, 0, 20, 0));
@@ -1355,23 +1316,15 @@ public class LecturePageController {
             VBox.setMargin(subtitleLbl, new Insets(0, 0, 20, 0));
         }
 
-     
-
-        // ── Bottom padding ────────────────────────────────────────────────────────
         Region bottomPad = new Region(); bottomPad.setPrefHeight(24);
         infoZone.getChildren().add(bottomPad);
 
         card.getChildren().addAll(photoZone, infoZone);
 
-        // ── Wrap card so close btn can float freely ───────────────────────────────
         StackPane cardWrapper = new StackPane(card);
         cardWrapper.setMaxWidth(320);
-
-        // ── Spring-in animation ───────────────────────────────────────────────────
-        cardWrapper.setScaleX(0.82);
-        cardWrapper.setScaleY(0.82);
-        cardWrapper.setOpacity(0);
-        cardWrapper.setTranslateY(24);
+        cardWrapper.setScaleX(0.82); cardWrapper.setScaleY(0.82);
+        cardWrapper.setOpacity(0);  cardWrapper.setTranslateY(24);
 
         overlay.getChildren().add(cardWrapper);
         overlay.setOnMouseClicked(e -> { if (e.getTarget() == overlay) popup.close(); });
@@ -1379,12 +1332,10 @@ public class LecturePageController {
         Scene scene = new Scene(overlay);
         scene.setFill(Color.TRANSPARENT);
         popup.setScene(scene);
-
-        popup.sizeToScene();  
+        popup.sizeToScene();
         popup.centerOnScreen();
         popup.show();
 
-        // Three-part entrance: scale + fade + slide up
         ScaleTransition scale = new ScaleTransition(Duration.millis(280), cardWrapper);
         scale.setFromX(0.82); scale.setToX(1.0);
         scale.setFromY(0.82); scale.setToY(1.0);
@@ -1417,6 +1368,7 @@ public class LecturePageController {
             "-fx-letter-spacing: 4px;");
         return avatar;
     }
+
     private Label buildInitialsAvatar(String name) {
         String initials = name.contains(" ")
             ? "" + name.charAt(0) + name.charAt(name.indexOf(' ') + 1)
@@ -1431,7 +1383,7 @@ public class LecturePageController {
         avatar.setEffect(new DropShadow(16, Color.web("#00d4ff", 0.22)));
         return avatar;
     }
-  
+
     // =========================================================================
     //  TRAILER POPUP
     // =========================================================================
@@ -1514,17 +1466,19 @@ public class LecturePageController {
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: rgba(0,0,0,0.88);");
 
-        VBox card = new VBox(0);
-        card.setMaxSize(fullW - 40, fullH - 40); card.setPrefSize(fullW - 40, fullH - 40);
-        card.setStyle(
+        VBox popupCard = new VBox(0);
+        popupCard.setMaxSize(fullW - 40, fullH - 40); popupCard.setPrefSize(fullW - 40, fullH - 40);
+        popupCard.setStyle(
             "-fx-background-color: #07090f; -fx-background-radius: 14;" +
             "-fx-border-color: rgba(0,212,255,0.18); -fx-border-width: 1.5; -fx-border-radius: 14;" +
             "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.95),60,0.7,0,10);");
 
         Rectangle cardClip = new Rectangle();
         cardClip.setArcWidth(28); cardClip.setArcHeight(28);
-        card.layoutBoundsProperty().addListener((o, ov, nv) -> { cardClip.setWidth(nv.getWidth()); cardClip.setHeight(nv.getHeight()); });
-        card.setClip(cardClip);
+        popupCard.layoutBoundsProperty().addListener((o, ov, nv) -> {
+            cardClip.setWidth(nv.getWidth()); cardClip.setHeight(nv.getHeight());
+        });
+        popupCard.setClip(cardClip);
 
         HBox cardBar = new HBox(8);
         cardBar.setAlignment(Pos.CENTER_RIGHT); cardBar.setPadding(new Insets(9, 12, 9, 16));
@@ -1540,17 +1494,24 @@ public class LecturePageController {
 
         final boolean[] isSmall = {false};
         btnResize.setOnAction(e -> {
-            if (!isSmall[0]) { card.setMaxSize(smallW, smallH); card.setPrefSize(smallW, smallH); isSmall[0] = true; btnResize.setText("⊞"); }
-            else             { card.setMaxSize(fullW-40, fullH-40); card.setPrefSize(fullW-40, fullH-40); isSmall[0] = false; btnResize.setText("⊡"); }
+            if (!isSmall[0]) {
+                popupCard.setMaxSize(smallW, smallH); popupCard.setPrefSize(smallW, smallH);
+                isSmall[0] = true; btnResize.setText("⊞");
+            } else {
+                popupCard.setMaxSize(fullW - 40, fullH - 40); popupCard.setPrefSize(fullW - 40, fullH - 40);
+                isSmall[0] = false; btnResize.setText("⊡");
+            }
         });
 
         cardBar.getChildren().addAll(d1, d2, d3, barSpacer, btnResize, btnClose);
         VBox.setVgrow(webView, Priority.ALWAYS);
-        card.getChildren().addAll(cardBar, webView);
+        popupCard.getChildren().addAll(cardBar, webView);
 
-        root.setOnMouseClicked(e -> { if (e.getTarget() == root) { webView.getEngine().load(null); popup.close(); resetTrailerTabs(); } });
-        root.getChildren().add(card);
-        StackPane.setAlignment(card, Pos.CENTER);
+        root.setOnMouseClicked(e -> {
+            if (e.getTarget() == root) { webView.getEngine().load(null); popup.close(); resetTrailerTabs(); }
+        });
+        root.getChildren().add(popupCard);
+        StackPane.setAlignment(popupCard, Pos.CENTER);
 
         popup.setOnHidden(e -> { webView.getEngine().load(null); resetTrailerTabs(); });
         Scene scene = new Scene(root);
@@ -1577,8 +1538,10 @@ public class LecturePageController {
         String hover   = base + (isClose ? "-fx-background-color:#c0392b;-fx-border-color:#e74c3c;-fx-text-fill:white;" : "-fx-background-color:#162238;-fx-border-color:#2c5282;-fx-text-fill:#7eb8f7;");
         String pressed = base + (isClose ? "-fx-background-color:#922b21;-fx-border-color:#c0392b;-fx-text-fill:white;" : "-fx-background-color:#0a1520;-fx-border-color:#1e3a5f;-fx-text-fill:#4a90d9;");
         btn.setStyle(normal);
-        btn.setOnMouseEntered(e -> btn.setStyle(hover));  btn.setOnMouseExited(e  -> btn.setStyle(normal));
-        btn.setOnMousePressed(e -> btn.setStyle(pressed)); btn.setOnMouseReleased(e -> btn.setStyle(hover));
+        btn.setOnMouseEntered(e  -> btn.setStyle(hover));
+        btn.setOnMouseExited (e  -> btn.setStyle(normal));
+        btn.setOnMousePressed(e  -> btn.setStyle(pressed));
+        btn.setOnMouseReleased(e -> btn.setStyle(hover));
         return btn;
     }
 
@@ -1618,7 +1581,7 @@ public class LecturePageController {
     }
 
     // =========================================================================
-    //  WATCH NEXT SECTION  (final fix — see previous submission for comments)
+    //  WATCH NEXT SECTION
     // =========================================================================
     private void populateWatchNext() {
         if (watchNextContainer == null) return;
@@ -1726,10 +1689,10 @@ public class LecturePageController {
         final String ICON_OFF = "-fx-font-size:24px;-fx-font-weight:300;-fx-text-fill:rgba(0,212,255,0.2);-fx-padding:0 0 1 0;";
 
         btn.setStyle(BASE);
-        btn.setOnMouseEntered(e -> { if (!btn.isDisabled()) { btn.setStyle(HOVER);    icon.setStyle(ICON_HI);  } });
-        btn.setOnMouseExited (e -> { if (!btn.isDisabled()) { btn.setStyle(BASE);     icon.setStyle(ICON_ON);  } else { btn.setStyle(DISABLED); icon.setStyle(ICON_OFF); } });
-        btn.setOnMousePressed(e -> { if (!btn.isDisabled())   btn.setStyle(PRESSED); });
-        btn.setOnMouseReleased(e -> { if (!btn.isDisabled())  btn.setStyle(HOVER); });
+        btn.setOnMouseEntered(e  -> { if (!btn.isDisabled()) { btn.setStyle(HOVER);    icon.setStyle(ICON_HI);  } });
+        btn.setOnMouseExited (e  -> { if (!btn.isDisabled()) { btn.setStyle(BASE);     icon.setStyle(ICON_ON);  } else { btn.setStyle(DISABLED); icon.setStyle(ICON_OFF); } });
+        btn.setOnMousePressed(e  -> { if (!btn.isDisabled())   btn.setStyle(PRESSED); });
+        btn.setOnMouseReleased(e -> { if (!btn.isDisabled())   btn.setStyle(HOVER); });
         btn.disabledProperty().addListener((obs, was, now) -> { btn.setStyle(now ? DISABLED : BASE); icon.setStyle(now ? ICON_OFF : ICON_ON); });
         return btn;
     }
@@ -1837,18 +1800,15 @@ public class LecturePageController {
         imagePane.getChildren().add(placeholder);
 
         if (posterUrl != null && !posterUrl.isBlank()) {
-            try {
-                String resolved;
-                if (posterUrl.startsWith("http") || posterUrl.startsWith("file:")) resolved = posterUrl;
-                else {
-                    URL res = getClass().getResource(posterUrl.startsWith("/") ? posterUrl : "/" + posterUrl);
-                    resolved = res != null ? res.toExternalForm() : new java.io.File(posterUrl).toURI().toString();
-                }
-                ImageView iv = new ImageView(new Image(resolved, true));
+            // ── ImageUtil replaces the try/catch URL resolution block ──────────
+            Image posterImg = ImageUtil.load(posterUrl);
+            if (!posterImg.isError()) {
+                ImageView iv = new ImageView(posterImg);
                 iv.setFitWidth(180); iv.setFitHeight(160); iv.setPreserveRatio(false);
                 Rectangle clip = new Rectangle(180, 160); clip.setArcWidth(20); clip.setArcHeight(20);
-                iv.setClip(clip); imagePane.getChildren().add(iv);
-            } catch (Exception ignored) {}
+                iv.setClip(clip);
+                imagePane.getChildren().add(iv);
+            }
         }
 
         Region gradient = new Region(); gradient.setPrefSize(180, 160); gradient.setMouseTransparent(true);
@@ -1886,7 +1846,6 @@ public class LecturePageController {
         }
         card.getChildren().addAll(imagePane, info);
 
-        // Three-flag click guard (drag threshold + Platform.runLater)
         final double   DRAG_THRESHOLD = 6.0;
         final boolean[] hovering = {false};
         final boolean[] dragged  = {false};
@@ -1912,7 +1871,7 @@ public class LecturePageController {
         });
         card.setOnMouseDragged(e -> {
             double dx = e.getSceneX() - pressXY[0], dy = e.getSceneY() - pressXY[1];
-            if (Math.sqrt(dx*dx + dy*dy) > DRAG_THRESHOLD) dragged[0] = true;
+            if (Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) dragged[0] = true;
         });
         card.setOnMouseReleased(e -> {
             card.setScaleX(hovering[0] ? 1.05 : 1.0);

@@ -45,13 +45,7 @@
                    style="-fx-text-fill: #0ea5e9; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
 
             <!-- Season ID (read-only, informational) -->
-            <TextField fx:id="seasonIdField" promptText="Season ID" editable="false"
-                       style="-fx-background-color: rgba(14,165,233,0.05);
-                              -fx-text-fill: #4b5563; -fx-prompt-text-fill: #374151;
-                              -fx-border-color: rgba(14,165,233,0.12);
-                              -fx-border-radius: 8; -fx-background-radius: 8;
-                              -fx-padding: 8 12; -fx-font-size: 11px;"/>
-
+          
             <HBox spacing="10">
                 <TextField fx:id="numEpisodeField" promptText="Ep # *" prefWidth="80"
                            style="-fx-background-color: rgba(14,165,233,0.08); -fx-text-fill: white;
