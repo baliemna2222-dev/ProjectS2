@@ -10,10 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Service layer for film progress management.
- * Uses FilmProgressDAO internally.
- */
 public class FilmProgressService {
 
     private final FilmProgressDAO filmProgressDAO;
