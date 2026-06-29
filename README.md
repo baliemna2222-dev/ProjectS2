@@ -27,10 +27,9 @@
 [🚀 View Source Code](https://github.com/baliemna2222-dev/ProjectS2/tree/emna) · [🌐 Project Details](https://baliemna2222-dev.github.io/emna-benali.github.io/raksha.html) · [👩‍💻 Portfolio](https://baliemna2222-dev.github.io/emna-benali.github.io/index.html)
 
 <br/>
+[![Database](https://img.shields.io/badge/🗄️_Database-jstreamdb.sql-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://github.com/baliemna2222-dev/Raksha-Streaming-Platform/blob/emna/jstreamdb%20(8)%20(2).sql)
 
-[![Database](https://img.shields.io/badge/🗄️_Database-raksha__database.sql-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](raksha_database.sql)
-[![Manual](https://img.shields.io/badge/📖_Manual-MANUAL.md-0078D4?style=for-the-badge&logo=bookstack&logoColor=white)](MANUAL.md)
-
+[![Manual](https://img.shields.io/badge/📖_Manual-manuel.pdf-0078D4?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)](https://github.com/baliemna2222-dev/Raksha-Streaming-Platform/blob/emna/manuel%20(1)%20(2).pdf)
 </div>
 
 ---
@@ -193,7 +192,7 @@ mvn clean javafx:run
 
 ## 🗄️ Database Setup
 
-> [`jstreamdb (8) (2).sql`](jstreamdb (8) (2).sql) contains the **complete database** for this project — all tables, relationships, and sample data. You must import this file into MySQL **before** launching the app.
+> [`jstreamdb (8) (2).sql`](jstreamdb%20(8)%20(2).sql) contains the **complete database** for this project — all tables, relationships, and sample data. You must import this file into MySQL **before** launching the app.
 
 ### What's inside
 
@@ -207,17 +206,17 @@ mvn clean javafx:run
 
 **Option A — Command Line**
 ```bash
-mysql -u root -p < raksha_database.sql
+mysql -u root -p < "jstreamdb (8) (2).sql"
 ```
 
 **Option B — MySQL Workbench**
 1. Open MySQL Workbench and connect to your server
-2. Go to **File → Open SQL Script** → select `raksha_database.sql`
+2. Go to **File → Open SQL Script** → select `jstreamdb (8) (2).sql`
 3. Click ⚡ **Execute**
 
 **Option C — phpMyAdmin**
 1. Open `http://localhost/phpmyadmin`
-2. Click **Import** → choose `raksha_database.sql` → click **Go**
+2. Click **Import** → choose `jstreamdb (8) (2).sql` → click **Go**
 
 ### Default accounts
 
@@ -232,7 +231,7 @@ mysql -u root -p < raksha_database.sql
 
 ## 📖 App Manual
 
-> [`manuel (1) (2).pdf`](manuel (1) (2).pdf) is a **step-by-step guide** to using every part of Raksha — for both regular users and administrators.
+> [`manuel (1) (2).pdf`](manuel%20(1)%20(2).pdf) is a **step-by-step guide** to using every part of Raksha — for both regular users and administrators.
 
 <details>
 <summary><b>👤 What the User Guide covers</b></summary>
@@ -261,7 +260,7 @@ mysql -u root -p < raksha_database.sql
 <details>
 <summary><b>🔧 Troubleshooting</b></summary>
 
-Common issues and fixes — wrong credentials, missing database, video not playing, blank content rows, and more. All detailed in [`manuel (1) (2).pdf`](manuel (1) (2).pdf).
+Common issues and fixes — wrong credentials, missing database, video not playing, blank content rows, and more. All detailed in [`manuel (1) (2).pdf`](manuel%20(1)%20(2).pdf).
 
 </details>
 
@@ -310,8 +309,8 @@ new Thread(loadMovies).start();
 
 ```
 raksha/
-├── raksha_database.sql        ← Import this into MySQL first
-├── MANUAL.md                  ← User & Admin guide
+├── jstreamdb (8) (2).sql      ← Import this into MySQL first
+├── manuel (1) (2).pdf         ← User & Admin guide
 ├── pom.xml
 └── src/
     └── main/
