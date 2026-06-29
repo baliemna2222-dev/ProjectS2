@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=30&pause=1000&color=E50914&center=true&vCenter=true&width=600&lines=🎬+Raksha+Streaming+App;Netflix-Inspired+JavaFX+Desktop+App;Dual-Role+%7C+Secure+%7C+Cinematic" alt="Typing SVG" />
+<img src="JStream/src/main/resources/assets/images/logo/Raksha.png" alt="Typing SVG" />
 
 <br/>
 
