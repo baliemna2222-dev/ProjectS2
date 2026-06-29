@@ -193,7 +193,7 @@ mvn clean javafx:run
 
 ## 🗄️ Database Setup
 
-> [`raksha_database.sql`](raksha_database.sql) contains the **complete database** for this project — all tables, relationships, and sample data. You must import this file into MySQL **before** launching the app.
+> [`jstreamdb (8) (2).sql`](jstreamdb (8) (2).sql) contains the **complete database** for this project — all tables, relationships, and sample data. You must import this file into MySQL **before** launching the app.
 
 ### What's inside
 
@@ -232,7 +232,7 @@ mysql -u root -p < raksha_database.sql
 
 ## 📖 App Manual
 
-> [`MANUAL.md`](MANUAL.md) is a **step-by-step guide** to using every part of Raksha — for both regular users and administrators.
+> [`manuel (1) (2).pdf`](manuel (1) (2).pdf) is a **step-by-step guide** to using every part of Raksha — for both regular users and administrators.
 
 <details>
 <summary><b>👤 What the User Guide covers</b></summary>
@@ -261,7 +261,7 @@ mysql -u root -p < raksha_database.sql
 <details>
 <summary><b>🔧 Troubleshooting</b></summary>
 
-Common issues and fixes — wrong credentials, missing database, video not playing, blank content rows, and more. All detailed in [`MANUAL.md`](MANUAL.md).
+Common issues and fixes — wrong credentials, missing database, video not playing, blank content rows, and more. All detailed in [`manuel (1) (2).pdf`](manuel (1) (2).pdf).
 
 </details>
 
