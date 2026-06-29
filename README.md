@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="JStream/src/main/resources/assets/images/logo/Raksha.png" alt="Typing SVG" />
+<img src="JStream/src/main/resources/assets/images/logo/Raksha.png" width=200 height=300 alt="Typing SVG" />
 
 <br/>
 
