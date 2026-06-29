@@ -28,6 +28,7 @@
 
 <br/>
 [![Database](https://img.shields.io/badge/🗄️_Database-jstreamdb.sql-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://github.com/baliemna2222-dev/Raksha-Streaming-Platform/blob/emna/jstreamdb%20(8)%20(2).sql)
+<br/>
 
 [![Manual](https://img.shields.io/badge/📖_Manual-manuel.pdf-0078D4?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)](https://github.com/baliemna2222-dev/Raksha-Streaming-Platform/blob/emna/manuel%20(1)%20(2).pdf)
 </div>
