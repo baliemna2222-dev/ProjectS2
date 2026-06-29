@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="JStream/src/main/resources/assets/images/logo/Raksha.png" width=200 height=300 alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=30&pause=1000&color=E50914&center=true&vCenter=true&width=600&lines=🎬+Raksha+Streaming+App;Netflix-Inspired+JavaFX+Desktop+App;Dual-Role+%7C+Secure+%7C+Cinematic" alt="Typing SVG" />
 
 <br/>
 
@@ -25,6 +25,11 @@
 <br/>
 
 [🚀 View Source Code](https://github.com/baliemna2222-dev/ProjectS2/tree/emna) · [🌐 Project Details](https://baliemna2222-dev.github.io/emna-benali.github.io/raksha.html) · [👩‍💻 Portfolio](https://baliemna2222-dev.github.io/emna-benali.github.io/index.html)
+
+<br/>
+
+[![Database](https://img.shields.io/badge/🗄️_Database-raksha__database.sql-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](raksha_database.sql)
+[![Manual](https://img.shields.io/badge/📖_Manual-MANUAL.md-0078D4?style=for-the-badge&logo=bookstack&logoColor=white)](MANUAL.md)
 
 </div>
 
@@ -57,6 +62,8 @@ Designed and developed **solo**, this project demonstrates clean software engine
 - [Architecture](#-architecture)
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
+- [Database Setup](#-database-setup)
+- [App Manual](#-app-manual)
 - [Challenges & Solutions](#-challenges--solutions)
 - [Project Structure](#-project-structure)
 - [Developer](#-developer)
@@ -157,7 +164,7 @@ JavaFX styled with **custom CSS** — dark colour palette, smooth scene transiti
 
 ### Prerequisites
 
-```bash
+```
 Java 17+
 MySQL 8.0+
 Maven 3.8+
@@ -171,11 +178,9 @@ git clone https://github.com/baliemna2222-dev/ProjectS2.git
 cd ProjectS2
 git checkout emna
 
-# 2. Configure database
-# Create a MySQL database and run the schema SQL
+# 2. Import the database — see section below ↓
 
-# 3. Update DB credentials
-# Edit src/main/resources/db.properties
+# 3. Edit src/main/resources/db.properties with your MySQL credentials
 db.url=jdbc:mysql://localhost:3306/raksha_db
 db.username=your_username
 db.password=your_password
@@ -183,6 +188,82 @@ db.password=your_password
 # 4. Build and run
 mvn clean javafx:run
 ```
+
+---
+
+## 🗄️ Database Setup
+
+> [`raksha_database.sql`](raksha_database.sql) contains the **complete database** for this project — all tables, relationships, and sample data. You must import this file into MySQL **before** launching the app.
+
+### What's inside
+
+- ✅ Creates `raksha_db` automatically
+- ✅ All 7 tables: `users`, `roles`, `movies`, `series`, `episodes`, `categories`, `watch_history`
+- ✅ Foreign keys, constraints, and UTF-8 encoding
+- ✅ Default admin & user accounts with hashed passwords
+- ✅ Sample movies, series, episodes, and categories ready to use
+
+### How to import
+
+**Option A — Command Line**
+```bash
+mysql -u root -p < raksha_database.sql
+```
+
+**Option B — MySQL Workbench**
+1. Open MySQL Workbench and connect to your server
+2. Go to **File → Open SQL Script** → select `raksha_database.sql`
+3. Click ⚡ **Execute**
+
+**Option C — phpMyAdmin**
+1. Open `http://localhost/phpmyadmin`
+2. Click **Import** → choose `raksha_database.sql` → click **Go**
+
+### Default accounts
+
+| Role | Username | Password |
+|------|----------|----------|
+| 👑 Admin | `admin` | `admin123` |
+| 👤 User | `demo_user` | `user123` |
+
+> ⚠️ Change these passwords after your first login.
+
+---
+
+## 📖 App Manual
+
+> [`MANUAL.md`](MANUAL.md) is a **step-by-step guide** to using every part of Raksha — for both regular users and administrators.
+
+<details>
+<summary><b>👤 What the User Guide covers</b></summary>
+
+- Logging in and navigating the home screen
+- Browsing movies and series in scrollable rows
+- Watching content with the built-in video player
+- Player controls: play/pause, seek, volume, fullscreen
+- Watching episodes of a series by season
+- Viewing your watch history
+- Logging out
+
+</details>
+
+<details>
+<summary><b>🛠️ What the Admin Guide covers</b></summary>
+
+- Accessing the Admin Dashboard (loads automatically on admin login)
+- Adding, editing, and deleting **movies**
+- Managing **series** and their **episodes** per season
+- Creating and renaming **categories**
+- Viewing all users, changing their role, or deactivating their account
+
+</details>
+
+<details>
+<summary><b>🔧 Troubleshooting</b></summary>
+
+Common issues and fixes — wrong credentials, missing database, video not playing, blank content rows, and more. All detailed in [`MANUAL.md`](MANUAL.md).
+
+</details>
 
 ---
 
@@ -229,19 +310,21 @@ new Thread(loadMovies).start();
 
 ```
 raksha/
-├── src/
-│   └── main/
-│       ├── java/
-│       │   ├── controllers/       # JavaFX controllers (MVC)
-│       │   ├── dao/               # Data Access Objects
-│       │   ├── models/            # Entity classes
-│       │   ├── services/          # Business logic
-│       │   └── utils/             # SceneManager, HashUtil, etc.
-│       └── resources/
-│           ├── fxml/              # Scene layouts
-│           ├── css/               # Stylesheets
-│           └── db.properties      # DB config
-└── pom.xml
+├── raksha_database.sql        ← Import this into MySQL first
+├── MANUAL.md                  ← User & Admin guide
+├── pom.xml
+└── src/
+    └── main/
+        ├── java/
+        │   ├── controllers/   # JavaFX controllers (MVC)
+        │   ├── dao/           # Data Access Objects
+        │   ├── models/        # Entity classes
+        │   ├── services/      # Business logic
+        │   └── utils/         # SceneManager, HashUtil, etc.
+        └── resources/
+            ├── fxml/          # Scene layouts
+            ├── css/           # Stylesheets
+            └── db.properties  # DB credentials
 ```
 
 ---
